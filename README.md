@@ -61,6 +61,7 @@ FireTree 4.0/V5 的诊断结论（详见 `docs/THESIS.md`）：
 |---|---|
 | **[DEVELOPMENT-PLAN.md](DEVELOPMENT-PLAN.md)** | **主开发规划**：目标、规模约束、架构、领域模型、7 个工具、集成、WBS、M0–M5、验收、风险 |
 | [docs/SCALE.md](docs/SCALE.md) | 百万行规模机制：作用域上移、影响分析、评审吞吐、成本模型、推广 |
+| [docs/SCALE-BASELINE.md](docs/SCALE-BASELINE.md) | M0/T0.9 规模基线：目标仓测量、与 §2 假设的偏差和调整 |
 | [docs/THESIS.md](docs/THESIS.md) | 问题诊断与设计原则（为什么是这四个机制） |
 | [docs/QIAN-LANDING.md](docs/QIAN-LANDING.md) | 钱学森精髓落地矩阵：原文判据 → DSH 机制 → 可测信号 → 证伪条件 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | DSH 原生架构、7 个工具、工件、回执契约、分级、守卫 |

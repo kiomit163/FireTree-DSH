@@ -104,11 +104,12 @@ git status --short         # 必须干净
 
 ### T0.9 规模假设与基线测量
 
-- 选目标仓库（或代表性仓库），测量：
-  - 文件数、LOC、子系统数、接口数；
-  - 近 8 周 PR 量、评审时延、CI 时长；
-  - 现有测试/扫描产物类型（JUnit/SARIF/coverage/SBOM）。
-- 对照 `DEVELOPMENT-PLAN.md` §2 假设，偏差 >2× 需在 DECISIONS 记录并调整目标。
+- [x] 选目标仓库（或代表性仓库），测量：
+  - [x] 文件数 4,562、代码 LOC 938,534、文本 LOC 1,119,654（MiniMax-Code，2026-11-06）；
+  - [x] 近 8 周 PR：192 创建 / 169 合并（约 24/周）；12 个 PR 作者；
+  - [x] CI 主工作流成功运行中位 582.5s（约 9.7 min）；现有证据产物为 verification JSON/MD/export JSON；
+  - [x] 现有测试/扫描产物类型：无 JUnit/SARIF/coverage/SBOM；`.firetree` 注册表为 0。
+- [x] 对照 `DEVELOPMENT-PLAN.md` §2 假设：文件数约 2.19×、PR 量约 2.08× 低于下限；代码 LOC 约 1.07× 低于下限；CI 约 1.03× 低于下限；团队数不可测。偏差与调整见 `docs/SCALE-BASELINE.md`。
 
 ### T0.10 Parking Lot 与范围冻结
 

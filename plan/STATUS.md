@@ -14,13 +14,13 @@
 | T0.6 | DONE | `docs/ROADMAP.md` §三（metrics-v0）；`docs/DECISIONS.md` D7 冻结记录；tag `metrics-v0` | 2026-11-06 |
 | T0.7 | DONE | `docs/DECISIONS.md` 红队 8/8；`DEVELOPMENT-PLAN.md` §15 R1–R12；`test/m0-risks.test.mjs` | 2026-11-06 |
 | T0.8 | DONE | `docs/MIGRATION.md` §2.1–§2.5（删除清单冻结）；`test/m0-migration.test.mjs` | 2026-11-06 |
-| T0.9 | PENDING | 规模基线测量记录 | — |
+| T0.9 | DONE | `docs/SCALE-BASELINE.md`（MiniMax-Code：4,562 文件 / 938,534 代码 LOC / 24 PR·周⁻¹ / CI 9.7 min） | 2026-11-06 |
 | T0.10 | PENDING | `docs/PARKING-LOT.md` | — |
 | T0.11 | IN_PROGRESS | `plan/STATUS.md`（本文件；M0 收口时完成） | 2026-11-06 |
 
 ## 当前下一步
 
-- T0.9：选目标仓库，测量文件数、LOC、近 8 周 PR 量、CI 时长、证据产物类型；与 §2 假设偏差 >2× 时记录并调整。
+- T0.10：确认 Parking Lot 与范围冻结；新想法只入池。
 
 ## M0 完成信号（滚动核对）
 
@@ -32,6 +32,6 @@
 - [x] 指标冻结并打 tag `metrics-v0`。
 - [x] 风险登记册与红队意见。
 - [x] 迁移删除清单冻结。
-- [ ] 规模基线已测。
+- [x] 规模基线已测（含 >2× 偏差与调整）。
 - [ ] Parking Lot 确认。
 - [ ] STATUS.md 可用。
