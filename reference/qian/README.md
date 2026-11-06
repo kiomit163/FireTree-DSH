@@ -35,6 +35,8 @@ python reference/qian/extract.py --root "D:\Qian" --check
 
 `--check` 会核对四卷 SHA-256 是否与 `sources.json` 一致，并重跑 20 条引文核验；任一失败返回非 0。
 
+> 环境说明：Windows PATH 上的 Python 不一定安装 `python-docx`。本仓库不引入外部依赖；在 DSH profile 内应使用其自带 Python（T0.3 复验环境见 §7）。
+
 ## 4. 已知缺口（必须如实记录）
 
 | 缺口 | 状态 | 处理 |
@@ -58,3 +60,17 @@ python reference/qian/extract.py --root "D:\Qian" --check
 - 不复制、不分发四卷 DOCX；仓库只存哈希与短引文。
 - 短引文用于评论、研究与设计论证，标注出处与卷次。
 - 若未来需要更长引用，先做版权评估，再决定是否移出仓库。
+
+## 7. T0.3 复验记录（2026-11-06）
+
+| 项 | 结果 |
+|---|---|
+| 命令 | `python reference/qian/extract.py --root "D:\Qian" --check` |
+| 解释器 | DSH profile 自带 Python 3.12.14 + `python-docx` 1.2.0（PATH 上的 Python 3.14.6 无 `python-docx`，未安装外部依赖） |
+| 文件数 | 4 个 DOCX，与 `sources.json` 的 `volumes` 数量一致 |
+| SHA-256 | 四卷全部与 `sources.json` 一致；输出 `sources.json matches the source files` |
+| 引文核验 | 20/20 输出 `OK`；无失败项 |
+| 退出码 | `0` |
+| 缺口 | §4 的五项缺口仍成立，无新增已解决项 |
+
+**结论边界**：通过只能证明「四卷文件未变、20 条短语存在于标注卷次」；不能证明整句逐字连续、标点与上下文未被改写。引用仍按「短引 + 出处」使用。
