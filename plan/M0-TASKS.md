@@ -63,10 +63,10 @@ git status --short         # 必须干净
 
 验收：
 
-- [ ] `node --check` 全部通过。
-- [ ] `plugin_manager install_bundle` → `application: applied`。
-- [ ] `firetree_state` 返回 `{ok:true, ...}`（空状态）。
-- [ ] 其余 6 个工具返回「not implemented」且不崩溃。
+- [x] `node --check` 全部通过（2026-11-06：10 个 `.js`/`.mjs` 文件）。
+- [x] `plugin_manager install_bundle` → `application: applied`（2026-11-06，目标 `D:\FireTree-DSH`）。
+- [x] `firetree_state` 返回 `{ok:true, ...}`（单元测试断言 `ok:true`；live 调用返回 empty projection）。
+- [x] 其余 6 个工具返回「not implemented」且不崩溃（单元测试 6/6；live `firetree_assess` 返回 `NOT_IMPLEMENTED`）。
 
 ### T0.5 规模契约
 

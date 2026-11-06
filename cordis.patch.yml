@@ -1,0 +1,4 @@
+- insert:
+    - id: firetree-dsh
+      name: '@local/firetree-dsh'
+      config: {}

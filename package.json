@@ -1,0 +1,30 @@
+{
+  "name": "@local/firetree-dsh",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Auditable delivery protocol for DSH: risk tiers, external evidence receipts, human sign-off, and correctness cases.",
+  "license": "UNLICENSED",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "src/**/*.js",
+    "skills/**/SKILL.md",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
