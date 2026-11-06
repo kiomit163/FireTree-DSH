@@ -79,9 +79,10 @@ git status --short         # 必须干净
 
 验收：
 
-- [ ] 用 3 个真实样例（L0/L1/L2 各一）验证 schema 可表达。
-- [ ] `firetree_receipt` 的拒绝规则与 schema 字段一一对应。
-- [ ] 策略继承示例：org → repo → subsystem。
+- [x] 用 3 个真实样例（L0/L1/L2 各一）验证 schema 可表达（`fixtures/receipt-l{0,1,2}.json`，2026-11-06 全部通过）。
+- [x] `firetree_receipt` 的拒绝规则与 schema 字段一一对应（`schemas/README.md` §3 映射表；语义缺口标为 M2）。
+- [x] 策略继承示例：org → repo → subsystem（`fixtures/policy-{org,repo,subsystem}.json`；子层只加严，放松只走例外）。
+- [x] L2 样例覆盖「空映射被拒」（`fixtures/correctness-case-l2-empty-mapping.json` + 漏映射反例；schema 与语义检查均拒绝）。
 
 ### T0.6 指标预注册
 

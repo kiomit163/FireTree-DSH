@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://firetree.local/schemas/interfaces.schema.json",
+  "title": "FireTree interface registry entry v0",
+  "description": "One versioned interface contract: definition file, content hash, contract test, consumers, and interface-level dependencies.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "kind",
+    "file",
+    "sha256",
+    "contract_test",
+    "consumers",
+    "depends_on"
+  ],
+  "properties": {
+    "schema": {
+      "const": "firetree.interface/v0"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9.-]*$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["idl", "openapi", "ts", "proto"]
+    },
+    "file": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repo-relative path to the interface definition."
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "contract_test": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Test command or suite that exercises the contract."
+    },
+    "consumers": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Subsystem or service that consumes this interface."
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Interface ids this contract depends on."
+      }
+    }
+  }
+}

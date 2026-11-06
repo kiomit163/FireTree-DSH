@@ -1,0 +1,28 @@
+{
+  "schema": "firetree.correctness-case/v0",
+  "claims": [
+    {
+      "id": "c1",
+      "statement": "The billing retry path preserves the original idempotency key.",
+      "kind": "functional",
+      "owner": "human:author-01"
+    }
+  ],
+  "invariants": [
+    {
+      "id": "i1",
+      "statement": "The idempotency key is read from the request header before persistence.",
+      "enforced_by": "code",
+      "evidence_ref": ".firetree/evidence/l1-billing-junit.xml"
+    }
+  ],
+  "mapping": [
+    {
+      "claim_id": "c1",
+      "invariant_ids": ["i1"],
+      "tests": ["BillingRetryTest"],
+      "evidence_refs": [".firetree/evidence/l1-billing-junit.xml"]
+    }
+  ],
+  "residual": []
+}

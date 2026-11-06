@@ -15,6 +15,7 @@
     "index.js",
     "src/**/*.js",
     "skills/**/SKILL.md",
+    "schemas/*.schema.json",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg"

@@ -1,0 +1,10 @@
+{
+  "schema": "firetree.interface/v0",
+  "id": "billing.api",
+  "kind": "openapi",
+  "file": "contracts/billing/openapi.yaml",
+  "sha256": "8f262333685def4f8b1c62b34bdd13b1dee72ec27880f81adf355e4ec66f9feb",
+  "contract_test": "tests/contract/billing.spec.mjs",
+  "consumers": ["checkout"],
+  "depends_on": ["identity.api"]
+}

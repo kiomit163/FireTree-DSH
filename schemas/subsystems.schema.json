@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://firetree.local/schemas/subsystems.schema.json",
+  "title": "FireTree subsystem registry entry v0",
+  "description": "One subsystem: path scope, owners, interface references, required tests, dependencies, and the current OID dossier reference.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "name",
+    "paths",
+    "owners",
+    "interfaces",
+    "tests",
+    "dossier"
+  ],
+  "properties": {
+    "schema": {
+      "const": "firetree.subsystem/v0"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "paths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Repo-relative glob owned by this subsystem."
+      }
+    },
+    "owners": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^@",
+        "description": "CODEOWNERS owner, for example @team-billing."
+      }
+    },
+    "interfaces": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Interface id defined or consumed by this subsystem."
+      }
+    },
+    "tests": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Required test suite or contract test identifier."
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "description": "Reverse dependencies used by impact traversal."
+    },
+    "dossier": {
+      "$ref": "#/$defs/dossier"
+    }
+  },
+  "$defs": {
+    "dossier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "kind",
+        "method",
+        "updated_at"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "simple",
+            "large",
+            "simple-giant",
+            "open-complex-giant",
+            "unknown"
+          ]
+        },
+        "method": {
+          "type": "string",
+          "enum": ["decompose", "metasynthesis"]
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

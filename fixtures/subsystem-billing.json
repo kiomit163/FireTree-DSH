@@ -1,0 +1,17 @@
+{
+  "schema": "firetree.subsystem/v0",
+  "id": "billing",
+  "name": "Billing",
+  "paths": ["services/billing/**", "contracts/billing/**"],
+  "owners": ["@team-billing"],
+  "interfaces": ["billing.api"],
+  "tests": ["billing/unit", "billing/contract"],
+  "depends_on": ["identity"],
+  "dossier": {
+    "path": ".firetree/oid/billing.json",
+    "sha256": "5cfb80e3c3d062d9036d7b51601beb481bbb438d57c54496df97c7acff5dd2f0",
+    "kind": "large",
+    "method": "decompose",
+    "updated_at": "2026-11-06T08:00:00Z"
+  }
+}

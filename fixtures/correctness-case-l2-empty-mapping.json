@@ -1,0 +1,21 @@
+{
+  "schema": "firetree.correctness-case/v0",
+  "claims": [
+    {
+      "id": "c1",
+      "statement": "Concurrent duplicate charge requests produce at most one captured charge.",
+      "kind": "safety",
+      "owner": "human:author-01"
+    }
+  ],
+  "invariants": [
+    {
+      "id": "i1",
+      "statement": "A charge transaction writes the idempotency key before capturing funds.",
+      "enforced_by": "code",
+      "evidence_ref": ".firetree/evidence/billing-junit.xml"
+    }
+  ],
+  "mapping": [],
+  "residual": []
+}

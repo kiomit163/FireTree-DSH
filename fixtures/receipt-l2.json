@@ -1,0 +1,84 @@
+{
+  "schema": "firetree.receipt/v0",
+  "change": {
+    "base": "5555555555555555555555555555555555555555",
+    "head": "6666666666666666666666666666666666666666",
+    "files_sha256": "a04a557f51e3f9815ad7c22bab3e33f82c497c7eb0ab1d214155d841d9e419a2"
+  },
+  "tier": "L2",
+  "policy": {
+    "version": "ce9cf0179716052aa6e9f2c3ca8e1841e4a895fec88cb34112a4d0620bfa88f5",
+    "sampling": "full"
+  },
+  "intent": {
+    "spec": ".firetree/specs/billing-idempotency/spec.md",
+    "sha256": "e0f5cac42200033673b26008889558270643b0feaa23e7317285542769f0e83d"
+  },
+  "classification": {
+    "subsystem": "billing",
+    "kind": "large",
+    "method": "decompose",
+    "dossier_sha256": "5cfb80e3c3d062d9036d7b51601beb481bbb438d57c54496df97c7acff5dd2f0"
+  },
+  "hypotheses": {
+    "total": 2,
+    "verified": 2,
+    "accepted_risk": 0
+  },
+  "evidence": [
+    {
+      "kind": "test",
+      "producer": "ci:github-actions",
+      "run_ref": ".firetree/evidence/billing-junit.xml",
+      "sha256": "1700bc57ed767b9d3aa77a5eafb1ca4cbd5db545cfa0bcdee3ac96c956980ff0",
+      "produced_at": "2026-11-06T08:30:00Z"
+    },
+    {
+      "kind": "sarif",
+      "producer": "ci:github-actions",
+      "run_ref": ".firetree/evidence/billing-sarif.json",
+      "sha256": "e9f979c1ab5714bb81aebdd70a0599c8e987cdb908c88fc50b890e623837a2c3",
+      "produced_at": "2026-11-06T08:31:00Z"
+    },
+    {
+      "kind": "coverage",
+      "producer": "ci:github-actions",
+      "run_ref": ".firetree/evidence/billing-coverage.json",
+      "sha256": "7d8cc54c3e4c2942be58020bffb80307fc43e3d518766c8f29c1ee15a76a981c",
+      "produced_at": "2026-11-06T08:32:00Z"
+    }
+  ],
+  "review": {
+    "rounds": 2,
+    "new_findings": [3, 0],
+    "dissent": 2,
+    "verdict": "ready"
+  },
+  "correctness_case": {
+    "path": ".firetree/changes/billing-idempotency/correctness-case.json",
+    "sha256": "7626b8c7212e05f68ef70a11f2b6bcf88bdf9c1476a10135ea96d02763f3e491",
+    "claims": 2,
+    "mapped_claims": 2,
+    "unaccepted_residuals": 0
+  },
+  "impact": {
+    "files": [
+      "services/billing/charge.mjs",
+      "services/billing/idempotency.mjs",
+      "contracts/billing/openapi.yaml"
+    ],
+    "subsystems": ["billing", "checkout"],
+    "interfaces": ["billing.api"],
+    "owners": ["@team-billing", "@team-checkout"],
+    "traversed": true,
+    "confidence": "high"
+  },
+  "signoff": {
+    "by": "human",
+    "identity": "human:architect-01",
+    "at": "2026-11-06T09:10:00Z",
+    "scope": "L2 interface change and accepted residual risk."
+  },
+  "expires_at": "2026-12-06T00:00:00Z",
+  "assurance": "A2"
+}

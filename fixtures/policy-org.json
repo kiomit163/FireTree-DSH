@@ -1,0 +1,51 @@
+{
+  "schema": "firetree.policy/v0",
+  "version": "047f256c882c910d5eca747c0d515198c5edf06dd06b9efe1d30f12c2b34d52e",
+  "scope": "org",
+  "extends": null,
+  "tiers": {
+    "L0": {
+      "sample_rate": 0.1,
+      "review_rounds": 1,
+      "signoff": "none",
+      "correctness_case": "none",
+      "token_budget": 20000
+    },
+    "L1": {
+      "sample_rate": 1,
+      "review_rounds": 2,
+      "signoff": "peer",
+      "correctness_case": "light",
+      "token_budget": 100000
+    },
+    "L2": {
+      "sample_rate": 1,
+      "review_rounds": 3,
+      "signoff": "human",
+      "correctness_case": "full",
+      "token_budget": 400000
+    }
+  },
+  "triggers": {
+    "L0": ["docs", "config", "tests-only"],
+    "L1": ["source-code"],
+    "L2": [
+      "interface-change",
+      "cross-subsystem",
+      "security",
+      "data",
+      "dependency",
+      "unknown-impact"
+    ]
+  },
+  "sampling": {
+    "mode": "tiered",
+    "record_required": true
+  },
+  "exceptions": [],
+  "inheritance": {
+    "mode": "tighten_only",
+    "relaxation_via": "exception",
+    "relaxation_requires": ["architect_approval", "expires_at"]
+  }
+}

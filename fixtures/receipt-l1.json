@@ -1,0 +1,69 @@
+{
+  "schema": "firetree.receipt/v0",
+  "change": {
+    "base": "3333333333333333333333333333333333333333",
+    "head": "4444444444444444444444444444444444444444",
+    "files_sha256": "b05025c05706c0dbdac2302a873030f1bd5ee4e3478e7bdfec090f2bc4db1278"
+  },
+  "tier": "L1",
+  "policy": {
+    "version": "02cfd39603228f1a29f3245de4c68bedd72b826a73c3b29d0ba75ffce3143aa7",
+    "sampling": "full"
+  },
+  "intent": {
+    "spec": ".firetree/specs/billing-retry/spec.md",
+    "sha256": "14163b7230c081b17f54f05e7ff5b1c5c3126d673b91a271de457fdac0546298"
+  },
+  "classification": {
+    "subsystem": "billing",
+    "kind": "large",
+    "method": "decompose",
+    "dossier_sha256": "5cfb80e3c3d062d9036d7b51601beb481bbb438d57c54496df97c7acff5dd2f0"
+  },
+  "hypotheses": {
+    "total": 1,
+    "verified": 1,
+    "accepted_risk": 0
+  },
+  "evidence": [
+    {
+      "kind": "test",
+      "producer": "ci:github-actions",
+      "run_ref": ".firetree/evidence/l1-billing-junit.xml",
+      "sha256": "01792a227b2b5a6d0bbde670cc7d64a250f439540474651bbe16f1e857608e22",
+      "produced_at": "2026-11-06T08:20:00Z"
+    }
+  ],
+  "review": {
+    "rounds": 2,
+    "new_findings": [2, 0],
+    "dissent": 1,
+    "verdict": "ready"
+  },
+  "correctness_case": {
+    "path": ".firetree/changes/billing-retry/correctness-case.json",
+    "sha256": "0aca6fe8bd436175dc39b1da5744bfa92916625d09b83d5fda8a95f0ead1f34a",
+    "claims": 1,
+    "mapped_claims": 1,
+    "unaccepted_residuals": 0
+  },
+  "impact": {
+    "files": [
+      "services/billing/charge.mjs",
+      "services/billing/retry.mjs"
+    ],
+    "subsystems": ["billing"],
+    "interfaces": [],
+    "owners": ["@team-billing"],
+    "traversed": true,
+    "confidence": "high"
+  },
+  "signoff": {
+    "by": "human",
+    "identity": "human:reviewer-01",
+    "at": "2026-11-06T09:00:00Z",
+    "scope": "L1 peer review of the retry path."
+  },
+  "expires_at": "2026-12-06T00:00:00Z",
+  "assurance": "A2"
+}

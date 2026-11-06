@@ -1,0 +1,59 @@
+{
+  "schema": "firetree.correctness-case/v0",
+  "claims": [
+    {
+      "id": "c1",
+      "statement": "Concurrent duplicate charge requests produce at most one captured charge.",
+      "kind": "safety",
+      "owner": "human:author-01"
+    },
+    {
+      "id": "c2",
+      "statement": "Retrying the same idempotency key returns the original result.",
+      "kind": "functional",
+      "owner": "human:author-01"
+    }
+  ],
+  "invariants": [
+    {
+      "id": "i1",
+      "statement": "A charge transaction writes the idempotency key before capturing funds.",
+      "enforced_by": "code",
+      "evidence_ref": ".firetree/evidence/billing-junit.xml"
+    },
+    {
+      "id": "i2",
+      "statement": "The API rejects a reused key with a different payload using 409.",
+      "enforced_by": "contract",
+      "evidence_ref": ".firetree/evidence/billing-sarif.json"
+    }
+  ],
+  "mapping": [
+    {
+      "claim_id": "c1",
+      "invariant_ids": ["i1"],
+      "tests": ["BillingIdempotencyTest"],
+      "evidence_refs": [
+        ".firetree/evidence/billing-junit.xml",
+        ".firetree/evidence/billing-sarif.json"
+      ]
+    },
+    {
+      "claim_id": "c2",
+      "invariant_ids": ["i1", "i2"],
+      "tests": ["BillingIdempotencyTest", "BillingContractTest"],
+      "evidence_refs": [
+        ".firetree/evidence/billing-junit.xml",
+        ".firetree/evidence/billing-sarif.json"
+      ]
+    }
+  ],
+  "residual": [
+    {
+      "claim_id": "c1",
+      "reason": "Cross-region partition behavior is not covered by the current test matrix; accepted for this release.",
+      "accepted_by": "human:architect-01",
+      "expires_at": "2026-12-06T00:00:00Z"
+    }
+  ]
+}

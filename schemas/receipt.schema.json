@@ -1,0 +1,512 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://firetree.local/schemas/receipt.schema.json",
+  "title": "FireTree delivery receipt v0",
+  "description": "The auditable exit artifact for one change. It references external evidence; it never creates evidence. The full correctness-case file validates against #/$defs/correctnessCase. Empty mapping is a semantic rejection implemented by the v0 correctness-case checker, because JSON Schema cannot compare claim ids across arrays.",
+  "$comment": "M0 v0 contract. Full cross-field verification (claim coverage, last-round zero findings, residual expiry, local A1 provenance) belongs to M2; the schema already exposes every field those checks need.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "change",
+    "tier",
+    "policy",
+    "intent",
+    "classification",
+    "hypotheses",
+    "evidence",
+    "review",
+    "correctness_case",
+    "impact",
+    "signoff",
+    "expires_at",
+    "assurance"
+  ],
+  "properties": {
+    "schema": {
+      "const": "firetree.receipt/v0"
+    },
+    "change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base", "head", "files_sha256"],
+      "properties": {
+        "base": { "$ref": "#/$defs/commit" },
+        "head": { "$ref": "#/$defs/commit" },
+        "files_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "tier": {
+      "type": "string",
+      "enum": ["L0", "L1", "L2"]
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "sampling"],
+      "properties": {
+        "version": { "$ref": "#/$defs/sha256" },
+        "sampling": {
+          "type": "string",
+          "enum": ["none", "sampled", "full"]
+        },
+        "sample": { "$ref": "#/$defs/sampleRecord" }
+      }
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spec", "sha256"],
+      "properties": {
+        "spec": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subsystem", "kind", "method", "dossier_sha256"],
+      "properties": {
+        "subsystem": { "type": "string", "minLength": 1 },
+        "kind": {
+          "type": "string",
+          "enum": ["simple", "large", "simple-giant", "open-complex-giant", "unknown"]
+        },
+        "method": {
+          "type": "string",
+          "enum": ["decompose", "metasynthesis"]
+        },
+        "dossier_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "hypotheses": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "verified", "accepted_risk"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "verified": { "type": "integer", "minimum": 0 },
+        "accepted_risk": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/evidence" }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rounds", "new_findings", "dissent", "verdict"],
+      "properties": {
+        "rounds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "new_findings": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "integer", "minimum": 0 }
+        },
+        "dissent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "verdict": {
+          "type": "string",
+          "enum": ["ready", "not-ready"]
+        },
+        "zero_dissent_checks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Required when dissent is zero: what the reviewer actually checked."
+        }
+      }
+    },
+    "correctness_case": {
+      "description": "Summary of the separate correctness-case file. null for L0; required object for L2.",
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/correctnessCaseSummary" }
+      ]
+    },
+    "impact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "files",
+        "subsystems",
+        "interfaces",
+        "owners",
+        "traversed",
+        "confidence"
+      ],
+      "properties": {
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "subsystems": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "interfaces": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "owners": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "traversed": {
+          "type": "boolean"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "low"]
+        }
+      }
+    },
+    "signoff": {
+      "description": "Human or CI sign-off. L2 must be human.",
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/signoff" }
+      ]
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "assurance": {
+      "type": "string",
+      "enum": ["A1", "A2"],
+      "description": "A1 is local-only evidence; A2 requires CI-produced evidence. Never claim A2 without it."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "tier": { "const": "L2" }
+        },
+        "required": ["tier"]
+      },
+      "then": {
+        "properties": {
+          "correctness_case": { "type": "object" },
+          "signoff": {
+            "type": "object",
+            "required": ["by", "identity", "at", "scope"],
+            "properties": {
+              "by": { "const": "human" }
+            }
+          },
+          "review": {
+            "properties": {
+              "rounds": { "minimum": 2 },
+              "new_findings": { "minItems": 2 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "classification": {
+            "properties": {
+              "kind": {
+                "enum": ["open-complex-giant", "unknown"]
+              }
+            },
+            "required": ["kind"]
+          }
+        },
+        "required": ["classification"]
+      },
+      "then": {
+        "properties": {
+          "tier": { "const": "L2" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "policy": {
+            "properties": {
+              "sampling": { "const": "sampled" }
+            },
+            "required": ["sampling"]
+          }
+        },
+        "required": ["policy"]
+      },
+      "then": {
+        "properties": {
+          "policy": {
+            "required": ["sample"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tier": { "enum": ["L0", "L1"] }
+        },
+        "required": ["tier"]
+      },
+      "then": {
+        "properties": {
+          "impact": {
+            "properties": {
+              "traversed": { "const": true },
+              "confidence": { "const": "high" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "assurance": { "const": "A2" }
+        },
+        "required": ["assurance"]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "items": {
+              "properties": {
+                "producer": { "pattern": "^(?!local:).+" }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "review": {
+            "properties": {
+              "dissent": { "const": 0 }
+            },
+            "required": ["dissent"]
+          }
+        },
+        "required": ["review"]
+      },
+      "then": {
+        "properties": {
+          "review": {
+            "required": ["zero_dissent_checks"],
+            "properties": {
+              "zero_dissent_checks": { "minItems": 1 }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{7,64}$"
+    },
+    "sampleRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decided_by", "decided_at", "conclusion"],
+      "properties": {
+        "decided_by": { "type": "string", "minLength": 1 },
+        "decided_at": { "type": "string", "format": "date-time" },
+        "conclusion": { "type": "string", "minLength": 1 }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "producer",
+        "run_ref",
+        "sha256",
+        "produced_at"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["test", "coverage", "sarif", "sbom", "bench"]
+        },
+        "producer": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!agent(?:$|[:/])).+$",
+          "description": "CI or deterministic tool. The agent is never an evidence producer; local:<tool> is A1 only."
+        },
+        "run_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "produced_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "signoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["by", "identity", "at", "scope"],
+      "properties": {
+        "by": {
+          "type": "string",
+          "enum": ["human", "ci"]
+        },
+        "identity": { "type": "string", "minLength": 1 },
+        "at": { "type": "string", "format": "date-time" },
+        "scope": { "type": "string", "minLength": 1 }
+      }
+    },
+    "correctnessCaseSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "claims",
+        "mapped_claims",
+        "unaccepted_residuals"
+      ],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "claims": { "type": "integer", "minimum": 1 },
+        "mapped_claims": { "type": "integer", "minimum": 1 },
+        "unaccepted_residuals": { "type": "integer", "const": 0 }
+      }
+    },
+    "correctnessCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "claims", "invariants", "mapping", "residual"],
+      "properties": {
+        "schema": {
+          "const": "firetree.correctness-case/v0"
+        },
+        "claims": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/claim" }
+        },
+        "invariants": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/invariant" }
+        },
+        "mapping": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/mapping" }
+        },
+        "residual": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/residual" }
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "kind", "owner"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+        },
+        "statement": { "type": "string", "minLength": 1 },
+        "kind": {
+          "type": "string",
+          "enum": ["functional", "safety", "security", "performance", "compatibility"]
+        },
+        "owner": { "type": "string", "minLength": 1 }
+      }
+    },
+    "invariant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "enforced_by", "evidence_ref"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+        },
+        "statement": { "type": "string", "minLength": 1 },
+        "enforced_by": {
+          "type": "string",
+          "enum": ["code", "test", "config", "contract"]
+        },
+        "evidence_ref": { "type": "string", "minLength": 1 }
+      }
+    },
+    "mapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim_id", "invariant_ids", "tests", "evidence_refs"],
+      "properties": {
+        "claim_id": { "type": "string", "minLength": 1 },
+        "invariant_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "tests": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "evidence_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "residual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim_id", "reason", "accepted_by", "expires_at"],
+      "properties": {
+        "claim_id": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "accepted_by": {
+          "type": "string",
+          "pattern": "^human:",
+          "description": "A human accepts the residual risk; an agent cannot."
+        },
+        "expires_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

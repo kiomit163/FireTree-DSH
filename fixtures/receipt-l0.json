@@ -1,0 +1,63 @@
+{
+  "schema": "firetree.receipt/v0",
+  "change": {
+    "base": "1111111111111111111111111111111111111111",
+    "head": "2222222222222222222222222222222222222222",
+    "files_sha256": "9f45b89c23beeb87e37916958424f7e8520a6043b01b63420deb343468a32d05"
+  },
+  "tier": "L0",
+  "policy": {
+    "version": "047f256c882c910d5eca747c0d515198c5edf06dd06b9efe1d30f12c2b34d52e",
+    "sampling": "sampled",
+    "sample": {
+      "decided_by": "human:measurement-01",
+      "decided_at": "2026-11-06T08:00:00Z",
+      "conclusion": "Sampled under the 10% L0 audit rate; docs links checked."
+    }
+  },
+  "intent": {
+    "spec": "docs/README.md",
+    "sha256": "9a50a830ebab96d85b5e1d506f7f692af63605171eb99c54f891edc833bc712d"
+  },
+  "classification": {
+    "subsystem": "docs",
+    "kind": "simple",
+    "method": "decompose",
+    "dossier_sha256": "9cf433ff79f56faee7694cd2e12a52ea946cc46618bd96f606aabb436d7803c5"
+  },
+  "hypotheses": {
+    "total": 0,
+    "verified": 0,
+    "accepted_risk": 0
+  },
+  "evidence": [
+    {
+      "kind": "test",
+      "producer": "local:node-test",
+      "run_ref": ".firetree/evidence/l0-docs-junit.xml",
+      "sha256": "fd091a610fe5fb6f4bb1c6bd27981b43e434abe4dcefb1cac88c1b925d88b7a0",
+      "produced_at": "2026-11-06T08:10:00Z"
+    }
+  ],
+  "review": {
+    "rounds": 1,
+    "new_findings": [0],
+    "dissent": 0,
+    "verdict": "ready",
+    "zero_dissent_checks": [
+      "Checked README links and the three examples in the docs section."
+    ]
+  },
+  "correctness_case": null,
+  "impact": {
+    "files": ["README.md"],
+    "subsystems": ["docs"],
+    "interfaces": [],
+    "owners": ["@team-docs"],
+    "traversed": true,
+    "confidence": "high"
+  },
+  "signoff": null,
+  "expires_at": "2026-12-06T00:00:00Z",
+  "assurance": "A1"
+}
