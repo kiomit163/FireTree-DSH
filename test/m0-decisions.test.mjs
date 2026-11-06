@@ -62,3 +62,13 @@ test('D7 records the staged escape-defect thresholds without ambiguity', () => {
   assert.match(block, /12 个月能力目标/);
   assert.match(block, /≥30%/);
 });
+
+test('every decision records a red-team objection and a mitigation response', () => {
+  for (const block of blocks) {
+    const id = block.slice(0, 2);
+    assert.doesNotMatch(block, /T0\.7 补录/, `${id} still has a red-team placeholder`);
+    assert.match(block, /^\s+- 反对：/m, `${id} has no objection`);
+    assert.match(block, /^\s+- 回应：/m, `${id} has no response`);
+    assert.match(block, /缓解/, `${id} response has no mitigation`);
+  }
+});

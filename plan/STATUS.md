@@ -12,7 +12,7 @@
 | T0.4 | DONE | `package.json`、`cordis.patch.yml`、`index.js`、`src/`、`skills/`；`test/skeleton.test.mjs`；install `applied`；`firetree_state` live empty | 2026-11-06 |
 | T0.5 | DONE | `schemas/*.schema.json`、`schemas/README.md`、`fixtures/`；`test/schema-contracts.test.mjs`（17/17）、`test/schema-validator.test.mjs`（4/4） | 2026-11-06 |
 | T0.6 | DONE | `docs/ROADMAP.md` §三（metrics-v0）；`docs/DECISIONS.md` D7 冻结记录；tag `metrics-v0` | 2026-11-06 |
-| T0.7 | PENDING | `docs/DECISIONS.md` 红队记录、`docs/ROADMAP.md` §五 | — |
+| T0.7 | DONE | `docs/DECISIONS.md` 红队 8/8；`DEVELOPMENT-PLAN.md` §15 R1–R12；`test/m0-risks.test.mjs` | 2026-11-06 |
 | T0.8 | PENDING | `docs/MIGRATION.md` 勾选与冻结删除清单 | — |
 | T0.9 | PENDING | 规模基线测量记录 | — |
 | T0.10 | PENDING | `docs/PARKING-LOT.md` | — |
@@ -20,7 +20,7 @@
 
 ## 当前下一步
 
-- T0.7：补全风险登记册；对 D1–D8 各写至少一条反对意见与回应。
+- T0.8：逐项确认 `docs/MIGRATION.md` 的保留/重写/删除/归档，修正技能数不一致，冻结删除清单。
 
 ## M0 完成信号（滚动核对）
 
@@ -30,7 +30,7 @@
 - [x] 仓库骨架可被 DSH 加载；7 个工具注册。
 - [x] 四个 schema 定稿（含 correctness case v0）。
 - [x] 指标冻结并打 tag `metrics-v0`。
-- [ ] 风险登记册与红队意见。
+- [x] 风险登记册与红队意见。
 - [ ] 迁移删除清单冻结。
 - [ ] 规模基线已测。
 - [ ] Parking Lot 确认。

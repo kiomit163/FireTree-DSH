@@ -78,4 +78,4 @@ node --test test/schema-contracts.test.mjs
 node --test test/schema-validator.test.mjs
 ```
 
-2026-11-06 结果：`schema-contracts` 17/17 通过，`schema-validator` 4/4 通过；完整套件 59/59 通过。
+2026-11-06 结果：`schema-contracts` 17/17 通过，`schema-validator` 4/4 通过；完整套件以 `npm test` 为准。
