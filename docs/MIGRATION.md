@@ -63,9 +63,22 @@
 
 ### 2.4 归档（不迁移，保留证据）
 
+**归档记录（2026-11-06，T0.2 实际执行）**
+
+| 项 | 值 |
+|---|---|
+| 仓库 | `D:\FireTree V5` |
+| tag | `v5-archive`（lightweight，指向 commit） |
+| commit | `00e81a890e7cefc2fff89c2991a06593a827f4b8` |
+| commit 日期 | `2026-11-02T00:16:30+08:00` |
+| commit 标题 | `docs(qa): record 48/48 mutation smoke and final CI` |
+| 取证时工作区 | `git status --porcelain=v1` 为空 |
+| 复验命令 | `git -C "D:\FireTree V5" rev-parse "v5-archive^{commit}"` |
+
 - V5 仓库打 tag `v5-archive`；记录 commit hash。
 - `plan/STATUS.md`、`REMEDIATION-PLAN.md`、`plan/evidence/` 作为历史证据保留在原仓库。
 - 在 `docs/MIGRATION.md` 记录归档位置与 hash，便于日后引用。
+- 归档后 V5 只读：除复验与读取外不再修改；任何新想法进入本仓库，不回改 V5。
 
 ## 三、迁移机制
 
