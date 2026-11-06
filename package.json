@@ -21,7 +21,8 @@
     "icon.svg"
   ],
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "check:docs": "node scripts/check-docs.mjs"
   },
   "dsh": {
     "bundle": {

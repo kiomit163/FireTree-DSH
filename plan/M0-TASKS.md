@@ -121,11 +121,12 @@ git status --short         # 必须干净
 
 ## M0 完成信号
 
-- `DECISIONS.md`：8 条 ACCEPTED（含规模含义）。
-- `reference/qian`：hash 一致、引文可核、缺口写明。
-- 骨架：可安装、可调用、可卸载；7 个工具注册。
-- 规模契约：4 个 schema 定稿并有样例。
-- 指标：冻结并打 tag；规模假设已测量。
-- 范围：README「不做清单」+ Parking Lot 生效。
+- [x] `DECISIONS.md`：8 条 ACCEPTED（含规模含义、代价、证伪条件、复议时间、红队意见）。
+- [x] `reference/qian`：hash 一致、20/20 引文可核、缺口写明。
+- [x] 骨架：可安装、可调用、可卸载；7 个工具注册；6 个技能占位。
+- [x] 规模契约：4 个 schema 定稿并有 L0/L1/L2 样例；correctness case v0；空映射被拒。
+- [x] 指标：冻结并打 tag `metrics-v0`；规模假设已测量并记录偏差。
+- [x] 范围：README「不做清单」+ Parking Lot 生效。
+- [x] `plan/STATUS.md` 可用，含全部 T0 证据与 M0 验收记录。
 
-**以上全部满足，才允许开始 M1 写业务逻辑。**
+**M0 状态：DONE（2026-11-06）。M1 未开始。** 以上全部满足，才允许开始 M1 写业务逻辑；本仓库未在 M0 内提前实现 assess/receipt 等业务逻辑。
