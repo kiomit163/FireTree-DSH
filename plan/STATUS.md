@@ -13,14 +13,14 @@
 | T0.5 | DONE | `schemas/*.schema.json`、`schemas/README.md`、`fixtures/`；`test/schema-contracts.test.mjs`（17/17）、`test/schema-validator.test.mjs`（4/4） | 2026-11-06 |
 | T0.6 | DONE | `docs/ROADMAP.md` §三（metrics-v0）；`docs/DECISIONS.md` D7 冻结记录；tag `metrics-v0` | 2026-11-06 |
 | T0.7 | DONE | `docs/DECISIONS.md` 红队 8/8；`DEVELOPMENT-PLAN.md` §15 R1–R12；`test/m0-risks.test.mjs` | 2026-11-06 |
-| T0.8 | PENDING | `docs/MIGRATION.md` 勾选与冻结删除清单 | — |
+| T0.8 | DONE | `docs/MIGRATION.md` §2.1–§2.5（删除清单冻结）；`test/m0-migration.test.mjs` | 2026-11-06 |
 | T0.9 | PENDING | 规模基线测量记录 | — |
 | T0.10 | PENDING | `docs/PARKING-LOT.md` | — |
 | T0.11 | IN_PROGRESS | `plan/STATUS.md`（本文件；M0 收口时完成） | 2026-11-06 |
 
 ## 当前下一步
 
-- T0.8：逐项确认 `docs/MIGRATION.md` 的保留/重写/删除/归档，修正技能数不一致，冻结删除清单。
+- T0.9：选目标仓库，测量文件数、LOC、近 8 周 PR 量、CI 时长、证据产物类型；与 §2 假设偏差 >2× 时记录并调整。
 
 ## M0 完成信号（滚动核对）
 
@@ -31,7 +31,7 @@
 - [x] 四个 schema 定稿（含 correctness case v0）。
 - [x] 指标冻结并打 tag `metrics-v0`。
 - [x] 风险登记册与红队意见。
-- [ ] 迁移删除清单冻结。
+- [x] 迁移删除清单冻结。
 - [ ] 规模基线已测。
 - [ ] Parking Lot 确认。
 - [ ] STATUS.md 可用。
