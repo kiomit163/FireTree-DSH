@@ -1,0 +1,129 @@
+# M0 任务（第 0–2 周）
+
+> 目标：**决定落盘、V5 冻结、台账可复现、规模契约定稿、骨架可加载、指标冻结。**
+> 两周内完成；任何一项延期，M1 顺延并在 DECISIONS 记录原因。
+
+---
+
+## 任务总览
+
+| ID | 任务 | Owner | 估时 | 依赖 | 验收 |
+|---|---|---|---|---|---|
+| T0.1 | 开工决策会（D1–D8） | 主持 | 0.5d | 会前必读 | `DECISIONS.md` 8 条 ACCEPTED |
+| T0.2 | V5 归档 | 工程 | 0.5d | 无 | tag `v5-archive` + commit hash 记录 |
+| T0.3 | 引文台账重建 | 工程 | 1d | 无 | `extract.py --check` 通过；20 条引文核验；缺口写明 |
+| T0.4 | 仓库骨架 | 工程 | 1d | T0.1 | `install_bundle` 可加载；7 个工具注册；`node --check` 通过 |
+| T0.5 | 规模契约 | 工程+架构 | 1.5d | T0.1 | policy/subsystems/interfaces/receipt（含 correctness_case）四个 schema 定稿 |
+| T0.6 | 指标预注册 | 度量 | 0.5d | T0.1 | `ROADMAP.md` §三冻结并打 tag `metrics-v0` |
+| T0.7 | 风险清单与红队意见 | 红队 | 0.5d | T0.1 | 风险登记册 + 每条决定的反驳记录 |
+| T0.8 | 迁移清单确认 | 工程 | 0.5d | T0.3 | `MIGRATION.md` 勾选；删除清单冻结 |
+| T0.9 | 规模假设与基线测量 | 度量 | 0.5d | T0.1 | 目标仓库文件数/LOC/PR 量/CI 时长；确认 §2 假设 |
+| T0.10 | Parking Lot 与范围冻结 | 主持 | 0.2d | T0.1 | 新想法入池；README「不做清单」确认 |
+
+合计约 7 人日，分布在两周。
+
+---
+
+## 详细验收
+
+### T0.1 开工决策会
+
+- 按 [KICKOFF.md](../KICKOFF.md) 议程执行（可拆成两次，但 D1/D2 必须第一天定）。
+- 产出：`DECISIONS.md` 八条状态改为 `ACCEPTED`，含日期、代价、证伪条件、复议时间。
+- 新增：**确认目标是百万行规模**，并在 D1/D2 中写入规模含义（单仓/多团队/PR 量）。
+- 失败判据：任何一条只有结论、没有证伪条件 → 未完成。
+
+### T0.2 V5 归档
+
+```bash
+# 在 D:\FireTree V5
+git tag v5-archive
+git rev-parse v5-archive   # 记录 hash
+git status --short         # 必须干净
+```
+
+- 记录到 `docs/MIGRATION.md` §2.4。
+- 归档后 V5 只读；任何新想法进本仓库，不回改 V5。
+
+### T0.3 引文台账重建
+
+- 运行 `reference/qian/extract.py --root "D:\Qian" --check`。
+- 核对四卷 SHA-256 与 `sources.json` 一致；20 条引文全部命中。
+- 记录未验证项（十八份台账缺失、AI Coding 论文缺失）到 `reference/qian/README.md` §4。
+
+### T0.4 仓库骨架
+
+交付：
+
+- `package.json`（`@local/firetree-dsh`，`dsh.bundle.patch`，exports locale/icon）。
+- `cordis.patch.yml`（一行 host row）。
+- `index.js`：`apply()` 注册 **7 个工具**（stub）、短 prompt section、6 个技能占位。
+- `src/lib/json.js`（严格 JSON）、`src/lib/tiers.js`（L0/L1/L2）。
+- `src/tools/state.js`：返回空状态（可真实调用）。
+
+验收：
+
+- [ ] `node --check` 全部通过。
+- [ ] `plugin_manager install_bundle` → `application: applied`。
+- [ ] `firetree_state` 返回 `{ok:true, ...}`（空状态）。
+- [ ] 其余 6 个工具返回「not implemented」且不崩溃。
+
+### T0.5 规模契约
+
+四个 schema 定稿（JSON Schema，进 `schemas/`）：
+
+1. `policy.schema.json`：tiers 触发、采样率、例外结构（到期日）、继承与覆盖规则。
+2. `subsystems.schema.json`：id、paths glob、owners、interfaces、tests、dossier 引用。
+3. `interfaces.schema.json`：id、kind、file、sha256、contract_test、consumers、depends_on。
+4. `receipt.schema.json`：见 `docs/ARCHITECTURE.md` §五（含 sampling/policy/impact/confidence/correctness_case）。
+
+验收：
+
+- [ ] 用 3 个真实样例（L0/L1/L2 各一）验证 schema 可表达。
+- [ ] `firetree_receipt` 的拒绝规则与 schema 字段一一对应。
+- [ ] 策略继承示例：org → repo → subsystem。
+
+### T0.6 指标预注册
+
+- 冻结 `ROADMAP.md` §三：主要/规模指标、采集方式、阈值、停止规则。
+- 明确样本量与统计口径（不足时标注方向性）。
+- 打 tag `metrics-v0`；pilot 前不改。
+
+### T0.7 风险与红队
+
+- 红队对 D1–D8 各提出至少一条反对意见，记录在 `DECISIONS.md`。
+- 风险清单覆盖：影响分析漏报、吞吐崩溃、成本超支、团队绕过、橡皮图章、DSH API 漂移、工件泛滥、单维护者。
+- 验收：每条反对意见都有「为何仍采纳 / 如何缓解」。
+
+### T0.8 迁移清单确认
+
+- 逐项确认 `MIGRATION.md` §2.1–§2.3。
+- 冻结删除清单；例外需在 DECISIONS 记录。
+- 验收：每节有勾选与日期。
+
+### T0.9 规模假设与基线测量
+
+- 选目标仓库（或代表性仓库），测量：
+  - 文件数、LOC、子系统数、接口数；
+  - 近 8 周 PR 量、评审时延、CI 时长；
+  - 现有测试/扫描产物类型（JUnit/SARIF/coverage/SBOM）。
+- 对照 `DEVELOPMENT-PLAN.md` §2 假设，偏差 >2× 需在 DECISIONS 记录并调整目标。
+
+### T0.10 Parking Lot 与范围冻结
+
+- 确认并填充 `docs/PARKING-LOT.md`。
+- 会上所有「以后做」的想法入池，标注触发条件。
+- 验收：v1 范围未扩大；池中条目有触发条件。
+
+---
+
+## M0 完成信号
+
+- `DECISIONS.md`：8 条 ACCEPTED（含规模含义）。
+- `reference/qian`：hash 一致、引文可核、缺口写明。
+- 骨架：可安装、可调用、可卸载；7 个工具注册。
+- 规模契约：4 个 schema 定稿并有样例。
+- 指标：冻结并打 tag；规模假设已测量。
+- 范围：README「不做清单」+ Parking Lot 生效。
+
+**以上全部满足，才允许开始 M1 写业务逻辑。**

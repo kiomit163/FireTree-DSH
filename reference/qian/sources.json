@@ -1,0 +1,245 @@
+{
+  "method": "python-docx paragraphs + tables, utf-8",
+  "volumes": [
+    {
+      "file": "钱学森系统科学思想文库1：工程控制论（新世纪版）.docx",
+      "bytes": 4934251,
+      "sha256": "479a4f911fec7c7fdfb888acb1fddaab144e10b22999c968f8d98f765d040436",
+      "chars": 235717,
+      "paragraphs": 6032
+    },
+    {
+      "file": "钱学森系统科学思想文库2：论系统工程（新世纪版）.docx",
+      "bytes": 1277518,
+      "sha256": "f99ea5ad48604bbe56159718f5c3a78db22c5a9596762118855a4d1fb8d2b8c8",
+      "chars": 399343,
+      "paragraphs": 5748
+    },
+    {
+      "file": "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx",
+      "bytes": 1237802,
+      "sha256": "8287757444952d6b11789a875b39b4a3bc321a69a1d03af427edb03c1ab0fb5c",
+      "chars": 398102,
+      "paragraphs": 4981
+    },
+    {
+      "file": "钱学森系统科学思想文库4：钱学森系统科学思想研究.docx",
+      "bytes": 3448399,
+      "sha256": "bb73b2631e153b99bb0b0b68a0306249256929bc6cd539a20842c3605bf07773",
+      "chars": 327805,
+      "paragraphs": 4831
+    }
+  ],
+  "quotes": [
+    {
+      "label": "ocg-layers",
+      "phrase": "从可观测的整体系统到子系统",
+      "expected_volume": "文库3",
+      "found_in": [
+        "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx"
+      ],
+      "ok": true,
+      "note": "OCG 层次不可还原判据"
+    },
+    {
+      "label": "decomposition-loss",
+      "phrase": "要紧的东西都跑了",
+      "expected_volume": "文库3",
+      "found_in": [
+        "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx",
+        "钱学森系统科学思想文库4：钱学森系统科学思想研究.docx"
+      ],
+      "ok": true,
+      "note": "分解会丢要件"
+    },
+    {
+      "label": "convergence",
+      "phrase": "改得你说不出意见来了",
+      "expected_volume": "文库3",
+      "found_in": [
+        "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx"
+      ],
+      "ok": true,
+      "note": "收敛=异议穷尽"
+    },
+    {
+      "label": "re-evaluation",
+      "phrase": "任何一次解答都不可能是一劳永逸的",
+      "expected_volume": "文库3",
+      "found_in": [
+        "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx",
+        "钱学森系统科学思想文库4：钱学森系统科学思想研究.docx"
+      ],
+      "ok": true,
+      "note": "解答有时效"
+    },
+    {
+      "label": "overall-design-size",
+      "phrase": "几百人规模的总体设计部",
+      "expected_volume": "文库2",
+      "found_in": [
+        "钱学森系统科学思想文库2：论系统工程（新世纪版）.docx"
+      ],
+      "ok": true,
+      "note": "总体设计部规模判据"
+    },
+    {
+      "label": "baseline-definition",
+      "phrase": "基线是在一个技术开发层次完成以后",
+      "expected_volume": "文库4",
+      "found_in": [
+        "钱学森系统科学思想文库4：钱学森系统科学思想研究.docx"
+      ],
+      "ok": true,
+      "note": "基线定义（航天实践）"
+    },
+    {
+      "label": "review-as-process",
+      "phrase": "评审是在各层次上进行的一个过程",
+      "expected_volume": "文库4",
+      "found_in": [
+        "钱学森系统科学思想文库4：钱学森系统科学思想研究.docx"
+      ],
+      "ok": true,
+      "note": "评审是过程（航天实践）"
+    },
+    {
+      "label": "human-machine",
+      "phrase": "如果完全靠机器能解决问题",
+      "expected_volume": "文库3",
+      "found_in": [
+        "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx"
+      ],
+      "ok": true,
+      "note": "人机结合的定义性论证"
+    },
+    {
+      "label": "machine-serves-human",
+      "phrase": "让计算机伺候人",
+      "expected_volume": "文库3",
+      "found_in": [
+        "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx"
+      ],
+      "ok": true,
+      "note": "人机结合"
+    },
+    {
+      "label": "unknown-before-design",
+      "phrase": "心中无数",
+      "expected_volume": "文库2",
+      "found_in": [
+        "钱学森系统科学思想文库2：论系统工程（新世纪版）.docx",
+        "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx"
+      ],
+      "ok": true,
+      "note": "预研门禁"
+    },
+    {
+      "label": "no-wading",
+      "phrase": "摸着石头过河",
+      "expected_volume": "文库3",
+      "found_in": [
+        "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx"
+      ],
+      "ok": true,
+      "note": "预置异常处置"
+    },
+    {
+      "label": "aggregate-opinions",
+      "phrase": "零金碎玉",
+      "expected_volume": "文库3",
+      "found_in": [
+        "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx"
+      ],
+      "ok": true,
+      "note": "意见需聚合"
+    },
+    {
+      "label": "diversity",
+      "phrase": "差异性程度排名靠前",
+      "expected_volume": "文库4",
+      "found_in": [
+        "钱学森系统科学思想文库4：钱学森系统科学思想研究.docx"
+      ],
+      "ok": true,
+      "note": "差异度指标"
+    },
+    {
+      "label": "signature",
+      "phrase": "敢不敢签字",
+      "expected_volume": "文库3",
+      "found_in": [
+        "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx"
+      ],
+      "ok": true,
+      "note": "签字担责"
+    },
+    {
+      "label": "four-levels",
+      "phrase": "直接搞改造客观世界的学问",
+      "expected_volume": "文库2",
+      "found_in": [
+        "钱学森系统科学思想文库2：论系统工程（新世纪版）.docx"
+      ],
+      "ok": true,
+      "note": "系统科学四台阶"
+    },
+    {
+      "label": "giant-system-limit",
+      "phrase": "大系统控制论是不能直接用来解决巨系统问题",
+      "expected_volume": "文库2",
+      "found_in": [
+        "钱学森系统科学思想文库2：论系统工程（新世纪版）.docx"
+      ],
+      "ok": true,
+      "note": "方法边界"
+    },
+    {
+      "label": "two-lines",
+      "phrase": "两条指挥线",
+      "expected_volume": "文库2",
+      "found_in": [
+        "钱学森系统科学思想文库1：工程控制论（新世纪版）.docx",
+        "钱学森系统科学思想文库2：论系统工程（新世纪版）.docx",
+        "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx",
+        "钱学森系统科学思想文库4：钱学森系统科学思想研究.docx"
+      ],
+      "ok": true,
+      "note": "两条指挥线（低频短语）"
+    },
+    {
+      "label": "double-five",
+      "phrase": "双五条",
+      "expected_volume": "文库4",
+      "found_in": [
+        "钱学森系统科学思想文库4：钱学森系统科学思想研究.docx"
+      ],
+      "ok": true,
+      "note": "航天质量实践（1 次）"
+    },
+    {
+      "label": "forum",
+      "phrase": "研讨厅",
+      "expected_volume": "文库3",
+      "found_in": [
+        "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx",
+        "钱学森系统科学思想文库4：钱学森系统科学思想研究.docx"
+      ],
+      "ok": true,
+      "note": "综合集成研讨厅"
+    },
+    {
+      "label": "metasynthesis",
+      "phrase": "综合集成",
+      "expected_volume": "文库3",
+      "found_in": [
+        "钱学森系统科学思想文库1：工程控制论（新世纪版）.docx",
+        "钱学森系统科学思想文库2：论系统工程（新世纪版）.docx",
+        "钱学森系统科学思想文库3：创建系统学 （新世纪版）(1).docx",
+        "钱学森系统科学思想文库4：钱学森系统科学思想研究.docx"
+      ],
+      "ok": true,
+      "note": "核心方法"
+    }
+  ]
+}
