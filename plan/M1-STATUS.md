@@ -12,7 +12,7 @@
 | W6.1 | DONE (v1) | `src/lib/impact.js`；`test/impact.test.mjs`（7/7）；50 条标注集召回待 W6.6/M2，未宣称达标 | 2026-11-07 |
 | W6.2 | DONE | `test/impact.test.mjs` 的 unknown/cross/interface/dependency/security → L2 用例 | 2026-11-07 |
 | W2.2 | DONE | `src/tools/classify.js`、`schemas/dossier.schema.json`；`test/classify.test.mjs`（7/7） | 2026-11-07 |
-| W2.3 | DONE | `src/tools/assess.js`、`schemas/assessment.schema.json`；`test/assess.test.mjs`（7/7） | 2026-11-07 |
+| W2.3 | DONE | `src/tools/assess.js`、`schemas/assessment.schema.json`；`test/assess.test.mjs`（7/7）；`src/lib/tool-schema.js` 将内部 schema 投影到 Host 子集（`test/tool-schema.test.mjs` 3/3） | 2026-11-07 |
 | W2.4 | IN_PROGRESS | `src/tools/hypothesis.js`（待建） | 2026-11-07 |
 | W2.7 | PENDING | `src/tools/receipt.js` 最小校验 | — |
 | W2.8 | DONE | `src/tools/state.js` 真实投影；`test/state.test.mjs`（5/5） | 2026-11-07 |
@@ -22,6 +22,13 @@
 ## 当前下一步
 
 - W2.4：`firetree_hypothesis` add/verify/list；随后 W2.7 回执最小校验。
+
+## Live 安装验证（2026-11-07）
+
+- `plugin_manager` remove → install 结果：`application: applied`。
+- 在隔离 fixture（ignored `.tmp/`）中实际调用 `firetree_state`、`firetree_classify`、`firetree_assess`：均返回各自 render 文本，无 `NOT_IMPLEMENTED`。
+- 写入并核验：`.firetree/oid/billing.json`（含 `.sha256`）与 `.firetree/changes/chg-live/assessment.json`（含 `.sha256`）。assessment 实际为 L1 / auto L1 / confidence high / signoff peer / sampling selected true。
+- 说明：DSH 的模型侧工具结果以 render 文本呈现；结构化字段以写入工件与单元测试断言为准。
 
 ## M1 完成信号（滚动）
 

@@ -8,6 +8,7 @@ import { normalizeRepoPath } from '../lib/glob.js';
 import { analyzeImpact, ImpactError } from '../lib/impact.js';
 import { loadRegistry } from '../lib/registry.js';
 import { assertJsonSchemaValue } from '../lib/schema.js';
+import { toToolSchema } from '../lib/tool-schema.js';
 
 const ASSESSMENT_SCHEMA = JSON.parse(readFileSync(new URL('../../schemas/assessment.schema.json', import.meta.url), 'utf8'));
 const TIER_ORDER = { L0: 0, L1: 1, L2: 2 };
@@ -139,7 +140,7 @@ export function createAssessTool(ctx) {
     description: 'Assess a change: automatic risk tier, deterministic impact set, required artifacts, sampling decision, and sign-off. Unknown paths force L2 and low confidence.',
     parameters: PARAMETERS,
     output: {
-      schema: OUTPUT_SCHEMA,
+      schema: toToolSchema(OUTPUT_SCHEMA),
       render: (_args, value) => [{
         type: 'text',
         text: `firetree_assess: ${value.tier} (auto ${value.auto_tier}); subsystems=${value.impact.subsystems.length}; interfaces=${value.impact.interfaces.length}; unknown=${value.impact.unknown.length}; signoff=${value.signoff_required}`,

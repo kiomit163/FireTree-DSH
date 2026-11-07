@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 import { ArtifactError, assertSafeId, readFiretreeJson, writeFiretreeJson } from '../lib/artifacts.js';
 import { assertJsonSchemaValue } from '../lib/schema.js';
+import { toToolSchema } from '../lib/tool-schema.js';
 
 const DOSSIER_SCHEMA = JSON.parse(readFileSync(new URL('../../schemas/dossier.schema.json', import.meta.url), 'utf8'));
 const ALLOWED_ARGS = new Set([
@@ -234,7 +235,7 @@ export function createClassifyTool(ctx) {
     description: 'Object-identification dossier for a subsystem or program: set/show known and unknown layers, reducibility test, method, owners, and allowed delivery autonomy.',
     parameters: PARAMETERS,
     output: {
-      schema: OUTPUT_SCHEMA,
+      schema: toToolSchema(OUTPUT_SCHEMA),
       render: (_args, value) => [{
         type: 'text',
         text: `firetree_classify ${value.action}: ${value.subsystem} (${value.dossier.kind}); decomposition_autonomy=${String(value.allowed.decomposition_autonomy)}; human_signoff=${String(value.allowed.requires_human_signoff)}`,

@@ -1,6 +1,7 @@
 /** Read-only FireTree state projection from .firetree artifacts. */
 
 import { ArtifactError, assertSafeId, readFiretreeJson, readJsonFile, resolveWithin } from '../lib/artifacts.js';
+import { toToolSchema } from '../lib/tool-schema.js';
 
 const ALLOWED_ARGUMENTS = new Set(['change', 'subsystem']);
 const KIND = ['dossier', 'subsystem', 'assessment', 'hypotheses', 'review', 'receipt'];
@@ -157,7 +158,7 @@ export function createStateTool(ctx) {
       },
     },
     output: {
-      schema: OUTPUT_SCHEMA,
+      schema: toToolSchema(OUTPUT_SCHEMA),
       render: (_args, value) => [{
         type: 'text',
         text: `FireTree state (${value.mode}): ${value.counts.pending} pending, ${value.counts.expiring} expiring, ${value.counts.blocked} blocked.`,

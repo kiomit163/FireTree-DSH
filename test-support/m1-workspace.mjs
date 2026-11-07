@@ -80,10 +80,13 @@ const CODEOWNERS = [
 /**
  * Create an isolated M1 workspace with policy, registries, CODEOWNERS, and source files.
  *
+ * @param {{parent?: string}} [options] - Optional parent directory.
  * @returns {Promise<{root: string, cleanup: () => Promise<void>}>} Workspace handle.
  */
-export async function createM1Workspace() {
-  const root = await mkdtemp(join(tmpdir(), 'firetree-m1-'));
+export async function createM1Workspace(options = {}) {
+  const parent = options.parent ?? tmpdir();
+  await mkdir(parent, { recursive: true });
+  const root = await mkdtemp(join(parent, 'firetree-m1-'));
   const policy = JSON.parse(await readFile(new URL('../fixtures/policy-org.json', import.meta.url), 'utf8'));
 
   const files = {
