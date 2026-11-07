@@ -3,8 +3,6 @@ import { test } from 'node:test';
 
 import { apply, inject, PROMPT_SECTION } from '../index.js';
 import { SKILLS } from '../src/skills.js';
-import { toStrictJson } from '../src/lib/json.js';
-import { createStubTools, STUB_TOOL_NAMES } from '../src/tools/stub.js';
 
 function context() {
   const tools = new Map();
@@ -57,30 +55,11 @@ test('registers exactly seven tools with callable definitions', () => {
   }
 });
 
-test('the remaining synth stub is callable and fails closed as not implemented', () => {
-  const stubs = createStubTools();
-  assert.equal(stubs.length, 1);
-  assert.deepEqual(stubs.map((tool) => tool.name), [...STUB_TOOL_NAMES]);
-
-  for (const tool of stubs) {
-    const value = tool.execute({});
-    assert.deepEqual(value, {
-      ok: false,
-      schema: 'firetree.not-implemented/v0',
-      code: 'NOT_IMPLEMENTED',
-      tool: tool.name,
-      message: `${tool.name} is registered for M2 but has no business logic yet.`,
-    });
-    assert.doesNotThrow(() => toStrictJson(value));
-    assert.equal(tool.output.render({}, value)[0].type, 'text');
-  }
-});
-
 test('prompt section stays within the twelve-line budget', () => {
   assert.equal(PROMPT_SECTION.name, 'firetree:delivery-protocol');
   assert.equal(Number.isFinite(PROMPT_SECTION.order), true);
   assert.ok(PROMPT_SECTION.text.split('\n').length <= 12);
-  assert.match(PROMPT_SECTION.text, /M1/);
+  assert.match(PROMPT_SECTION.text, /M[12]/);
 });
 
 test('registers six placeholders whose bodies load from SKILL.md', () => {

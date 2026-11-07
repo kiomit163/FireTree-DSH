@@ -6,8 +6,8 @@ import { createClassifyTool } from './src/tools/classify.js';
 import { createHypothesisTool } from './src/tools/hypothesis.js';
 import { createReceiptTool } from './src/tools/receipt.js';
 import { createReviewTool } from './src/tools/review.js';
-import { createStubTools } from './src/tools/stub.js';
 import { createStateTool } from './src/tools/state.js';
+import { createSynthesizeTool } from './src/tools/synthesize.js';
 
 /** Cordis plugin name. */
 export const name = 'firetree-dsh';
@@ -28,7 +28,7 @@ export const PROMPT_SECTION = {
     '- Only humans sign; agent self-sign count is always zero.',
     '- L2 claims each need an invariant and evidence; an unaccepted residual blocks.',
     '- Use firetree_state for current state; load the FireTree skills for full rules.',
-    '- M1/M2: state, classify, assess, hypothesis, receipt, and review are live; synthesize returns NOT_IMPLEMENTED.',
+    '- M2: all seven FireTree tools are live; use review/synthesize for L2 and receipt before claiming completion.',
     '</firetree_protocol>',
   ].join('\n'),
 };
@@ -40,7 +40,7 @@ export const PROMPT_SECTION = {
  * @returns {void}
  */
 export function apply(ctx) {
-  for (const tool of [createStateTool(ctx), createClassifyTool(ctx), createAssessTool(ctx), createHypothesisTool(ctx), createReceiptTool(ctx), createReviewTool(ctx), ...createStubTools()]) {
+  for (const tool of [createStateTool(ctx), createClassifyTool(ctx), createAssessTool(ctx), createHypothesisTool(ctx), createReceiptTool(ctx), createReviewTool(ctx), createSynthesizeTool(ctx)]) {
     ctx.tools.register(tool);
   }
 

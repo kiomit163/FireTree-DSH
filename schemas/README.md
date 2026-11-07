@@ -15,6 +15,7 @@
 | `assessment.schema.json` | M1：变更入口的 tier/impact/required_artifacts/sampling/signoff 工件 |
 | `hypotheses.schema.json` | M1：变更级假设台账，含 detection 与外部 evidence_ref |
 | `review.schema.json` | M2：L1 三步/L2 七步评审的 package/round/verdict 工件 |
+| `synthesis.schema.json` | M2：L2 独立席位综合集成的 plan/round 工件 |
 
 配套纯函数：
 

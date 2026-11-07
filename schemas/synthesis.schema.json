@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://firetree.local/schemas/synthesis.schema.json",
+  "title": "FireTree independent-seat synthesis artifacts v0",
+  "description": "Plan and round artifacts for an L2 independent-seat synthesis. This is an analogy to metasynthesis, not a claim that models are human experts.",
+  "$defs": {
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "change", "tier", "question", "timebox_minutes", "max_rounds", "seats", "output_schema", "created_at"],
+      "properties": {
+        "schema": { "const": "firetree.synthesis-plan/v0" },
+        "change": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+        "tier": { "const": "L2" },
+        "question": { "type": "string", "minLength": 1 },
+        "timebox_minutes": { "type": "integer", "minimum": 1, "maximum": 60 },
+        "max_rounds": { "const": 3 },
+        "seats": {
+          "type": "array",
+          "minItems": 3,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/seatPlan" }
+        },
+        "output_schema": { "type": "object" },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "seatPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "requirement"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "enum": ["data", "model", "experience"] },
+        "requirement": { "type": "string", "minLength": 1 }
+      }
+    },
+    "round": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "change", "round", "seats", "synthesizer", "metrics", "created_at"],
+      "properties": {
+        "schema": { "const": "firetree.synthesis-round/v0" },
+        "change": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+        "round": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "seats": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/seatResult" }
+        },
+        "synthesizer": { "$ref": "#/$defs/synthesizer" },
+        "metrics": { "$ref": "#/$defs/metrics" },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "seatResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "provider", "model", "claim", "evidence", "confidence", "objections"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "enum": ["data", "model", "experience"] },
+        "provider": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "claim": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string", "minLength": 1 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "objections": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "data": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["command", "value"],
+          "properties": {
+            "command": { "type": "string", "minLength": 1 },
+            "value": { "type": "number" }
+          }
+        }
+      }
+    },
+    "synthesizer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["responded_to", "converged", "elapsed_minutes"],
+      "properties": {
+        "responded_to": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["objection", "decision", "evidence"],
+            "properties": {
+              "objection": { "type": "string", "minLength": 1 },
+              "decision": { "type": "string", "enum": ["accepted", "rejected"] },
+              "evidence": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "converged": { "type": "boolean" },
+        "next_question": { "type": "string", "minLength": 1 },
+        "elapsed_minutes": { "type": "number", "minimum": 0 }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["overlap", "diversity", "new_objections", "unresolved_objections", "converged", "timed_out"],
+      "properties": {
+        "overlap": { "type": "number", "minimum": 0, "maximum": 1 },
+        "diversity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "new_objections": { "type": "integer", "minimum": 0 },
+        "unresolved_objections": { "type": "integer", "minimum": 0 },
+        "converged": { "type": "boolean" },
+        "timed_out": { "type": "boolean" }
+      }
+    }
+  }
+}
