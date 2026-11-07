@@ -58,7 +58,7 @@
         "location": { "type": "string", "minLength": 1 },
         "claim": { "type": "string", "minLength": 1 },
         "evidence": { "type": "string", "minLength": 1 },
-        "verdict": { "type": "string", "enum": ["open", "accepted", "rejected"] },
+        "verdict": { "type": "string", "enum": ["open", "accepted", "rejected", "resolved"] },
         "route": { "type": "string", "enum": ["blocker", "non-blocker", "question"] },
         "lens": { "type": "string", "enum": ["correctness", "security", "compatibility", "performance", "operations", "tests", "other"] }
       }

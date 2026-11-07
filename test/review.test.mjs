@@ -42,6 +42,8 @@ const finding = {
   route: 'blocker',
   lens: 'correctness',
 };
+const resolvedFinding = { ...finding, verdict: 'resolved' };
+const nonBlockerOpen = { ...finding, route: 'non-blocker' };
 
 async function assessL1(workspace, change = 'chg-r1') {
   const assess = createAssessTool(contextFor(workspace.root));
@@ -65,7 +67,7 @@ test('L1 review runs open, two rounds, and a three-step verdict', async () => {
     assert.equal(opened.record.schema, 'firetree.review-package/v0');
     assert.deepEqual(validateJsonSchema(opened, tool.output.schema), []);
 
-    await tool.execute({ action: 'round', change: 'chg-r1', findings: [finding] }, EXEC);
+    await tool.execute({ action: 'round', change: 'chg-r1', findings: [resolvedFinding] }, EXEC);
     const emptyRound = await tool.execute({
       action: 'round',
       change: 'chg-r1',
@@ -119,7 +121,7 @@ test('L2 review requires two seats, two rounds, seven steps, and human sign-off'
         { id: 's2', owner: '@team-checkout', role: 'reviewer' },
       ],
     }), EXEC);
-    await tool.execute({ action: 'round', change: 'chg-r2', findings: [finding] }, EXEC);
+    await tool.execute({ action: 'round', change: 'chg-r2', findings: [resolvedFinding] }, EXEC);
     await tool.execute({ action: 'round', change: 'chg-r2', findings: [], checked: ['contract diff and consumer impact reviewed'] }, EXEC);
 
     const verdict = await tool.execute({
@@ -190,10 +192,55 @@ test('L2 verdict rejects too few rounds, CI/agent sign-off, and non-convergence'
       (error) => error.code === 'INVALID_ARGS',
     );
 
-    await tool.execute({ action: 'round', change: 'chg-r4', findings: [finding] }, EXEC);
+    await tool.execute({ action: 'round', change: 'chg-r4', findings: [nonBlockerOpen] }, EXEC);
     await assert.rejects(
       tool.execute({ action: 'verdict', change: 'chg-r4', steps: sevenSteps, dissent: 1, signoff: { by: 'human', identity: 'human:a', at: '2026-11-07T00:00:00Z', scope: 'L2' }, decision: 'ready' }, EXEC),
       (error) => error.code === 'REVIEW_NOT_CONVERGED',
+    );
+  } finally {
+    await workspace.cleanup();
+  }
+});
+
+test('review rejects a ready verdict with an open blocker', async () => {
+  const workspace = await createM1Workspace();
+  try {
+    const ctx = contextFor(workspace.root);
+    const assess = createAssessTool(ctx);
+    await assess.execute({
+      base: '9999999999999999999999999999999999999999',
+      head: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      files: ['contracts/billing/openapi.yaml'],
+      change: 'chg-r5',
+    }, EXEC);
+    const tool = createReviewTool(ctx);
+    await tool.execute(openArgs({
+      change: 'chg-r5',
+      seats: [
+        { id: 's1', owner: '@team-billing' },
+        { id: 's2', owner: '@team-checkout' },
+      ],
+    }), EXEC);
+    await tool.execute({ action: 'round', change: 'chg-r5', findings: [finding] }, EXEC);
+    await tool.execute({ action: 'round', change: 'chg-r5', findings: [], checked: ['discussed blocker'] }, EXEC);
+    await assert.rejects(
+      tool.execute({
+        action: 'verdict',
+        change: 'chg-r5',
+        steps: [
+          { id: 'criteria', evidence: 'x' },
+          { id: 'data', evidence: 'x' },
+          { id: 'seats', evidence: 'x' },
+          { id: 'pre_read', evidence: 'x' },
+          { id: 'discussion', evidence: 'x' },
+          { id: 'written_conclusion', evidence: 'x' },
+          { id: 'notify', evidence: 'x' },
+        ],
+        dissent: 1,
+        signoff: { by: 'human', identity: 'human:a', at: '2026-11-07T00:00:00Z', scope: 'L2' },
+        decision: 'ready',
+      }, EXEC),
+      (error) => error.code === 'OPEN_BLOCKER',
     );
   } finally {
     await workspace.cleanup();
@@ -236,7 +283,7 @@ test('review rejects empty rounds without checked, round overflow, and bad verdi
       tool.execute({ action: 'round', change: 'chg-r1', findings: [] }, EXEC),
       (error) => error.code === 'ZERO_FINDINGS_CHECK_REQUIRED',
     );
-    await tool.execute({ action: 'round', change: 'chg-r1', findings: [finding] }, EXEC);
+    await tool.execute({ action: 'round', change: 'chg-r1', findings: [resolvedFinding] }, EXEC);
     await tool.execute({ action: 'round', change: 'chg-r1', findings: [], checked: ['checked'] }, EXEC);
     await assert.rejects(
       tool.execute({ action: 'round', change: 'chg-r1', findings: [], checked: ['checked again'] }, EXEC),

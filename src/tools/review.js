@@ -11,7 +11,7 @@ const PACKAGE_SCHEMA = REVIEW_SCHEMA.$defs.package;
 const ROUND_SCHEMA = REVIEW_SCHEMA.$defs.round;
 const VERDICT_SCHEMA = REVIEW_SCHEMA.$defs.verdict;
 const ACTIONS = new Set(['open', 'round', 'verdict']);
-const FINDING_VERDICTS = new Set(['open', 'accepted', 'rejected']);
+const FINDING_VERDICTS = new Set(['open', 'accepted', 'rejected', 'resolved']);
 const ROUTES = new Set(['blocker', 'non-blocker', 'question']);
 const LENSES = new Set(['correctness', 'security', 'compatibility', 'performance', 'operations', 'tests', 'other']);
 const STEP_IDS = new Set(['criteria', 'review', 'conclusion', 'data', 'seats', 'pre_read', 'discussion', 'written_conclusion', 'notify']);
@@ -387,6 +387,12 @@ export function createReviewTool(ctx) {
       if (rounds.length === 0) throw new ReviewError('REVIEW_ROUNDS_REQUIRED', 'cannot issue a verdict without a round');
       if (tier === 'L2' && rounds.length < 2) throw new ReviewError('L2_ROUNDS_REQUIRED', 'L2 requires at least two rounds');
       const steps = validateSteps(parsed.steps, tier);
+      const blockers = rounds
+        .flatMap((round) => round.findings)
+        .filter((finding) => finding.route === 'blocker' && !['resolved', 'rejected'].includes(finding.verdict));
+      if (parsed.decision === 'ready' && blockers.length > 0) {
+        throw new ReviewError('OPEN_BLOCKER', `ready verdict has ${blockers.length} unresolved blocker(s)`);
+      }
       if (parsed.decision === 'ready' && (rounds.at(-1)?.findings.length ?? 0) !== 0) {
         throw new ReviewError('REVIEW_NOT_CONVERGED', 'ready verdict requires zero findings in the final round');
       }

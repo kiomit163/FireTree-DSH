@@ -5,7 +5,7 @@
 
 | ID | 状态 | 证据路径 | 日期 |
 |---|---|---|---|
-| W2.6 | DONE | `src/tools/review.js`、`schemas/review.schema.json`；`test/review.test.mjs`（5/5） | 2026-11-07 |
+| W2.6 | DONE | `src/tools/review.js`、`schemas/review.schema.json`；`test/review.test.mjs`（6/6）；含 open blocker 拒绝 | 2026-11-07 |
 | W2.5 | DONE | `src/tools/synthesize.js`、`schemas/synthesis.schema.json`；`test/synthesize.test.mjs`（3/3） | 2026-11-07 |
 | W9.4 | BLOCKED | 需 10 个真实 L2 与目标团队/仓库 | — |
 | W6.6 | BLOCKED | 需 50 条真实影响标注集 | — |
@@ -19,3 +19,16 @@
 - `firetree_review` 记录并校验评审工件；它不自动开会、不模拟评委会。
 - `firetree_synthesize` 只校验席位记录与收敛条件；它不调用模型、不生成专家意见。
 - L2 的两轮/七步/人签/双模型是工具拒绝规则；真实 L2 质量仍需 W9.4 数据。
+- `firetree_receipt` 仍是 M1 最小校验：它校验 receipt 内的 review 字段，但**尚未读取并比对** `.firetree/changes/<change>/verdict.json` 与 `synthesis/round-N.json`；这项集成留到下一步。
+- `firetree_state` 尚未把 synthesis 工件纳入投影。
+- open blocker 的 ready verdict 已被拒绝；这只能保证记录一致，不能保证评审实质质量。
+
+## Live 验证（2026-11-07）
+
+在隔离 fixture 中实际调用：
+- `firetree_assess` → L2（2 subsystems / 1 interface / human signoff）。
+- `firetree_review` open → round 1 → round 2 → verdict（7 steps / 2 rounds / human signoff）。
+- `firetree_synthesize` plan → round 1（converged=false）→ round 2（converged=true；overlap 0.1017 / diversity 0.8983）。
+- `firetree_state` 报 2 pending（hypotheses、receipt；review 已存在）。
+- 发现并修复：ready verdict 曾接受 round 1 的 open blocker；现在返回 `OPEN_BLOCKER`，并有回归测试。
+
