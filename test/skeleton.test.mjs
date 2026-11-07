@@ -97,7 +97,7 @@ test('registers six placeholders whose bodies load from SKILL.md', () => {
   for (const skill of skills) {
     assert.ok(skill.description.length > 0);
     assert.ok(skill.content.length > 0);
-    assert.match(skill.content, /M0 占位|M1/);
+    assert.match(skill.content, /M0 占位|M1|M2/);
     assert.equal(skill.source, 'bundled');
     assert.deepEqual(skill.invocation, { modelInvocable: true, userInvocable: true });
     assert.equal(skill.resourceBase.kind, 'directory');
