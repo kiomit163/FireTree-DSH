@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://firetree.local/schemas/hypotheses.schema.json",
+  "title": "FireTree hypotheses v0",
+  "description": "Change-level hypothesis ledger. Every hypothesis must carry a detection method and pass criterion; verification requires external evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "change", "hypotheses", "updated_at"],
+  "properties": {
+    "schema": { "const": "firetree.hypotheses/v0" },
+    "change": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "hypotheses": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/hypothesis" }
+    }
+  },
+  "$defs": {
+    "detection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "pass_criterion", "evidence_kind"],
+      "properties": {
+        "method": { "type": "string", "enum": ["test", "metric", "experiment", "analysis"] },
+        "command": { "type": "string", "minLength": 1 },
+        "pass_criterion": { "type": "string", "minLength": 1 },
+        "evidence_kind": { "type": "string", "minLength": 1 }
+      }
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["producer", "run_ref", "sha256", "produced_at"],
+      "properties": {
+        "producer": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!agent(?:$|[:/])).+$",
+          "description": "CI or deterministic tool; the audited agent cannot be the producer."
+        },
+        "run_ref": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "produced_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "hypothesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "kind", "detection", "status", "created_at", "updated_at"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^h[0-9]+$" },
+        "statement": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "enum": ["assumption", "risk", "claim"] },
+        "detection": { "$ref": "#/$defs/detection" },
+        "status": { "type": "string", "enum": ["untested", "verified", "falsified"] },
+        "evidence_ref": { "$ref": "#/$defs/evidenceRef" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

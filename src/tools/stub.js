@@ -2,19 +2,14 @@
 
 import { assertJsonValue } from '../lib/json.js';
 
-/** Names of the four stubs that remain before their implementations exist in M1. */
+/** Names of the three stubs that remain before their implementations exist. */
 export const STUB_TOOL_NAMES = Object.freeze([
-  'firetree_hypothesis',
   'firetree_synthesize',
   'firetree_review',
   'firetree_receipt',
 ]);
 
 const STUB_SPECS = Object.freeze([
-  {
-    name: 'firetree_hypothesis',
-    description: 'Add, verify, and list design hypotheses with external detection evidence. M1 stub: not implemented.',
-  },
   {
     name: 'firetree_synthesize',
     description: 'Plan and record an independent-seat synthesis round for an L2 decision. M1 stub: not implemented.',

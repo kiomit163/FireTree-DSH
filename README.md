@@ -78,7 +78,7 @@ FireTree 4.0/V5 的诊断结论（详见 `docs/THESIS.md`）：
 
 **M0 已完成（2026-11-06）；M1 进行中。**
 
-本仓库现在有：可安装/卸载的 DSH 骨架（7 个工具 + 6 个技能占位）、短 prompt section、四个 M0 schema（含 correctness case v0）加 M1 dossier/assessment schema、L0/L1/L2 样例、冻结的 `metrics-v0`、风险/红队、迁移删除清单、规模基线与 [plan/STATUS.md](plan/STATUS.md)。`firetree_state`、`firetree_classify`、`firetree_assess` 已可调用；其余 4 个工具仍是 stub，返回 `NOT_IMPLEMENTED`。
+本仓库现在有：可安装/卸载的 DSH 骨架（7 个工具 + 6 个技能占位）、短 prompt section、四个 M0 schema（含 correctness case v0）加 M1 dossier/assessment/hypotheses schema、L0/L1/L2 样例、冻结的 `metrics-v0`、风险/红队、迁移删除清单、规模基线与 [plan/STATUS.md](plan/STATUS.md)。`firetree_state`、`firetree_classify`、`firetree_assess`、`firetree_hypothesis` 已可调用；其余 3 个工具仍是 stub，返回 `NOT_IMPLEMENTED`。
 
 主要证据：[plan/STATUS.md](plan/STATUS.md)、[plan/M1-STATUS.md](plan/M1-STATUS.md)、[schemas/README.md](schemas/README.md)、[docs/SCALE-BASELINE.md](docs/SCALE-BASELINE.md)。下一步是 M1（单团队试点），从注册表/影响分析/classify/assess 开始；M0 不构成百万行规模验证：基线在文件数与 PR 量上低于 §2 假设 >2×。
 

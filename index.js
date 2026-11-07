@@ -3,6 +3,7 @@
 import { SKILLS } from './src/skills.js';
 import { createAssessTool } from './src/tools/assess.js';
 import { createClassifyTool } from './src/tools/classify.js';
+import { createHypothesisTool } from './src/tools/hypothesis.js';
 import { createStubTools } from './src/tools/stub.js';
 import { createStateTool } from './src/tools/state.js';
 
@@ -25,7 +26,7 @@ export const PROMPT_SECTION = {
     '- Only humans sign; agent self-sign count is always zero.',
     '- L2 claims each need an invariant and evidence; an unaccepted residual blocks.',
     '- Use firetree_state for current state; load the FireTree skills for full rules.',
-    '- M1: firetree_state, firetree_classify, and firetree_assess are live; the other firetree tools return NOT_IMPLEMENTED.',
+    '- M1: firetree_state, firetree_classify, firetree_assess, and firetree_hypothesis are live; the other firetree tools return NOT_IMPLEMENTED.',
     '</firetree_protocol>',
   ].join('\n'),
 };
@@ -37,7 +38,7 @@ export const PROMPT_SECTION = {
  * @returns {void}
  */
 export function apply(ctx) {
-  for (const tool of [createStateTool(ctx), createClassifyTool(ctx), createAssessTool(ctx), ...createStubTools()]) {
+  for (const tool of [createStateTool(ctx), createClassifyTool(ctx), createAssessTool(ctx), createHypothesisTool(ctx), ...createStubTools()]) {
     ctx.tools.register(tool);
   }
 
