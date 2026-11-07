@@ -31,4 +31,5 @@
 - `firetree_synthesize` plan → round 1（converged=false）→ round 2（converged=true；overlap 0.1017 / diversity 0.8983）。
 - `firetree_state` 报 2 pending（hypotheses、receipt；review 已存在）。
 - 发现并修复：ready verdict 曾接受 round 1 的 open blocker；现在返回 `OPEN_BLOCKER`，并有回归测试。
+- 修复后重新安装 bundle（`application: applied`），在 fixture 中 live 重放同一 verdict：返回 `Error: ready verdict has 1 unresolved blocker(s)`。
 
