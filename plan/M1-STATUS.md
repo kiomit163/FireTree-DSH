@@ -7,8 +7,8 @@
 | ID | 状态 | 证据路径 | 日期 |
 |---|---|---|---|
 | W3.1 | DONE | `src/lib/artifacts.js`；`test/artifacts.test.mjs`（7/7） | 2026-11-07 |
-| W3.2 | IN_PROGRESS | `src/lib/registry.js`（待建）、`src/lib/codeowners.js`（待建） | 2026-11-07 |
-| W4.4 | PENDING | CODEOWNERS 解析与抽样一致性 | — |
+| W3.2 | DONE | `src/lib/registry.js`；`test/registry.test.mjs`（4/4）；`test-support/m1-workspace.mjs` | 2026-11-07 |
+| W4.4 | IN_PROGRESS | `src/lib/codeowners.js`（待建）、`src/lib/glob.js`（待建） | 2026-11-07 |
 | W6.1 | PENDING | `src/lib/impact.js`、50 条标注集 | — |
 | W6.2 | PENDING | unknown → L2 的拒绝测试 | — |
 | W2.2 | PENDING | `src/tools/classify.js` + dossier | — |
@@ -21,7 +21,7 @@
 
 ## 当前下一步
 
-- W3.2：注册表、policy 加载与 schema 校验；随后 W4.4 CODEOWNERS、W6.1 影响分析。
+- W4.4：CODEOWNERS 解析与 path glob；随后 W6.1 影响分析。
 
 ## M1 完成信号（滚动）
 
