@@ -11,8 +11,8 @@
 | W4.4 | DONE | `src/lib/codeowners.js`、`src/lib/glob.js`；`test/glob-codeowners.test.mjs`（5/5） | 2026-11-07 |
 | W6.1 | DONE (v1) | `src/lib/impact.js`；`test/impact.test.mjs`（7/7）；50 条标注集召回待 W6.6/M2，未宣称达标 | 2026-11-07 |
 | W6.2 | DONE | `test/impact.test.mjs` 的 unknown/cross/interface/dependency/security → L2 用例 | 2026-11-07 |
-| W2.2 | IN_PROGRESS | `src/tools/classify.js` + dossier（待建） | 2026-11-07 |
-| W2.3 | PENDING | `src/tools/assess.js` + assessment 工件 | — |
+| W2.2 | DONE | `src/tools/classify.js`、`schemas/dossier.schema.json`；`test/classify.test.mjs`（7/7） | 2026-11-07 |
+| W2.3 | IN_PROGRESS | `src/tools/assess.js` + assessment 工件（待建） | 2026-11-07 |
 | W2.4 | PENDING | `src/tools/hypothesis.js` | — |
 | W2.7 | PENDING | `src/tools/receipt.js` 最小校验 | — |
 | W2.8 | PENDING | `src/tools/state.js` 真实投影 | — |
@@ -21,7 +21,7 @@
 
 ## 当前下一步
 
-- W2.2：`firetree_classify` set/show、dossier schema 与拒绝规则；随后 W2.3 `firetree_assess`。
+- W2.3：`firetree_assess` 分级/影响/要求/采样/签字 + assessment 工件；随后 W2.8 state。
 
 ## M1 完成信号（滚动）
 

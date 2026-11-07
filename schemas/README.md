@@ -1,6 +1,6 @@
 # FireTree 规模契约 v0（M0 冻结）
 
-> 冻结日期：2026-11-06。四个 schema 是 M0 的规模契约；M1 只按这些字段实现，不静默扩字段。
+> 冻结日期：2026-11-06。M0 的四个 schema 是规模契约；M1 增加 `dossier.schema.json`（对象辨识工件）。M1 只按这些字段实现，不静默扩字段。
 > 变更契约必须走 `docs/DECISIONS.md`，并同步更新样例与测试。
 
 ## 1. 文件
@@ -11,6 +11,7 @@
 | `subsystems.schema.json` | 子系统 id、paths glob、owners、interfaces、tests、dossier 引用 |
 | `interfaces.schema.json` | 接口 id、kind、定义文件、hash、contract test、consumers、depends_on |
 | `receipt.schema.json` | 交付回执 v0；含 `correctness_case` 摘要与 `$defs.correctnessCase` 完整结构 |
+| `dossier.schema.json` | M1：对象辨识 dossier（kind、已知/未知层次、可分解性测试、owner、允许的自治等级） |
 
 配套纯函数：
 

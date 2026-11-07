@@ -1,6 +1,7 @@
 /** FireTree-DSH bundle entry: tools, short prompt section, and six skills. */
 
 import { SKILLS } from './src/skills.js';
+import { createClassifyTool } from './src/tools/classify.js';
 import { createStubTools } from './src/tools/stub.js';
 import { stateTool } from './src/tools/state.js';
 
@@ -8,7 +9,7 @@ import { stateTool } from './src/tools/state.js';
 export const name = 'firetree-dsh';
 
 /** Host services required by this bundle. */
-export const inject = ['tools', 'systemPrompt', 'skills'];
+export const inject = ['tools', 'systemPrompt', 'skills', 'workingDirectory'];
 
 /** Short routing section; full rules stay in the on-demand skills. */
 export const PROMPT_SECTION = {
@@ -35,7 +36,7 @@ export const PROMPT_SECTION = {
  * @returns {void}
  */
 export function apply(ctx) {
-  for (const tool of [stateTool, ...createStubTools()]) {
+  for (const tool of [stateTool, createClassifyTool(ctx), ...createStubTools()]) {
     ctx.tools.register(tool);
   }
 

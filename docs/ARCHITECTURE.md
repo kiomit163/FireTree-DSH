@@ -77,7 +77,7 @@ firetree-dsh/
 - **输入**：`subsystem`、`kind`（simple|large|simple-giant|open-complex-giant|unknown）、`layers_known[]`、`layers_unknown[]`、`coupling_evidence[]`、`reducibility_test{command, result}`、`method`（decompose|metasynthesis）、`owner_of_unknowns[]`、`learning_plan[]`
 - **拒绝规则**：`layers_unknown` 非空却声明 `reducible`；`metasynthesis` 却没有 owner；`unknown` 没有 learning plan。
 - **输出**：dossier + 允许的方法/工具约束（例如「OCG：禁止分解式自治交付，回执需人工签字」）。
-- **工件**：`.firetree/subsystems/<id>.json`
+- **工件**：`.firetree/oid/<id>.json`（dossier）；`.firetree/subsystems/<id>.json` 是引用该 dossier 的子系统注册表条目。
 
 ### 2. `firetree_assess`（每次变更的唯一入口）
 
@@ -138,6 +138,7 @@ firetree-dsh/
 ```
 .firetree/
 ├── policy.json                 # 分级/采样/例外/继承（策略即代码）
+├── oid/<id>.json               # 对象辨识 dossier（classify 写入）
 ├── subsystems/<id>.json        # 子系统：paths/owners/interfaces/tests/dossier
 ├── interfaces/<id>.json        # 接口：kind/file/sha256/contract_test/consumers
 ├── programs/<id>.json          # 项目/程序级对象辨识与基线（季度）

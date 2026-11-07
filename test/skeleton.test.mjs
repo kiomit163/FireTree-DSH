@@ -33,7 +33,7 @@ function context() {
 }
 
 test('declares the host services it needs', () => {
-  assert.deepEqual(inject, ['tools', 'systemPrompt', 'skills']);
+  assert.deepEqual(inject, ['tools', 'systemPrompt', 'skills', 'workingDirectory']);
 });
 
 test('registers exactly seven tools with callable definitions', () => {
@@ -58,9 +58,9 @@ test('registers exactly seven tools with callable definitions', () => {
   }
 });
 
-test('the six M0 stubs are callable and fail closed as not implemented', () => {
+test('the five remaining M1 stubs are callable and fail closed as not implemented', () => {
   const stubs = createStubTools();
-  assert.equal(stubs.length, 6);
+  assert.equal(stubs.length, 5);
   assert.deepEqual(stubs.map((tool) => tool.name), [...STUB_TOOL_NAMES]);
 
   for (const tool of stubs) {
@@ -70,7 +70,7 @@ test('the six M0 stubs are callable and fail closed as not implemented', () => {
       schema: 'firetree.not-implemented/v0',
       code: 'NOT_IMPLEMENTED',
       tool: tool.name,
-      message: `${tool.name} is registered for M0 but has no business logic yet.`,
+      message: `${tool.name} is registered for M1 but has no business logic yet.`,
     });
     assert.doesNotThrow(() => toStrictJson(value));
     assert.equal(tool.output.render({}, value)[0].type, 'text');

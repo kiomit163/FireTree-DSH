@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://firetree.local/schemas/dossier.schema.json",
+  "title": "FireTree OID dossier v0",
+  "description": "Object-identification dossier for one subsystem or program. It records what is known, what is unknown, how reducibility was tested, who owns the unknowns, and which delivery autonomy is allowed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "subsystem",
+    "kind",
+    "layers_known",
+    "layers_unknown",
+    "coupling_evidence",
+    "reducibility_test",
+    "method",
+    "owner_of_unknowns",
+    "learning_plan",
+    "allowed",
+    "updated_at"
+  ],
+  "properties": {
+    "schema": {
+      "const": "firetree.oid/v0"
+    },
+    "subsystem": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["simple", "large", "simple-giant", "open-complex-giant", "unknown"]
+    },
+    "layers_known": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "layers_unknown": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "coupling_evidence": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "reducibility_test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "result"],
+      "properties": {
+        "command": { "type": "string", "minLength": 1 },
+        "result": {
+          "type": "string",
+          "enum": ["reducible", "not-reducible", "unknown"]
+        }
+      }
+    },
+    "method": {
+      "type": "string",
+      "enum": ["decompose", "metasynthesis"]
+    },
+    "owner_of_unknowns": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "learning_plan": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "allowed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decomposition_autonomy", "requires_human_signoff", "constraints"],
+      "properties": {
+        "decomposition_autonomy": { "type": "boolean" },
+        "requires_human_signoff": { "type": "boolean" },
+        "constraints": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

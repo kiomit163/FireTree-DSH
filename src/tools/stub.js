@@ -2,9 +2,8 @@
 
 import { assertJsonValue } from '../lib/json.js';
 
-/** Names of the six stubs that M0 registers before their implementations exist. */
+/** Names of the five stubs that remain before their implementations exist in M1. */
 export const STUB_TOOL_NAMES = Object.freeze([
-  'firetree_classify',
   'firetree_assess',
   'firetree_hypothesis',
   'firetree_synthesize',
@@ -13,10 +12,6 @@ export const STUB_TOOL_NAMES = Object.freeze([
 ]);
 
 const STUB_SPECS = Object.freeze([
-  {
-    name: 'firetree_classify',
-    description: 'Classify a subsystem or program object and return its OID dossier. M0 stub: not implemented.',
-  },
   {
     name: 'firetree_assess',
     description: 'Assess a change, determine its risk tier, impact set, required artifacts, and sign-off. M0 stub: not implemented.',
@@ -64,7 +59,7 @@ function createStubTool(spec) {
     schema: 'firetree.not-implemented/v0',
     code: 'NOT_IMPLEMENTED',
     tool: spec.name,
-    message: `${spec.name} is registered for M0 but has no business logic yet.`,
+    message: `${spec.name} is registered for M1 but has no business logic yet.`,
   });
 
   return {
