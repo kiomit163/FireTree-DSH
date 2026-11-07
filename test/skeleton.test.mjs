@@ -58,9 +58,9 @@ test('registers exactly seven tools with callable definitions', () => {
   }
 });
 
-test('the five remaining M1 stubs are callable and fail closed as not implemented', () => {
+test('the four remaining M1 stubs are callable and fail closed as not implemented', () => {
   const stubs = createStubTools();
-  assert.equal(stubs.length, 5);
+  assert.equal(stubs.length, 4);
   assert.deepEqual(stubs.map((tool) => tool.name), [...STUB_TOOL_NAMES]);
 
   for (const tool of stubs) {
@@ -97,7 +97,7 @@ test('prompt section stays within the twelve-line budget', () => {
   assert.equal(PROMPT_SECTION.name, 'firetree:delivery-protocol');
   assert.equal(Number.isFinite(PROMPT_SECTION.order), true);
   assert.ok(PROMPT_SECTION.text.split('\n').length <= 12);
-  assert.match(PROMPT_SECTION.text, /M0 skeleton/);
+  assert.match(PROMPT_SECTION.text, /M1/);
 });
 
 test('registers six placeholders whose bodies load from SKILL.md', () => {
@@ -113,7 +113,8 @@ test('registers six placeholders whose bodies load from SKILL.md', () => {
 
   for (const skill of skills) {
     assert.ok(skill.description.length > 0);
-    assert.ok(skill.content.includes('M0 占位'));
+    assert.ok(skill.content.length > 0);
+    assert.match(skill.content, /M0 占位|M1/);
     assert.equal(skill.source, 'bundled');
     assert.deepEqual(skill.invocation, { modelInvocable: true, userInvocable: true });
     assert.equal(skill.resourceBase.kind, 'directory');

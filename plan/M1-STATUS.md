@@ -12,16 +12,16 @@
 | W6.1 | DONE (v1) | `src/lib/impact.js`；`test/impact.test.mjs`（7/7）；50 条标注集召回待 W6.6/M2，未宣称达标 | 2026-11-07 |
 | W6.2 | DONE | `test/impact.test.mjs` 的 unknown/cross/interface/dependency/security → L2 用例 | 2026-11-07 |
 | W2.2 | DONE | `src/tools/classify.js`、`schemas/dossier.schema.json`；`test/classify.test.mjs`（7/7） | 2026-11-07 |
-| W2.3 | IN_PROGRESS | `src/tools/assess.js` + assessment 工件（待建） | 2026-11-07 |
+| W2.3 | DONE | `src/tools/assess.js`、`schemas/assessment.schema.json`；`test/assess.test.mjs`（7/7） | 2026-11-07 |
 | W2.4 | PENDING | `src/tools/hypothesis.js` | — |
 | W2.7 | PENDING | `src/tools/receipt.js` 最小校验 | — |
-| W2.8 | PENDING | `src/tools/state.js` 真实投影 | — |
+| W2.8 | IN_PROGRESS | `src/tools/state.js` 真实投影（待改） | 2026-11-07 |
 | W2.9 | PENDING | 每工具 ≥5 反例 | — |
 | W9.3 | BLOCKED | 需目标团队/仓库；50 个真实 PR | — |
 
 ## 当前下一步
 
-- W2.3：`firetree_assess` 分级/影响/要求/采样/签字 + assessment 工件；随后 W2.8 state。
+- W2.8：`firetree_state` 读取 dossier/assessment；随后 hypothesis/receipt。
 
 ## M1 完成信号（滚动）
 

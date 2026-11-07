@@ -1,6 +1,6 @@
-# FireTree 交付协议（M0 占位）
+# FireTree 交付协议（M1 初版，W8 重写）
 
-> 这是 M0 占位文本，W8 会重写。它只用于验证技能注册与路由，不得据此声称任何业务工具已实现。
+> 这是 M1 的可加载文本，W8 会重写。它用于路由与边界说明；不得据此声称 stub 已实现。
 
 FireTree-DSH 是「可审计交付协议」，不是治理 OS。四机制是对象辨识、假设台账、综合集成评审、再评估；两横切是外部证据回执与人签。
 
@@ -19,6 +19,6 @@ FireTree-DSH 是「可审计交付协议」，不是治理 OS。四机制是对�
 4. L2 的每条 claim 至少映射一个 invariant 与一条证据；空映射拒绝。
 5. 新想法入 Parking Lot，不扩大 v1 范围。
 
-## M0 边界
+## M1 边界
 
-当前只有 `firetree_state` 可真实调用并返回空状态；其余六个工具是 stub，返回 `NOT_IMPLEMENTED`。不要在 M0 中把它们当作可用的分级或回执实现。
+当前 `firetree_state`、`firetree_classify`、`firetree_assess` 已实现并可用；其余四个工具仍是 stub，返回 `NOT_IMPLEMENTED`。`classify` 写 `.firetree/oid/<id>.json`，`assess` 写 `.firetree/changes/<change>/assessment.json`；不要把 stub 当作已实现能力。

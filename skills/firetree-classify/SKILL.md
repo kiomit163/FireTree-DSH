@@ -1,12 +1,11 @@
-# firetree-classify（M0 占位）
-
-> M0 占位文本；`firetree_classify` 仍是 stub，返回 `NOT_IMPLEMENTED`。
+# firetree-classify（M1 初版）
 
 用途：在子系统/项目层做对象辨识，回答「这次对象能否分解、未知层次由谁负责、用什么方法」。
 
 - 作用域是子系统或项目，不是单个 PR。
-- 输入应包含 `kind`、已知/未知层次、耦合证据、可分解性测试、方法与未知项 owner。
-- 未知层次非空时，不得声称可分解；OCG/unknown 必须保留人工签字路径。
-- 输出 dossier，写入 `.firetree/subsystems/<id>.json`。
+- `action=set` 写入 `.firetree/oid/<id>.json`；`action=show` 读取并校验 hash。
+- 未知层次非空却声明可分解会被拒绝；metasynthesis 无 owner、unknown 无 learning plan、OCG 用 decompose 均拒绝。
+- 输出 dossier，包含 `allowed.decomposition_autonomy` 与 `allowed.requires_human_signoff`。
+- 当前初版只覆盖 classify；不要把它扩大到每个 PR。
 
-正式规则见 `docs/ARCHITECTURE.md` §三.1、`docs/QIAN-LANDING.md` Q1。当前不要调用该工具期待真实结果。
+正式规则见 `docs/ARCHITECTURE.md` §三.1、`docs/QIAN-LANDING.md` Q1。

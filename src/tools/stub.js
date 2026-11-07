@@ -1,10 +1,9 @@
-/** M0 stub tools: registered and callable, but deliberately without business logic. */
+/** M1 stub tools: registered and callable, but deliberately without business logic. */
 
 import { assertJsonValue } from '../lib/json.js';
 
-/** Names of the five stubs that remain before their implementations exist in M1. */
+/** Names of the four stubs that remain before their implementations exist in M1. */
 export const STUB_TOOL_NAMES = Object.freeze([
-  'firetree_assess',
   'firetree_hypothesis',
   'firetree_synthesize',
   'firetree_review',
@@ -13,24 +12,20 @@ export const STUB_TOOL_NAMES = Object.freeze([
 
 const STUB_SPECS = Object.freeze([
   {
-    name: 'firetree_assess',
-    description: 'Assess a change, determine its risk tier, impact set, required artifacts, and sign-off. M0 stub: not implemented.',
-  },
-  {
     name: 'firetree_hypothesis',
-    description: 'Add, verify, and list design hypotheses with external detection evidence. M0 stub: not implemented.',
+    description: 'Add, verify, and list design hypotheses with external detection evidence. M1 stub: not implemented.',
   },
   {
     name: 'firetree_synthesize',
-    description: 'Plan and record an independent-seat synthesis round for an L2 decision. M0 stub: not implemented.',
+    description: 'Plan and record an independent-seat synthesis round for an L2 decision. M1 stub: not implemented.',
   },
   {
     name: 'firetree_review',
-    description: 'Open a review, record rounds, and issue a verdict for the change. M0 stub: not implemented.',
+    description: 'Open a review, record rounds, and issue a verdict for the change. M1 stub: not implemented.',
   },
   {
     name: 'firetree_receipt',
-    description: 'Build or check the delivery receipt against external evidence and sign-off. M0 stub: not implemented.',
+    description: 'Build or check the delivery receipt against external evidence and sign-off. M1 stub: not implemented.',
   },
 ]);
 
