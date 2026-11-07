@@ -4,7 +4,7 @@ import { SKILLS } from './src/skills.js';
 import { createAssessTool } from './src/tools/assess.js';
 import { createClassifyTool } from './src/tools/classify.js';
 import { createStubTools } from './src/tools/stub.js';
-import { stateTool } from './src/tools/state.js';
+import { createStateTool } from './src/tools/state.js';
 
 /** Cordis plugin name. */
 export const name = 'firetree-dsh';
@@ -37,7 +37,7 @@ export const PROMPT_SECTION = {
  * @returns {void}
  */
 export function apply(ctx) {
-  for (const tool of [stateTool, createClassifyTool(ctx), createAssessTool(ctx), ...createStubTools()]) {
+  for (const tool of [createStateTool(ctx), createClassifyTool(ctx), createAssessTool(ctx), ...createStubTools()]) {
     ctx.tools.register(tool);
   }
 

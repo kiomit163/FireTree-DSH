@@ -5,7 +5,6 @@ import { apply, inject, PROMPT_SECTION } from '../index.js';
 import { SKILLS } from '../src/skills.js';
 import { toStrictJson } from '../src/lib/json.js';
 import { createStubTools, STUB_TOOL_NAMES } from '../src/tools/stub.js';
-import { stateTool } from '../src/tools/state.js';
 
 function context() {
   const tools = new Map();
@@ -75,22 +74,6 @@ test('the four remaining M1 stubs are callable and fail closed as not implemente
     assert.doesNotThrow(() => toStrictJson(value));
     assert.equal(tool.output.render({}, value)[0].type, 'text');
   }
-});
-
-test('firetree_state returns a strict JSON empty state', () => {
-  const empty = stateTool.execute({});
-  assert.equal(empty.ok, true);
-  assert.equal(empty.schema, 'firetree.state/v0');
-  assert.equal(empty.mode, 'empty');
-  assert.deepEqual(empty.counts, { pending: 0, expiring: 0, blocked: 0 });
-  assert.deepEqual(empty.entries, []);
-  assert.equal(Number.isNaN(Date.parse(empty.generated_at)), false);
-  assert.doesNotThrow(() => toStrictJson(empty));
-
-  assert.equal(stateTool.execute({ change: 'c1' }).mode, 'change');
-  assert.equal(stateTool.execute({ subsystem: 'billing' }).mode, 'subsystem');
-  assert.throws(() => stateTool.execute({ change: 1 }), TypeError);
-  assert.throws(() => stateTool.execute({ unknown: 'x' }), TypeError);
 });
 
 test('prompt section stays within the twelve-line budget', () => {

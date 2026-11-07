@@ -13,15 +13,15 @@
 | W6.2 | DONE | `test/impact.test.mjs` 的 unknown/cross/interface/dependency/security → L2 用例 | 2026-11-07 |
 | W2.2 | DONE | `src/tools/classify.js`、`schemas/dossier.schema.json`；`test/classify.test.mjs`（7/7） | 2026-11-07 |
 | W2.3 | DONE | `src/tools/assess.js`、`schemas/assessment.schema.json`；`test/assess.test.mjs`（7/7） | 2026-11-07 |
-| W2.4 | PENDING | `src/tools/hypothesis.js` | — |
+| W2.4 | IN_PROGRESS | `src/tools/hypothesis.js`（待建） | 2026-11-07 |
 | W2.7 | PENDING | `src/tools/receipt.js` 最小校验 | — |
-| W2.8 | IN_PROGRESS | `src/tools/state.js` 真实投影（待改） | 2026-11-07 |
+| W2.8 | DONE | `src/tools/state.js` 真实投影；`test/state.test.mjs`（5/5） | 2026-11-07 |
 | W2.9 | PENDING | 每工具 ≥5 反例 | — |
 | W9.3 | BLOCKED | 需目标团队/仓库；50 个真实 PR | — |
 
 ## 当前下一步
 
-- W2.8：`firetree_state` 读取 dossier/assessment；随后 hypothesis/receipt。
+- W2.4：`firetree_hypothesis` add/verify/list；随后 W2.7 回执最小校验。
 
 ## M1 完成信号（滚动）
 
