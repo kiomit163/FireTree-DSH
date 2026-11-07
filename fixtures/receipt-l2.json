@@ -61,6 +61,18 @@
     "mapped_claims": 2,
     "unaccepted_residuals": 0
   },
+  "synthesis": {
+    "plan": {
+      "path": ".firetree/changes/billing-idempotency/synthesis/plan.json",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    "rounds": 2,
+    "last_round": {
+      "path": ".firetree/changes/billing-idempotency/synthesis/round-2.json",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    },
+    "converged": true
+  },
   "impact": {
     "files": [
       "services/billing/charge.mjs",

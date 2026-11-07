@@ -1,10 +1,10 @@
 /** Read-only FireTree state projection from .firetree artifacts. */
 
-import { ArtifactError, assertSafeId, readFiretreeJson, readJsonFile, resolveWithin } from '../lib/artifacts.js';
+import { ArtifactError, assertSafeId, firetreePath, listJsonFiles, readFiretreeJson, readJsonFile, resolveWithin } from '../lib/artifacts.js';
 import { toToolSchema } from '../lib/tool-schema.js';
 
 const ALLOWED_ARGUMENTS = new Set(['change', 'subsystem']);
-const KIND = ['dossier', 'subsystem', 'assessment', 'hypotheses', 'review', 'receipt'];
+const KIND = ['dossier', 'subsystem', 'assessment', 'hypotheses', 'review', 'receipt', 'synthesis_plan', 'synthesis_round'];
 
 const OUTPUT_SCHEMA = Object.freeze({
   type: 'object',
@@ -122,6 +122,21 @@ async function changeEntries(root, change) {
     receipt = await optionalJson(root, receiptPath);
   }
 
+  const synthesisPlanPath = `${base}/synthesis/plan.json`;
+  const synthesisPlan = await optionalHashed(root, synthesisPlanPath);
+  const synthesisRounds = [];
+  if (synthesisPlan !== null) {
+    const files = await listJsonFiles(firetreePath(root, 'changes', id, 'synthesis'));
+    for (const file of files) {
+      const match = /\/round-(\d+)\.json$/.exec(file.replaceAll('\\', '/'));
+      if (!match) continue;
+      const path = `${base}/synthesis/round-${match[1]}.json`;
+      const record = await readFiretreeJson(root, path, { verifyHash: true, missing: 'null' });
+      if (record !== null) synthesisRounds.push({ round: Number(match[1]), path, createdAt: record.value.created_at });
+    }
+    synthesisRounds.sort((left, right) => left.round - right.round);
+  }
+
   const entries = [
     entry('assessment', id, assessment === null ? 'missing' : 'present', `${base}/assessment.json`, assessment?.created_at),
     entry('hypotheses', id, hypotheses === null ? 'missing' : 'present', `${base}/hypotheses.json`),
@@ -133,6 +148,21 @@ async function changeEntries(root, change) {
   if (hypotheses === null) nextActions.push(`Record hypotheses for ${id} before receipt.`);
   if (review === null) nextActions.push(`Open a review for ${id}.`);
   if (receipt === null) nextActions.push(`Build the delivery receipt for ${id}.`);
+
+  if (assessment?.tier === 'L2' || synthesisPlan !== null) {
+    entries.push(entry('synthesis_plan', id, synthesisPlan === null ? 'missing' : 'present', synthesisPlanPath, synthesisPlan?.created_at));
+    if (synthesisPlan === null) {
+      nextActions.push(`Plan independent-seat synthesis for ${id}.`);
+    } else if (synthesisRounds.length === 0) {
+      entries.push(entry('synthesis_round', `${id}:round-1`, 'missing', `${base}/synthesis/round-1.json`));
+      nextActions.push(`Record synthesis round 1 for ${id}.`);
+    } else {
+      for (const round of synthesisRounds) {
+        entries.push(entry('synthesis_round', `${id}:round-${round.round}`, 'present', round.path, round.createdAt));
+      }
+    }
+  }
+
   return { entries, nextActions };
 }
 

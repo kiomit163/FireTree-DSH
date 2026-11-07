@@ -133,6 +133,10 @@
         { "$ref": "#/$defs/correctnessCaseSummary" }
       ]
     },
+    "synthesis": {
+      "description": "M2 linkage to the L2 synthesis plan and final converged round; required for L2.",
+      "$ref": "#/$defs/synthesisSummary"
+    },
     "impact": {
       "type": "object",
       "additionalProperties": false,
@@ -203,8 +207,10 @@
         "required": ["tier"]
       },
       "then": {
+        "required": ["synthesis"],
         "properties": {
           "correctness_case": { "type": "object" },
+          "synthesis": { "type": "object" },
           "signoff": {
             "type": "object",
             "required": ["by", "identity", "at", "scope"],
@@ -326,6 +332,26 @@
     "sha256": {
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
+    },
+    "artifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "synthesisSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plan", "rounds", "last_round", "converged"],
+      "properties": {
+        "plan": { "$ref": "#/$defs/artifactRef" },
+        "rounds": { "type": "integer", "minimum": 1 },
+        "last_round": { "$ref": "#/$defs/artifactRef" },
+        "converged": { "type": "boolean", "const": true }
+      }
     },
     "commit": {
       "type": "string",

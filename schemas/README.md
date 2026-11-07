@@ -10,7 +10,7 @@
 | `policy.schema.json` | 分级触发、采样、例外、时间盒、继承/覆盖规则（org → repo → subsystem） |
 | `subsystems.schema.json` | 子系统 id、paths glob、owners、interfaces、tests、dossier 引用 |
 | `interfaces.schema.json` | 接口 id、kind、定义文件、hash、contract test、consumers、depends_on |
-| `receipt.schema.json` | 交付回执 v0；含 `correctness_case` 摘要与 `$defs.correctnessCase` 完整结构 |
+| `receipt.schema.json` | 交付回执 v0；含 `correctness_case` 摘要、L2 `synthesis` 摘要与 `$defs.correctnessCase` 完整结构 |
 | `dossier.schema.json` | M1：对象辨识 dossier（kind、已知/未知层次、可分解性测试、owner、允许的自治等级） |
 | `assessment.schema.json` | M1：变更入口的 tier/impact/required_artifacts/sampling/signoff 工件 |
 | `hypotheses.schema.json` | M1：变更级假设台账，含 detection 与外部 evidence_ref |

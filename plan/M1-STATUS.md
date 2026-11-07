@@ -43,7 +43,8 @@
 
 ## 已知限制（M1）
 
-- `firetree_receipt check` 只做最小校验；`firetree_review` 仍是 M2 工具，因此当前不检查 dissent 的逐条回应台账，只检查最后一轮 `new_findings=0` 与零异议自证字段。
+- M1 的 receipt 已在 M2 联动步骤中增加 review/synthesis 工件校验；本次 M1 快照的 129/129 是当时结果，当前套件以 `npm test` 为准。
+- `firetree_receipt check` 仍只做最小语义校验；完整外部证据可打开性与 ≤2s 目标在 M2/M3。
 - `accepted_risk` 尚未实现；未验证假设会阻断回执，而不是自动接受风险。
 - 影响分析召回没有 50 条真实标注集；W6.1 只完成 v1 实现与 fixture 测试。
 - 真实 50-PR 试点、误拦率、成本与团队意愿均未测。

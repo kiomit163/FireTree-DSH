@@ -7,6 +7,8 @@ import { sha256Text } from '../src/lib/artifacts.js';
 import { validateJsonSchema } from '../src/lib/schema.js';
 import { createAssessTool } from '../src/tools/assess.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
+import { createReviewTool } from '../src/tools/review.js';
+import { createSynthesizeTool } from '../src/tools/synthesize.js';
 import { createM1Workspace } from '../test-support/m1-workspace.mjs';
 
 const EXEC = { agent: { id: 'agent-1' }, signal: new AbortController().signal };
@@ -34,6 +36,35 @@ async function prepareL1(workspace) {
   }, EXEC);
   await mkdir(join(workspace.root, 'evidence'), { recursive: true });
   await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"/>\n', 'utf8');
+
+  const review = createReviewTool(ctx);
+  await review.execute({
+    action: 'open',
+    change: 'chg-l1',
+    diff_sha256: HASH,
+    spec_sha256: HASH,
+    criteria: ['correctness'],
+    evidence: ['evidence/junit.xml'],
+    seats: [{ id: 's1', owner: '@team-billing', role: 'reviewer' }],
+  }, EXEC);
+  await review.execute({
+    action: 'round',
+    change: 'chg-l1',
+    findings: [{ location: 'services/billing/charge.mjs:1', claim: 'retry covered', evidence: 'junit', verdict: 'resolved', route: 'blocker', lens: 'correctness' }],
+  }, EXEC);
+  await review.execute({ action: 'round', change: 'chg-l1', findings: [], checked: ['retry path reviewed'] }, EXEC);
+  await review.execute({
+    action: 'verdict',
+    change: 'chg-l1',
+    steps: [
+      { id: 'criteria', evidence: 'package' },
+      { id: 'review', evidence: 'rounds' },
+      { id: 'conclusion', evidence: 'zero final findings' },
+    ],
+    dissent: 1,
+    signoff: { by: 'human', identity: 'human:reviewer-01', at: '2026-11-07T01:00:00Z', scope: 'L1 peer review' },
+    decision: 'ready',
+  }, EXEC);
   return ctx;
 }
 
@@ -55,6 +86,26 @@ function l1BuildArgs() {
     signoff: { by: 'human', identity: 'human:reviewer-01', at: '2026-11-07T01:00:00Z', scope: 'L1 peer review' },
     expires_at: '2026-12-07T00:00:00Z',
     assurance: 'A2',
+  };
+}
+
+function l2SynthesisSeats() {
+  return [
+    { id: 'data-1', kind: 'data', provider: 'ci', model: 'coverage', claim: 'Coverage is 0.82.', evidence: 'coverage', confidence: 0.9, objections: ['latency not covered'], data: { command: 'pnpm test --coverage', value: 0.82 } },
+    { id: 'model-1', kind: 'model', provider: 'deepseek', model: 'deepseek-chat', claim: 'The idempotency key prevents duplicates.', evidence: 'spec', confidence: 0.8, objections: ['partition not covered'] },
+    { id: 'model-2', kind: 'model', provider: 'openai', model: 'gpt-x', claim: 'Duplicate requests may race under partition.', evidence: 'code', confidence: 0.7, objections: [] },
+    { id: 'experience-1', kind: 'experience', provider: 'human', model: 'architect-01', claim: 'The contract test covers duplicate keys.', evidence: 'contract test', confidence: 0.8, objections: [] },
+  ];
+}
+
+function l2Synthesizer(converged = false) {
+  return {
+    responded_to: [
+      { objection: 'latency not covered', decision: 'accepted', evidence: 'residual risk' },
+      { objection: 'partition not covered', decision: 'accepted', evidence: 'residual risk' },
+    ],
+    converged,
+    elapsed_minutes: converged ? 8 : 5,
   };
 }
 
@@ -100,6 +151,61 @@ test('build and check enforce L2 correctness case and human sign-off', async () 
     await mkdir(join(workspace.root, '.firetree', 'changes', 'chg-l2'), { recursive: true });
     const caseText = await readFile(new URL('../fixtures/correctness-case-l2.json', import.meta.url), 'utf8');
     await writeFile(join(workspace.root, '.firetree', 'changes', 'chg-l2', 'correctness-case.json'), caseText, 'utf8');
+
+    const review = createReviewTool(ctx);
+    await review.execute({
+      action: 'open',
+      change: 'chg-l2',
+      diff_sha256: HASH,
+      spec_sha256: HASH,
+      criteria: ['correctness', 'tests'],
+      evidence: ['evidence/junit.xml'],
+      seats: [
+        { id: 's1', owner: '@team-billing', role: 'owner' },
+        { id: 's2', owner: '@team-checkout', role: 'reviewer' },
+      ],
+    }, EXEC);
+    await review.execute({
+      action: 'round',
+      change: 'chg-l2',
+      findings: [{ location: 'contracts/billing/openapi.yaml:1', claim: 'consumer contract may break', evidence: 'junit', verdict: 'resolved', route: 'blocker', lens: 'compatibility' }],
+    }, EXEC);
+    await review.execute({ action: 'round', change: 'chg-l2', findings: [], checked: ['contract and consumers reviewed'] }, EXEC);
+    await review.execute({
+      action: 'verdict',
+      change: 'chg-l2',
+      steps: [
+        { id: 'criteria', evidence: 'package' },
+        { id: 'data', evidence: 'junit' },
+        { id: 'seats', evidence: 'two owners' },
+        { id: 'pre_read', evidence: 'notes' },
+        { id: 'discussion', evidence: 'rounds' },
+        { id: 'written_conclusion', evidence: 'verdict' },
+        { id: 'notify', evidence: 'owners notified' },
+      ],
+      dissent: 1,
+      signoff: { by: 'human', identity: 'human:architect-01', at: '2026-11-07T02:00:00Z', scope: 'L2 interface change' },
+      decision: 'ready',
+    }, EXEC);
+
+    const synthesize = createSynthesizeTool(ctx);
+    await synthesize.execute({
+      action: 'plan',
+      change: 'chg-l2',
+      question: 'Does the idempotency design cover concurrent and cross-region retries?',
+    }, EXEC);
+    await synthesize.execute({
+      action: 'record',
+      change: 'chg-l2',
+      seats: l2SynthesisSeats(),
+      synthesizer: l2Synthesizer(false),
+    }, EXEC);
+    await synthesize.execute({
+      action: 'record',
+      change: 'chg-l2',
+      seats: l2SynthesisSeats(),
+      synthesizer: l2Synthesizer(true),
+    }, EXEC);
 
     const tool = createReceiptTool(ctx);
     const built = await tool.execute({
@@ -197,6 +303,36 @@ test('check returns gaps for missing or tampered receipts', async () => {
     const tampered = await tool.execute({ action: 'check', change: 'chg-l1' }, EXEC);
     assert.equal(tampered.ok, false);
     assert.ok(tampered.gaps.length > 0);
+  } finally {
+    await workspace.cleanup();
+  }
+});
+
+test('receipt linkage fails closed when review artifact is missing or tampered', async () => {
+  const workspace = await createM1Workspace();
+  try {
+    const ctx = contextFor(workspace.root);
+    const assess = createAssessTool(ctx);
+    await assess.execute({
+      base: '1111111111111111111111111111111111111111',
+      head: '2222222222222222222222222222222222222222',
+      files: ['services/billing/charge.mjs'],
+      change: 'chg-l1',
+    }, EXEC);
+    await mkdir(join(workspace.root, 'evidence'), { recursive: true });
+    await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"/>\n', 'utf8');
+    const tool = createReceiptTool(ctx);
+    const missingReview = await tool.execute(l1BuildArgs(), EXEC);
+    assert.equal(missingReview.ok, false);
+    assert.ok(missingReview.gaps.some((gap) => /review verdict artifact/.test(gap)));
+
+    await prepareL1(workspace);
+    const built = await tool.execute(l1BuildArgs(), EXEC);
+    assert.equal(built.ok, true);
+    await writeFile(join(workspace.root, '.firetree', 'changes', 'chg-l1', 'verdict.json'), '{"tampered":true}\n', 'utf8');
+    const checked = await tool.execute({ action: 'check', change: 'chg-l1' }, EXEC);
+    assert.equal(checked.ok, false);
+    assert.ok(checked.gaps.some((gap) => /review verdict artifact|hash/.test(gap)));
   } finally {
     await workspace.cleanup();
   }

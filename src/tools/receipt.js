@@ -4,7 +4,14 @@ import { readFileSync } from 'node:fs';
 
 import { ArtifactError, assertSafeId, readFiretreeJson, readJsonFile, resolveWithin, sha256File, sha256Text, writeFiretreeJson } from '../lib/artifacts.js';
 import { validateCorrectnessCase } from '../lib/correctness.js';
-import { checkReceiptSemantics, RECEIPT_SCHEMA } from '../lib/receipt.js';
+import {
+  checkReceiptSemantics,
+  readReviewVerdict,
+  readSynthesisArtifacts,
+  RECEIPT_SCHEMA,
+  reviewToReceipt,
+  synthesisSummary,
+} from '../lib/receipt.js';
 import { assertJsonSchemaValue } from '../lib/schema.js';
 import { toToolSchema } from '../lib/tool-schema.js';
 
@@ -292,7 +299,7 @@ function validateArgs(args) {
     intent: validateIntent(args.intent),
     classification: validateClassification(args.classification),
     evidence: args.evidence,
-    review: validateReview(args.review),
+    review: args.review === undefined ? null : validateReview(args.review),
     signoff: validateSignoff(args.signoff),
     correctness_case: args.correctness_case,
     expires_at: args.expires_at,
@@ -374,6 +381,26 @@ export function createReceiptTool(ctx) {
       const gaps = [...preparedEvidence.gaps, ...preparedCase.gaps];
       if (gaps.length > 0) return failure(gaps);
 
+      let review = null;
+      let reviewSignoff = null;
+      if (assessment.tier !== 'L0') {
+        const reviewRecord = await readReviewVerdict(root, parsed.change);
+        if (reviewRecord === null) return failure(['review verdict artifact is missing']);
+        if (reviewRecord.value === null) return failure(['review verdict artifact is invalid']);
+        review = reviewToReceipt(reviewRecord.value);
+        reviewSignoff = reviewRecord.value.signoff ?? null;
+      }
+
+      let synthesis = null;
+      if (assessment.tier === 'L2' || assessment.tier === 'L1') {
+        const synthesisArtifacts = await readSynthesisArtifacts(root, parsed.change);
+        synthesis = synthesisSummary(synthesisArtifacts);
+      }
+      if (assessment.tier === 'L2' && synthesis === null) {
+        return failure(['L2 receipt requires synthesis artifacts']);
+      }
+      const signoff = parsed.signoff ?? reviewSignoff;
+
       const sampling = assessment.sampling.rate >= 1
         ? { sampling: 'full' }
         : assessment.sampling.selected
@@ -403,8 +430,9 @@ export function createReceiptTool(ctx) {
         classification: parsed.classification,
         hypotheses,
         evidence: preparedEvidence.evidence,
-        review: parsed.review,
+        review,
         correctness_case: preparedCase.summary,
+        ...(synthesis === null ? {} : { synthesis }),
         impact: {
           files: assessment.impact.files,
           subsystems: assessment.impact.subsystems,
@@ -413,7 +441,7 @@ export function createReceiptTool(ctx) {
           traversed: assessment.impact.traversed,
           confidence: assessment.confidence,
         },
-        signoff: parsed.signoff,
+        signoff,
         expires_at: parsed.expires_at,
         assurance: parsed.assurance,
       };

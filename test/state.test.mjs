@@ -7,6 +7,7 @@ import { validateJsonSchema } from '../src/lib/schema.js';
 import { createAssessTool } from '../src/tools/assess.js';
 import { createClassifyTool } from '../src/tools/classify.js';
 import { createStateTool } from '../src/tools/state.js';
+import { createSynthesizeTool } from '../src/tools/synthesize.js';
 import { createM1Workspace } from '../test-support/m1-workspace.mjs';
 
 const EXEC = { agent: { id: 'agent-1' }, signal: new AbortController().signal };
@@ -95,6 +96,44 @@ test('change state reports assessment present and the remaining M1 artifacts mis
     assert.equal(state.entries.find((entry) => entry.kind === 'receipt').status, 'missing');
     assert.ok(state.next_actions.some((action) => action.includes('Record hypotheses')));
     assert.deepEqual(validateJsonSchema(state, stateTool.output.schema), []);
+  } finally {
+    await workspace.cleanup();
+  }
+});
+
+test('change state projects synthesis plan and rounds for L2', async () => {
+  const workspace = await createM1Workspace();
+  try {
+    const ctx = contextFor(workspace.root);
+    const assess = createAssessTool(ctx);
+    await assess.execute({
+      base: '3333333333333333333333333333333333333333',
+      head: '4444444444444444444444444444444444444444',
+      files: ['contracts/billing/openapi.yaml'],
+      change: 'chg-state-l2',
+    }, EXEC);
+
+    const before = await createStateTool(ctx).execute({ change: 'chg-state-l2' }, EXEC);
+    assert.equal(before.entries.find((entry) => entry.kind === 'synthesis_plan').status, 'missing');
+    assert.ok(before.next_actions.some((action) => action.includes('synthesis')));
+
+    const synthesize = createSynthesizeTool(ctx);
+    await synthesize.execute({ action: 'plan', change: 'chg-state-l2', question: 'q' }, EXEC);
+    await synthesize.execute({
+      action: 'record',
+      change: 'chg-state-l2',
+      seats: [
+        { id: 'data-1', kind: 'data', provider: 'ci', model: 'coverage', claim: 'Coverage is 0.8.', evidence: 'coverage', confidence: 0.9, objections: [], data: { command: 'coverage', value: 0.8 } },
+        { id: 'model-1', kind: 'model', provider: 'deepseek', model: 'a', claim: 'Design is safe.', evidence: 'spec', confidence: 0.8, objections: [] },
+        { id: 'model-2', kind: 'model', provider: 'openai', model: 'b', claim: 'Design may race.', evidence: 'code', confidence: 0.7, objections: [] },
+      ],
+      synthesizer: { responded_to: [], converged: true, elapsed_minutes: 5 },
+    }, EXEC);
+
+    const after = await createStateTool(ctx).execute({ change: 'chg-state-l2' }, EXEC);
+    assert.equal(after.entries.find((entry) => entry.kind === 'synthesis_plan').status, 'present');
+    assert.equal(after.entries.find((entry) => entry.kind === 'synthesis_round').status, 'present');
+    assert.equal(after.counts.pending, 3); // hypotheses, review, receipt
   } finally {
     await workspace.cleanup();
   }

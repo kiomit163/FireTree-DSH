@@ -105,7 +105,7 @@ firetree-dsh/
 - **record**：输入一轮结构化结果（每席位：主张、证据、置信度、异议）；输出差异度、重叠率、新异议数、是否收敛、下一轮要问什么。
 - **拒绝规则**：少于两个独立 provider/model 却声称「多专家」；数据席位无命令/数值；综合器未回应异议；超过时间盒仍声称收敛。
 - **规模行为**：仅 L2 触发；最多 3 轮；超时记「未收敛」并阻断回执。
-- **工件**：`.firetree/changes/<change>/round-N.json`
+- **工件**：`.firetree/changes/<change>/synthesis/plan.json`、`.firetree/changes/<change>/synthesis/round-N.json`
 
 ### 5. `firetree_review`
 
@@ -115,7 +115,7 @@ firetree-dsh/
 - **verdict**：L2 七步齐全才允许；L1 三步；L2 需要外部签字；零异议轮要求写「查过什么」。
 - **拒绝规则**：缺步骤、缺失效评审包、agent 自签。
 - **规模行为**：按 tier 决定镜头数与轮数上限；支持导入 CI/人工评审记录。
-- **工件**：`.firetree/changes/<change>/{package.json, round-N.json, verdict.json}`
+- **工件**：`.firetree/changes/<change>/{package.json, round-N.json, verdict.json}`；synthesis 在 `synthesis/` 子目录
 
 ### 6. `firetree_receipt`
 
@@ -146,7 +146,10 @@ firetree-dsh/
 │   ├── assessment.json         # 分级 + 影响集 + 要求
 │   ├── hypotheses.json
 │   ├── package.json | round-N.json | verdict.json
-│   └── receipt.json            # 也可外置到制品库，仓库只留引用
+│   └── synthesis/
+│       ├── plan.json
+│       └── round-N.json
+├── receipts/<change>.json      # 也可外置到制品库，仓库只留引用
 └── metrics/events.jsonl        # 追加写，不含代码内容
 ```
 
