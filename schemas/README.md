@@ -1,6 +1,6 @@
 # FireTree 规模契约 v0（M0 冻结）
 
-> 冻结日期：2026-11-06。M0 的四个 schema 是规模契约；M1 增加 `dossier.schema.json`（对象辨识）、`assessment.schema.json`（变更入口）、`hypotheses.schema.json`（假设台账）。M1 只按这些字段实现，不静默扩字段。
+> 冻结日期：2026-11-06。M0 的四个 schema 是规模契约；M1/M2 增加 `dossier.schema.json`、`assessment.schema.json`、`hypotheses.schema.json`、`review.schema.json`。M1/M2 只按这些字段实现，不静默扩字段。
 > 变更契约必须走 `docs/DECISIONS.md`，并同步更新样例与测试。
 
 ## 1. 文件
@@ -14,6 +14,7 @@
 | `dossier.schema.json` | M1：对象辨识 dossier（kind、已知/未知层次、可分解性测试、owner、允许的自治等级） |
 | `assessment.schema.json` | M1：变更入口的 tier/impact/required_artifacts/sampling/signoff 工件 |
 | `hypotheses.schema.json` | M1：变更级假设台账，含 detection 与外部 evidence_ref |
+| `review.schema.json` | M2：L1 三步/L2 七步评审的 package/round/verdict 工件 |
 
 配套纯函数：
 

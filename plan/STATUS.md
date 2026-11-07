@@ -1,6 +1,6 @@
 # M0 状态
 
-> 更新：2026-11-06。工作目录：`D:\FireTree-DSH`。M0：**DONE**；M1 实现：**DONE**，50-PR 试点：**BLOCKED**（见 [M1-STATUS.md](M1-STATUS.md)）。
+> 更新：2026-11-06。工作目录：`D:\FireTree-DSH`。M0：**DONE**；M1 实现：**DONE**，50-PR 试点：**BLOCKED**；M2 实现：**IN_PROGRESS**（见 [M1-STATUS.md](M1-STATUS.md)、[M2-STATUS.md](M2-STATUS.md)）。
 > 状态值：`DONE` / `IN_PROGRESS` / `PENDING` / `BLOCKED`。每个 DONE 附可复核证据。
 > T0.11 的跟踪文件在 T0.1 时预建，本文件是 M0 收口证据；M0 完成后才允许进入 M1。
 

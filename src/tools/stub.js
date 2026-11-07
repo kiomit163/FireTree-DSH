@@ -2,20 +2,15 @@
 
 import { assertJsonValue } from '../lib/json.js';
 
-/** Names of the two stubs that remain before their implementations exist. */
+/** Names of the one stub that remains before its implementation exists. */
 export const STUB_TOOL_NAMES = Object.freeze([
   'firetree_synthesize',
-  'firetree_review',
 ]);
 
 const STUB_SPECS = Object.freeze([
   {
     name: 'firetree_synthesize',
-    description: 'Plan and record an independent-seat synthesis round for an L2 decision. M1 stub: not implemented.',
-  },
-  {
-    name: 'firetree_review',
-    description: 'Open a review, record rounds, and issue a verdict for the change. M1 stub: not implemented.',
+    description: 'Plan and record an independent-seat synthesis round for an L2 decision. M2 stub: not implemented.',
   },
 ]);
 
@@ -33,7 +28,7 @@ const OUTPUT_SCHEMA = Object.freeze({
 });
 
 /**
- * Build one callable M0 stub definition.
+ * Build one callable M2 stub definition.
  *
  * @param {{name: string, description: string}} spec - Stable tool metadata.
  * @returns {object} DSH tool definition.
@@ -44,7 +39,7 @@ function createStubTool(spec) {
     schema: 'firetree.not-implemented/v0',
     code: 'NOT_IMPLEMENTED',
     tool: spec.name,
-    message: `${spec.name} is registered for M1 but has no business logic yet.`,
+    message: `${spec.name} is registered for M2 but has no business logic yet.`,
   });
 
   return {
@@ -57,7 +52,7 @@ function createStubTool(spec) {
     },
     output: {
       schema: OUTPUT_SCHEMA,
-      render: () => [{ type: 'text', text: `${spec.name}: NOT_IMPLEMENTED (M0 skeleton)` }],
+      render: () => [{ type: 'text', text: `${spec.name}: NOT_IMPLEMENTED (M2 skeleton)` }],
     },
     execute() {
       assertJsonValue(value);

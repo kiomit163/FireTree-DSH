@@ -76,11 +76,11 @@ FireTree 4.0/V5 的诊断结论（详见 `docs/THESIS.md`）：
 
 ## 6. 当前状态
 
-**M0 已完成（2026-11-06）；M1 实现完成，50-PR 试点待目标团队/仓库。**
+**M0 已完成（2026-11-06）；M1 实现完成，50-PR 试点待目标团队/仓库；M2 review 已本地实现，synthesize 进行中。**
 
-本仓库现在有：可安装/卸载的 DSH 骨架（7 个工具 + 6 个技能占位）、短 prompt section、四个 M0 schema（含 correctness case v0）加 M1 dossier/assessment/hypotheses schema、L0/L1/L2 样例、冻结的 `metrics-v0`、风险/红队、迁移删除清单、规模基线与 [plan/STATUS.md](plan/STATUS.md)。`firetree_state`、`firetree_classify`、`firetree_assess`、`firetree_hypothesis`、`firetree_receipt` 已可调用；`firetree_synthesize`、`firetree_review` 仍是 stub。
+本仓库现在有：可安装/卸载的 DSH 骨架（7 个工具 + 6 个技能占位）、短 prompt section、四个 M0 schema（含 correctness case v0）加 M1/M2 dossier/assessment/hypotheses/review schema、L0/L1/L2 样例、冻结的 `metrics-v0`、风险/红队、迁移删除清单、规模基线与 [plan/STATUS.md](plan/STATUS.md)。`firetree_state`、`firetree_classify`、`firetree_assess`、`firetree_hypothesis`、`firetree_receipt`、`firetree_review` 已可调用；`firetree_synthesize` 仍是 stub。
 
-主要证据：[plan/STATUS.md](plan/STATUS.md)、[plan/M1-STATUS.md](plan/M1-STATUS.md)、[schemas/README.md](schemas/README.md)、[docs/SCALE-BASELINE.md](docs/SCALE-BASELINE.md)。下一步是 M1（单团队试点），从注册表/影响分析/classify/assess 开始；M0 不构成百万行规模验证：基线在文件数与 PR 量上低于 §2 假设 >2×。
+主要证据：[plan/STATUS.md](plan/STATUS.md)、[plan/M1-STATUS.md](plan/M1-STATUS.md)、[plan/M2-STATUS.md](plan/M2-STATUS.md)、[schemas/README.md](schemas/README.md)、[docs/SCALE-BASELINE.md](docs/SCALE-BASELINE.md)。下一步是 M1 试点（需目标团队/仓库）与 M2 synthesize；M0 不构成百万行规模验证：基线在文件数与 PR 量上低于 §2 假设 >2×。
 
 ## 7. 硬规则（任何阶段不得违反）
 

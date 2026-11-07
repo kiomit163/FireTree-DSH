@@ -57,9 +57,9 @@ test('registers exactly seven tools with callable definitions', () => {
   }
 });
 
-test('the two remaining stubs are callable and fail closed as not implemented', () => {
+test('the remaining synth stub is callable and fails closed as not implemented', () => {
   const stubs = createStubTools();
-  assert.equal(stubs.length, 2);
+  assert.equal(stubs.length, 1);
   assert.deepEqual(stubs.map((tool) => tool.name), [...STUB_TOOL_NAMES]);
 
   for (const tool of stubs) {
@@ -69,7 +69,7 @@ test('the two remaining stubs are callable and fail closed as not implemented', 
       schema: 'firetree.not-implemented/v0',
       code: 'NOT_IMPLEMENTED',
       tool: tool.name,
-      message: `${tool.name} is registered for M1 but has no business logic yet.`,
+      message: `${tool.name} is registered for M2 but has no business logic yet.`,
     });
     assert.doesNotThrow(() => toStrictJson(value));
     assert.equal(tool.output.render({}, value)[0].type, 'text');
