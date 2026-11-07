@@ -389,6 +389,14 @@ export function createReceiptTool(ctx) {
         if (reviewRecord.value === null) return failure(['review verdict artifact is invalid']);
         review = reviewToReceipt(reviewRecord.value);
         reviewSignoff = reviewRecord.value.signoff ?? null;
+        if (parsed.review !== null) {
+          if (parsed.review.rounds !== review.rounds
+            || parsed.review.dissent !== review.dissent
+            || parsed.review.verdict !== review.verdict
+            || JSON.stringify(parsed.review.new_findings) !== JSON.stringify(review.new_findings)) {
+            return failure(['review input does not match verdict artifact']);
+          }
+        }
       }
 
       let synthesis = null;

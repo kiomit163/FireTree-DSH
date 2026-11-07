@@ -82,7 +82,7 @@ function l1BuildArgs() {
         produced_at: '2026-11-07T00:00:00Z',
       },
     ],
-    review: { rounds: 2, new_findings: [2, 0], dissent: 1, verdict: 'ready' },
+    review: { rounds: 2, new_findings: [1, 0], dissent: 1, verdict: 'ready' },
     signoff: { by: 'human', identity: 'human:reviewer-01', at: '2026-11-07T01:00:00Z', scope: 'L1 peer review' },
     expires_at: '2026-12-07T00:00:00Z',
     assurance: 'A2',
@@ -221,7 +221,7 @@ test('build and check enforce L2 correctness case and human sign-off', async () 
           produced_at: '2026-11-07T00:00:00Z',
         },
       ],
-      review: { rounds: 2, new_findings: [3, 0], dissent: 2, verdict: 'ready' },
+      review: { rounds: 2, new_findings: [1, 0], dissent: 1, verdict: 'ready' },
       signoff: { by: 'human', identity: 'human:architect-01', at: '2026-11-07T02:00:00Z', scope: 'L2 interface change' },
       correctness_case: '.firetree/changes/chg-l2/correctness-case.json',
       expires_at: '2026-12-07T00:00:00Z',
@@ -246,7 +246,7 @@ test('build and check enforce L2 correctness case and human sign-off', async () 
         run_ref: 'evidence/junit.xml',
         produced_at: '2026-11-07T00:00:00Z',
       }],
-      review: { rounds: 2, new_findings: [3, 0], dissent: 2, verdict: 'ready' },
+      review: { rounds: 2, new_findings: [1, 0], dissent: 1, verdict: 'ready' },
       signoff: { by: 'human', identity: 'human:architect-01', at: '2026-11-07T02:00:00Z', scope: 'L2 interface change' },
       expires_at: '2026-12-07T00:00:00Z',
       assurance: 'A2',
@@ -329,6 +329,12 @@ test('receipt linkage fails closed when review artifact is missing or tampered',
     await prepareL1(workspace);
     const built = await tool.execute(l1BuildArgs(), EXEC);
     assert.equal(built.ok, true);
+    const mismatched = await tool.execute({
+      ...l1BuildArgs(),
+      review: { ...l1BuildArgs().review, rounds: 3 },
+    }, EXEC);
+    assert.equal(mismatched.ok, false);
+    assert.ok(mismatched.gaps.some((gap) => /review input does not match/.test(gap)));
     await writeFile(join(workspace.root, '.firetree', 'changes', 'chg-l1', 'verdict.json'), '{"tampered":true}\n', 'utf8');
     const checked = await tool.execute({ action: 'check', change: 'chg-l1' }, EXEC);
     assert.equal(checked.ok, false);

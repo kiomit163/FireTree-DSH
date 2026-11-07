@@ -23,7 +23,7 @@
   - review 的 tier、rounds、new_findings、dissent、decision、七步/三步、human signoff；并读取 round-N.json 复核 finding 计数、最后一轮为空、无未解决 blocker；
   - synthesis 的 plan/last-round 哈希、轮数、converged/timed_out；
   - 回执 `synthesis` 引用与实际工件一致。
-- `firetree_receipt build` 从 review verdict 取 review 字段与 signoff，从 synthesis 工件取 summary；不再只信任调用方传入的 review。
+- `firetree_receipt build` 从 review verdict 取 review 字段与 signoff，从 synthesis 工件取 summary；若显式传入 `review`，必须与 verdict 一致，否则返回 `review input does not match verdict artifact`。
 - `firetree_state` 的 change 投影新增 `synthesis_plan` 与 `synthesis_round` 条目；L2 缺 plan/round 会计入 pending。
 - 测试：`test/receipt.test.mjs` 6/6、`test/state.test.mjs` 6/6。
 
