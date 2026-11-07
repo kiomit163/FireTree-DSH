@@ -138,11 +138,12 @@ test('declared higher tier is allowed and recorded', async () => {
   }
 });
 
-test('missing policy, empty files, and missing agent fail closed', async () => {
+test('missing policy, empty files, invalid path, and missing agent fail closed', async () => {
   const workspace = await createM1Workspace();
   try {
     const tool = createAssessTool(contextFor(workspace.root));
     await assert.rejects(tool.execute(assessArgs({ files: [] }), EXEC), (error) => error.code === 'INVALID_ARGS');
+    await assert.rejects(tool.execute(assessArgs({ files: ['../escape.mjs'] }), EXEC), (error) => error.code === 'INVALID_ARGS');
     await assert.rejects(tool.execute(assessArgs(), { signal: new AbortController().signal }), (error) => error.code === 'AGENT_REQUIRED');
 
     await rm(join(workspace.root, '.firetree', 'policy.json'));

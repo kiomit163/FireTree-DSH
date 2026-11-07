@@ -110,6 +110,8 @@ test('missing change artifacts and input guards fail closed', async () => {
 
     await assert.rejects(tool.execute({ change: 'c1', subsystem: 'billing' }, EXEC), TypeError);
     await assert.rejects(tool.execute({ change: 'c1' }, { signal: new AbortController().signal }), TypeError);
+    await assert.rejects(tool.execute({ unknown: 'x' }, EXEC), TypeError);
+    await assert.rejects(tool.execute({ change: '../escape' }, EXEC), (error) => error.code === 'INVALID_ID');
   } finally {
     await workspace.cleanup();
   }
