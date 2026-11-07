@@ -112,6 +112,28 @@ export function parseStrictJson(text) {
 }
 
 /**
+ * Serialize a strict JSON value with deterministic object-key ordering.
+ *
+ * @param {unknown} value - Candidate value.
+ * @returns {string} Canonical JSON text.
+ */
+export function canonicalJson(value) {
+  assertJsonValue(value);
+
+  const encode = (current) => {
+    if (current === null || typeof current === 'boolean' || typeof current === 'number') {
+      return JSON.stringify(current);
+    }
+    if (typeof current === 'string') return JSON.stringify(current);
+    if (Array.isArray(current)) return `[${current.map(encode).join(',')}]`;
+    const keys = Object.keys(current).sort();
+    return `{${keys.map((key) => `${JSON.stringify(key)}:${encode(current[key])}`).join(',')}}`;
+  };
+
+  return encode(value);
+}
+
+/**
  * Check whether a value is strict JSON without throwing.
  *
  * @param {unknown} value - Candidate value.
