@@ -76,7 +76,7 @@ FireTree 4.0/V5 的诊断结论（详见 `docs/THESIS.md`）：
 
 ## 6. 当前状态
 
-**M0 已完成（2026-11-06）；M1 进行中。**
+**M0 已完成（2026-11-06）；M1 实现完成，50-PR 试点待目标团队/仓库。**
 
 本仓库现在有：可安装/卸载的 DSH 骨架（7 个工具 + 6 个技能占位）、短 prompt section、四个 M0 schema（含 correctness case v0）加 M1 dossier/assessment/hypotheses schema、L0/L1/L2 样例、冻结的 `metrics-v0`、风险/红队、迁移删除清单、规模基线与 [plan/STATUS.md](plan/STATUS.md)。`firetree_state`、`firetree_classify`、`firetree_assess`、`firetree_hypothesis`、`firetree_receipt` 已可调用；`firetree_synthesize`、`firetree_review` 仍是 stub。
 
