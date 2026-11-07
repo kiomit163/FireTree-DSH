@@ -9,9 +9,9 @@
 | W3.1 | DONE | `src/lib/artifacts.js`；`test/artifacts.test.mjs`（7/7） | 2026-11-07 |
 | W3.2 | DONE | `src/lib/registry.js`；`test/registry.test.mjs`（4/4）；`test-support/m1-workspace.mjs` | 2026-11-07 |
 | W4.4 | DONE | `src/lib/codeowners.js`、`src/lib/glob.js`；`test/glob-codeowners.test.mjs`（5/5） | 2026-11-07 |
-| W6.1 | IN_PROGRESS | `src/lib/impact.js`（待建）、50 条标注集 | 2026-11-07 |
-| W6.2 | PENDING | unknown → L2 的拒绝测试 | — |
-| W2.2 | PENDING | `src/tools/classify.js` + dossier | — |
+| W6.1 | DONE (v1) | `src/lib/impact.js`；`test/impact.test.mjs`（7/7）；50 条标注集召回待 W6.6/M2，未宣称达标 | 2026-11-07 |
+| W6.2 | DONE | `test/impact.test.mjs` 的 unknown/cross/interface/dependency/security → L2 用例 | 2026-11-07 |
+| W2.2 | IN_PROGRESS | `src/tools/classify.js` + dossier（待建） | 2026-11-07 |
 | W2.3 | PENDING | `src/tools/assess.js` + assessment 工件 | — |
 | W2.4 | PENDING | `src/tools/hypothesis.js` | — |
 | W2.7 | PENDING | `src/tools/receipt.js` 最小校验 | — |
@@ -21,7 +21,7 @@
 
 ## 当前下一步
 
-- W6.1/W6.2：确定性影响分析；未知路径强制 L2；再接 classify/assess。
+- W2.2：`firetree_classify` set/show、dossier schema 与拒绝规则；随后 W2.3 `firetree_assess`。
 
 ## M1 完成信号（滚动）
 
