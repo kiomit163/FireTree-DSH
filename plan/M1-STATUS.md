@@ -14,14 +14,15 @@
 | W2.2 | DONE | `src/tools/classify.js`、`schemas/dossier.schema.json`；`test/classify.test.mjs`（7/7） | 2026-11-07 |
 | W2.3 | DONE | `src/tools/assess.js`、`schemas/assessment.schema.json`；`test/assess.test.mjs`（7/7）；`src/lib/tool-schema.js` 将内部 schema 投影到 Host 子集（`test/tool-schema.test.mjs` 3/3） | 2026-11-07 |
 | W2.4 | DONE | `src/tools/hypothesis.js`、`schemas/hypotheses.schema.json`；`test/hypothesis.test.mjs`（5/5） | 2026-11-07 |
-| W2.7 | IN_PROGRESS | `src/tools/receipt.js` 最小校验（待建） | 2026-11-07 |
+| W2.7 | DONE | `src/tools/receipt.js`、`src/lib/receipt.js`；`test/receipt.test.mjs`（5/5） | 2026-11-07 |
+| W2.9 | IN_PROGRESS | 每工具 ≥5 反例审计 | 2026-11-07 |
 | W2.8 | DONE | `src/tools/state.js` 真实投影；`test/state.test.mjs`（5/5） | 2026-11-07 |
 | W2.9 | PENDING | 每工具 ≥5 反例 | — |
 | W9.3 | BLOCKED | 需目标团队/仓库；50 个真实 PR | — |
 
 ## 当前下一步
 
-- W2.7：`firetree_receipt` build/check 最小校验；随后全量测试与 live 安装验证。
+- W2.9：逐工具反例审计（classify/assess/hypothesis/receipt/state 各 ≥5），随后全量测试与 live 安装验证。
 
 ## Live 安装验证（2026-11-07）
 

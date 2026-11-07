@@ -21,4 +21,4 @@ FireTree-DSH 是「可审计交付协议」，不是治理 OS。四机制是对�
 
 ## M1 边界
 
-当前 `firetree_state`、`firetree_classify`、`firetree_assess`、`firetree_hypothesis` 已实现并可用；其余三个工具（synthesize/review/receipt）仍是 stub，返回 `NOT_IMPLEMENTED`。`classify` 写 `.firetree/oid/<id>.json`，`assess` 写 `.firetree/changes/<change>/assessment.json`，`hypothesis` 写 `.firetree/changes/<change>/hypotheses.json`；不要把 stub 当作已实现能力。
+当前 `firetree_state`、`firetree_classify`、`firetree_assess`、`firetree_hypothesis`、`firetree_receipt` 已实现并可用；`firetree_synthesize`、`firetree_review` 仍是 stub，返回 `NOT_IMPLEMENTED`。`classify` 写 `.firetree/oid/<id>.json`，`assess` 写 `.firetree/changes/<change>/assessment.json`，`hypothesis` 写 `.firetree/changes/<change>/hypotheses.json`，`receipt` 写 `.firetree/receipts/<change>.json`；不要把 stub 当作已实现能力。

@@ -57,9 +57,9 @@ test('registers exactly seven tools with callable definitions', () => {
   }
 });
 
-test('the three remaining stubs are callable and fail closed as not implemented', () => {
+test('the two remaining stubs are callable and fail closed as not implemented', () => {
   const stubs = createStubTools();
-  assert.equal(stubs.length, 3);
+  assert.equal(stubs.length, 2);
   assert.deepEqual(stubs.map((tool) => tool.name), [...STUB_TOOL_NAMES]);
 
   for (const tool of stubs) {

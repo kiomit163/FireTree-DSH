@@ -1,13 +1,11 @@
-# firetree-receipt（M0 占位）
-
-> M0 占位文本；`firetree_receipt` 仍是 stub，返回 `NOT_IMPLEMENTED`。
+# firetree-receipt（M1 初版）
 
 用途：变更的唯一出口，从外部证据组装回执并按等级校验。
 
-- 只读证据；每条证据必须有 `producer`、`sha256`、`produced_at`、可打开的 `run_ref`。
-- 生产者不得是 agent；签字人不得是 agent；本地模式显式 A1，不得声称 A2。
-- 证据缺失/过期、影响未遍历、L2 未收敛、空映射的 correctness case → 拒绝并列出缺口。
-- 不自动补证据；失败必须 fail-closed。
-- 输出写入 `.firetree/receipts/<change>.json`。
+- `build` 读取 `assessment.json` 与 `hypotheses.json`，要求显式 `intent`、`classification`、`evidence[]`、`review`、`expires_at`、`assurance`；L2 还要求 `correctness_case` 路径与 `signoff.by=human`。
+- `check` 只读 `.firetree/receipts/<change>.json` 与 `.sha256`，不自动补证据。
+- 证据 producer 不得是 agent；本地文件必须存在且 hash 一致；远程 URL 只接受显式 sha256。
+- 回执过期、评审最后一轮未归零、L2 缺人签/ correctness case、假设未验证且未接受风险，都会返回 `ok:false` 与缺口清单。
+- 当前是 M1 最小校验；完整 correctness case 映射、外部证据可打开性与 ≤2s 性能目标在 M2 完成。
 
-正式规则见 `docs/ARCHITECTURE.md` §三.6 与 §五。当前不要调用该工具期待真实结果。
+正式规则见 `docs/ARCHITECTURE.md` §三.6 与 §五。
