@@ -5,6 +5,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 
 import { sha256Text } from '../src/lib/artifacts.js';
+import { validateJunitXml } from '../src/lib/junit.js';
 import { createAssessTool } from '../src/tools/assess.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
 
@@ -95,9 +96,8 @@ async function main() {
       await mkdir(dirname(evidenceFile), { recursive: true });
       curlFile(junit.url, evidenceFile);
       const xml = await readFile(evidenceFile, 'utf8');
-      if (!xml.trimStart().startsWith('<?xml') && !xml.trimStart().startsWith('<testsuites') && !xml.trimStart().startsWith('<testsuite')) {
-        throw new Error('downloaded artifact is not JUnit XML');
-      }
+      const junitCheck = validateJunitXml(xml);
+      if (!junitCheck.valid) throw new Error(`invalid JUnit XML: ${junitCheck.gaps.join('; ')}`);
       const timestamp = /timestamp="([^"]+)"/.exec(xml)?.[1];
 
       await assess.execute({

@@ -35,13 +35,27 @@ A2 证据：
 - OTel：kind `coverage`，producer `ci:codecov`，`ci_passed=true`，coverage 约 **91.25%–91.38%**。
 - Kubernetes：kind `test`，producer `ci:prow`，JUnit XML（如 `#143751`：`tests=2436 failures=0`）。
 
+### JUnit 严格校验
+
+50/50 K8s JUnit 文件通过 [src/lib/junit.js](../src/lib/junit.js)：
+
+- XML 根/闭合结构；
+- `tests` / `failures` / `errors` / `skipped` 数值；
+- 至少 1 个 test；
+- `failures=0`、`errors=0`；
+- 无 `<failure>` / `<error>` 元素；
+- 无 DOCTYPE/ENTITY。
+
+汇总：**9,130,105 tests / 0 failures / 0 errors / 0 skipped**。  
+校验脚本：[scripts/validate-pilot-junit.mjs](../scripts/validate-pilot-junit.mjs)。
+
 A1 证据：
 
 ```json
 { "scope": "analysis-only", "assurance": "A1" }
 ```
 
-`#16308` 没有 Codecov 报告，保留 A1。
+`#16308` 是 L0 的 `config/configgrpc` + `.chloggen` 变更，没有 Codecov 报告；**明确保持 A1**。
 
 ## 2. 每个 PR 的工件
 
@@ -89,7 +103,18 @@ K8s 流程：merge commit 的第二父提交 → GitHub statuses → Prow `targe
 - 99 个 A2 工件全部通过 build/check；
 - 没有人类参与，也没有伪造 human signoff。
 
-## 5. 没有证明什么
+## 5. SARIF / SBOM 状态
+
+当前**没有**把 SARIF/SBOM 升级为 A2，因为拿不到 per-PR 的公开工件：
+
+- CodeQL code-scanning API：`Requires authentication`；
+- GitHub Actions artifact 下载：`401`（public artifact listing 可读，下载需凭据）；
+- GitHub dependency-graph SBOM：可公开读取，但它是**仓库级** SBOM，不是 per-PR，且 API 已触发 rate limit；
+- K8s GCS listing：`403`；JUnit 能通过 Prow `lensArtifacts` 直达，SARIF/SBOM 没有同等公开路径。
+
+没有用占位文件冒充 SARIF/SBOM。需要只读 GitHub token / CI artifact 访问，或本地跑 CodeQL/Syft 并明确标 A1。
+
+## 6. 没有证明什么
 
 - coverage ≠ 测试全部通过；K8s JUnit 是 **unit** presubmit，不等于 e2e/integration 全覆盖；
 - 没有 SARIF、SBOM；
@@ -97,7 +122,7 @@ K8s 流程：merge commit 的第二父提交 → GitHub statuses → Prow `targe
 - 不是人类验收，不是 M1/M2；
 - 证据只证明“CI 产出了这份 coverage/JUnit 并被哈希引用”，不证明变更行为完全正确。
 
-## 6. 下一步
+## 7. 下一步
 
 1. 为 `#16308` 找 Codecov 替代或保持 A1；
 2. 接入 SARIF（CodeQL）和 SBOM；
