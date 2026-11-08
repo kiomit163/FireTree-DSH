@@ -5,7 +5,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const SKIP_DIRECTORIES = new Set(['.git', 'node_modules', '.firetree']);
+const SKIP_DIRECTORIES = new Set(['.git', 'node_modules', '.firetree', '.tmp']);
 const REMOTE_PREFIXES = ['http://', 'https://', 'mailto:', 'tel:', 'data:'];
 
 function walk(directory, files = []) {
