@@ -380,7 +380,7 @@
       "properties": {
         "kind": {
           "type": "string",
-          "enum": ["test", "coverage", "sarif", "sbom", "bench"]
+          "enum": ["test", "coverage", "sarif", "sbom", "bench", "analysis"]
         },
         "producer": {
           "type": "string",

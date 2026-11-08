@@ -16,7 +16,7 @@ import { assertJsonSchemaValue } from '../lib/schema.js';
 import { checkTechnicalEvidenceSemantics, TECHNICAL_SCHEMA } from '../lib/technical.js';
 import { toToolSchema } from '../lib/tool-schema.js';
 
-const KINDS = new Set(['test', 'coverage', 'sarif', 'sbom', 'bench']);
+const KINDS = new Set(['test', 'coverage', 'sarif', 'sbom', 'bench', 'analysis']);
 const ALLOWED_ARGS = new Set([
   'action',
   'change',
@@ -412,6 +412,11 @@ export function createReceiptTool(ctx) {
       if (gaps.length > 0) return failure(gaps);
 
       if (parsed.mode === 'autonomous') {
+        const evidenceScope = preparedEvidence.evidence.every((item) => item.kind === 'analysis')
+          ? 'analysis-only'
+          : preparedEvidence.evidence.every((item) => /^ci:/i.test(item.producer))
+            ? 'ci-evidence'
+            : 'test-evidence';
         const technical = {
           schema: 'firetree.technical-evidence/v0',
           mode: 'autonomous',
@@ -442,6 +447,7 @@ export function createReceiptTool(ctx) {
           },
           expires_at: parsed.expires_at,
           assurance: parsed.assurance,
+          scope: evidenceScope,
           human_signoff: false,
           completion_claim: false,
           milestone_claim: false,

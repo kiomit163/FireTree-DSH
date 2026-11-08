@@ -81,6 +81,30 @@ test('autonomous technical evidence builds and checks without human signoff', as
   }
 });
 
+test('analysis-only autonomous evidence is explicitly scoped', async () => {
+  const workspace = await createM1Workspace();
+  try {
+    const ctx = await prepare(workspace, ['services/billing/charge.mjs'], 'chg-auto-analysis');
+    await writeFile(join(workspace.root, 'evidence', 'analysis.json'), '{"tier":"L1"}\n', 'utf8');
+    const tool = createReceiptTool(ctx);
+    const built = await tool.execute(buildArgs({
+      change: 'chg-auto-analysis',
+      assurance: 'A1',
+      evidence: [{
+        kind: 'analysis',
+        producer: 'tool:firetree-pilot-assess',
+        run_ref: 'evidence/analysis.json',
+        produced_at: '2026-11-08T00:00:00Z',
+      }],
+    }), EXEC);
+    assert.equal(built.ok, true);
+    assert.equal(built.technical_evidence.scope, 'analysis-only');
+    assert.equal(built.technical_evidence.assurance, 'A1');
+  } finally {
+    await workspace.cleanup();
+  }
+});
+
 test('autonomous evidence rejects human signoff, review, and agent evidence', async () => {
   const workspace = await createM1Workspace();
   try {

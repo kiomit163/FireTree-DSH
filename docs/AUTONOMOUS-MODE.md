@@ -66,6 +66,7 @@ autonomous 模式把保证上限显式降到 **A2：外部确定性证据完整*
 - 证据 producer 不得是 `agent`；本地文件必须存在且 hash 一致；
 - `human_signoff`、`completion_claim`、`milestone_claim` 永远为 `false`；
 - 不接受 A3；
+- `scope` 必须显式：`analysis-only` / `test-evidence` / `ci-evidence`；
 - autonomous 模式拒绝 `signoff` / `review` / `correctness_case` 输入，避免把人工或半人工字段混入；
 - 技术证据过期即 `ok:false`。
 
