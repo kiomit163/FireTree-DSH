@@ -49,9 +49,9 @@ test('OWNERS resolves nearest directory, filters, and aliases', async () => {
     const owners = await loadOwners(root);
     assert.ok(owners);
     assert.equal(owners.source, 'OWNERS');
-    assert.deepEqual(owners.resolve('pkg/foo/x.go').owners, ['@foo-approver', '@foo-reviewer']);
+    assert.deepEqual(owners.resolve('pkg/foo/x.go').owners, ['@approver-a', '@foo-approver', '@foo-reviewer', '@reviewer-a', '@reviewer-b']);
     assert.deepEqual(owners.resolve('pkg/other/x.go').owners, ['@approver-a', '@reviewer-a', '@reviewer-b']);
-    assert.deepEqual(owners.resolve('go.mod').owners, ['@dep-a']);
+    assert.deepEqual(owners.resolve('go.mod').owners, ['@approver-a', '@dep-a', '@reviewer-a', '@reviewer-b']);
     assert.deepEqual(owners.resolve('README.md').owners, ['@approver-a', '@reviewer-a', '@reviewer-b']);
   } finally {
     await rm(root, { recursive: true, force: true });

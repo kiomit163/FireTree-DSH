@@ -115,7 +115,12 @@ test('security-sensitive code is L2 while test/docs paths remain L0', async () =
 
     assert.equal(isL0Path('docs/security/policy.md'), true);
     assert.equal(isL0Path('tests/auth/token.test.mjs'), true);
+    assert.equal(isL0Path('staging/oidc/testdata/mldsa_1.pem'), true);
     assert.equal(isL0Path('services/billing/auth/token.mjs'), false);
+
+    const testdataPem = await analyze(workspace, ['services/billing/testdata/cert.pem']);
+    assert.equal(testdataPem.auto_tier, 'L0');
+    assert.ok(!testdataPem.reasons.some((reason) => reason.startsWith('sensitive path:')));
   } finally {
     await workspace.cleanup();
   }

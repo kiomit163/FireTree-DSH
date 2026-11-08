@@ -1,7 +1,7 @@
 /** Minimal Kubernetes-style OWNERS / OWNERS_ALIASES resolver. */
 
 import { readdir, readFile } from 'node:fs/promises';
-import { basename, dirname, join, relative, sep } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 
 import { normalizeRepoPath } from './glob.js';
 
@@ -50,6 +50,7 @@ export function parseOwners(text, source = 'OWNERS') {
   const reviewers = [];
   const filters = [];
   const aliases = new Map();
+  let noParentOwners = false;
   let section = null;
   let filter = null;
   let filterSection = null;
@@ -61,11 +62,34 @@ export function parseOwners(text, source = 'OWNERS') {
     const indent = withoutComment.match(/^ */)[0].length;
     const trimmed = withoutComment.trim();
 
+    if (trimmed.startsWith('-')) {
+      const owner = listItem(trimmed);
+      if (owner !== null && section === 'aliases' && alias !== null) {
+        alias.owners.push(owner);
+        continue;
+      }
+      if (owner !== null && LIST_SECTIONS.has(section)) {
+        if (section === 'approvers') approvers.push(owner);
+        else reviewers.push(owner);
+        continue;
+      }
+      if (owner !== null && section === 'filters' && filter !== null && filterSection !== null) {
+        filter[filterSection].push(owner);
+        continue;
+      }
+    }
+
     if (indent === 0) {
       section = keyOf(trimmed);
       filter = null;
       filterSection = null;
       alias = null;
+      continue;
+    }
+
+    if (section === 'options') {
+      const match = /^no_parent_owners:\s*(true|false)\s*$/i.exec(trimmed);
+      if (indent === 2 && match !== null) noParentOwners = match[1].toLowerCase() === 'true';
       continue;
     }
 
@@ -86,7 +110,7 @@ export function parseOwners(text, source = 'OWNERS') {
 
     if (section === 'aliases') {
       if (indent === 2 && trimmed.endsWith(':')) {
-        alias = { name: keyOf(trimmed), owners: [] };
+        alias = { name: keyOf(trimmed).toLowerCase(), owners: [] };
         aliases.set(alias.name, alias);
       } else if (alias !== null) {
         const owner = listItem(trimmed);
@@ -119,6 +143,7 @@ export function parseOwners(text, source = 'OWNERS') {
     reviewers: [...new Set(reviewers)],
     filters: compiledFilters,
     aliases,
+    noParentOwners,
   };
 }
 
@@ -130,13 +155,13 @@ export function parseOwners(text, source = 'OWNERS') {
 export function parseOwnersAliases(text, source = 'OWNERS_ALIASES') {
   if (typeof text !== 'string') throw new TypeError('OWNERS_ALIASES text must be a string');
   const parsed = parseOwners(text, source);
-  return new Map([...parsed.aliases].map(([name, value]) => [name, [...value.owners]]));
+  return new Map([...parsed.aliases].map(([name, value]) => [name.toLowerCase(), [...value.owners]]));
 }
 
 function expandOwners(values, aliases, seen = new Set()) {
   const output = new Set();
   for (const value of values) {
-    const key = value.startsWith('@') ? value.slice(1) : value;
+    const key = (value.startsWith('@') ? value.slice(1) : value).toLowerCase();
     if (seen.has(key)) continue;
     const alias = aliases.get(key);
     if (alias === undefined) {
@@ -150,17 +175,15 @@ function expandOwners(values, aliases, seen = new Set()) {
   return [...output];
 }
 
-function ownersForRule(rule, repoPath, aliases) {
-  const path = normalizeRepoPath(repoPath);
-  const name = basename(path);
-  const filter = [...rule.filters].reverse().find((entry) => entry.regex.test(path) || entry.regex.test(name));
-  const values = filter === undefined
-    ? [...rule.approvers, ...rule.reviewers]
-    : [...filter.approvers, ...filter.reviewers];
-  const owners = [...new Set(expandOwners(values, aliases))].sort();
+function ownersForRule(rule, aliases, relativePath) {
+  const values = [...rule.approvers, ...rule.reviewers];
+  for (const filter of rule.filters) {
+    if (filter.regex.test(relativePath)) values.push(...filter.approvers, ...filter.reviewers);
+  }
   return {
-    owners,
-    pattern: filter === undefined ? rule.source : `${rule.source}#${filter.pattern}`,
+    owners: [...new Set(expandOwners(values, aliases))].sort(),
+    pattern: rule.source,
+    noParentOwners: rule.noParentOwners,
   };
 }
 
@@ -214,18 +237,24 @@ export async function loadOwners(root) {
   }
 
   function resolve(repoPath) {
-    let directory = dirname(normalizeRepoPath(repoPath));
+    const path = normalizeRepoPath(repoPath);
+    let directory = dirname(path);
     if (directory === '.') directory = '';
+    const owners = new Set();
+    let pattern = null;
     while (true) {
       const rule = byDirectory.get(directory);
       if (rule !== undefined) {
-        const resolved = ownersForRule(rule, repoPath, aliases);
-        if (resolved.owners.length > 0) return resolved;
+        const relativePath = directory === '' ? path : path.slice(directory.length + 1);
+        const resolved = ownersForRule(rule, aliases, relativePath);
+        for (const owner of resolved.owners) owners.add(owner);
+        pattern = resolved.pattern;
+        if (resolved.noParentOwners && resolved.owners.length > 0) break;
       }
       if (directory === '') break;
       directory = dirname(directory) === '.' ? '' : dirname(directory);
     }
-    return { owners: [], pattern: null };
+    return { owners: [...owners].sort(), pattern };
   }
 
   return { source: 'OWNERS', files: files.length, resolve };

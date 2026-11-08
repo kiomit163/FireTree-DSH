@@ -8,7 +8,8 @@
 - 源码/历史：Gitee 镜像 `https://gitee.com/mirrors/Kubernetes.git`，blobless、无工作区克隆；实际返回 140,166 个 commit 的完整历史（`--depth=300` 未生效），未 checkout 源码。
 - 样本：最近 50 个 `Merge pull request #...` merge commit；base 取第一父提交，文件列表用 `git diff-tree base..merge`；共 368 个文件。
 - 注册表：先跑 12 个顶层子系统，再细化到 **77 个**（`api`、`build`、`cluster`、`cmd`、`hack`、`test`、`third_party`、`vendor`、`repo-root`、`pkg/*` 的 30 个一级目录、`staging/src/k8s.io/*` 的 35 个仓库）。
-- **没有 CODEOWNERS**：Kubernetes 使用 `OWNERS`/`OWNERS_ALIASES`；已实现最小适配器（最近目录、filters、aliases、approvers/reviewers），从 git tree 提取 **594 个 OWNERS** 与根 `OWNERS_ALIASES`。owner 不再使用占位符。
+- **没有 CODEOWNERS**：Kubernetes 使用 `OWNERS`/`OWNERS_ALIASES`；已实现最小适配器（最近目录 + 父目录累积、filters、aliases、approvers/reviewers、`no_parent_owners`），从 git tree 提取 **594 个 OWNERS** 与根 `OWNERS_ALIASES`。owner 不再使用占位符。
+- 对拍：`test/owners-official.test.mjs` 使用 `kubernetes-sigs/prow/pkg/repoowners/repoowners_test.go` 的 `TestGetApprovers` / `TestExpandAliases` 语义：父目录累积、filter 全匹配、`no_parent_owners`、大小写不敏感 alias。
 - 没有定义接口注册表；因此本次没有 interface-change 原因。
 
 复现：
@@ -33,10 +34,12 @@ node scripts/pilot-assess.mjs `
 | 低置信 | 0 | 0 |
 | 跨子系统 PR | 11 | 12 |
 | dependency 原因 | 26 | 26 |
-| sensitive path 原因 | 4 | 4 |
+| sensitive path 原因 | 1 | 1 |
 | interface 原因 | 0（未建接口表） | 0（未建接口表） |
 | OWNERS 文件 | 594 | 594 |
 | 无 owner 的 PR | 0 | 0 |
+
+> `testdata/` 已按测试夹具处理：`testdata/*.pem` 不再触发 security L2。`142397` 仍因多模块依赖保持 L2；敏感路径原因从 4 降为 1（`143776` 的 `pkg/registry/rbac`）。
 
 细化后唯一的 tier 变化：`#142763` 从 L1 → L2，原因是同时改动 `staging-apimachinery` 与 `staging-apiserver`。这说明**粗粒度确实会低估跨子系统，但在本样本里只低估 1/50**，不是主要误差来源。
 
@@ -45,20 +48,20 @@ node scripts/pilot-assess.mjs `
 典型 L2：
 
 - `143751`：`pkg/scheduler` 与 `staging/src/k8s.io/kube-scheduler` 跨子系统；
-- `142397`：多模块 `go.mod/go.sum` + 安全敏感路径；
+- `142397`：多模块 `go.mod/go.sum`；testdata 证书已豁免，不再贡献 sensitive 原因；
 - `143776`：`pkg/registry/rbac/rest` 命中 security 段；
 - `143657`：`staging` + `vendor` + 根依赖跨子系统；
 - `142763`：`apimachinery` 与 `apiserver` 跨仓库。
 
 Live 抽样：`#143751` 经 `firetree_assess` 实际调用得到 **L2**，与脚本报告一致；打开 assessment 后可看到 `pkg/scheduler` 与 `staging/.../kube-scheduler` 的真实 owner。
 
-OWNERS 验证：加载 **594 个 OWNERS**、50 个 PR 全部解析出 owner（`ownerless_prs=[]`）。例如 `go.mod` 命中根 `filters` 的 `go\.(mod|sum|work|work\.sum)$`，`pkg/scheduler/...` 命中 `pkg/scheduler/OWNERS`，`staging/.../kube-scheduler/...` 命中对应 staging OWNERS。Live `#143751` 解析出 **19 个真实 owner**，不再含 `@kubernetes/pilot-owner`。
+OWNERS 验证：加载 **594 个 OWNERS**、50 个 PR 全部解析出 owner（`ownerless_prs=[]`）。例如 `go.mod` 命中根 `filters` 的 `go\.(mod|sum|work|work\.sum)$`，`pkg/scheduler/...` 累积根、`pkg`、`pkg/scheduler` 的 OWNERS，`staging/.../kube-scheduler/...` 命中对应 staging OWNERS。Live `#143751` 解析出 **26 个真实 owner**，不再含 `@kubernetes/pilot-owner`。
 
 ## 3. 发现
 
 1. **粗粒度低估跨子系统，但幅度有限**：12 → 77 个子系统后只多 1 个 L2（`#142763`）。原先“27 个 L1 中可能大量是误判”的假设被数据削弱；下一步更值得做的是接口表和 owner。
-2. **testdata 的 `.pem` 被当 security 敏感路径**：`142397` 的 `staging/.../testdata/mldsa_*.pem` 触发 sensitive path。它们看起来是测试证书，是否应阻断 L2 需要团队决定；当前规则不区分 `testdata`。
-3. **OWNERS 适配器已实现，但仍是“最小”语义**：支持最近目录、`filters`（按最后一个匹配）、`aliases`、approvers/reviewers；忽略 `emeritus_approvers`、`options`、复杂 YAML。真实 owner 已解析，但不能等同 Kubernetes 官方 OWNERS 工具的全部行为。
+2. **testdata 的 `.pem` 已决定豁免 security L2**：`testdata/` 加入测试路径集合，`.pem` 不再触发 sensitive path；`142397` 仍因依赖保持 L2。真实密钥泄露仍应由 secret scanning 负责，FireTree 不替代它。
+3. **OWNERS 适配器已对拍，但仍是“最小”实现**：支持父目录累积、`filters`（所有匹配）、大小写不敏感 `aliases`、`no_parent_owners`、approvers/reviewers；忽略 `emeritus_approvers`、`options` 其他字段、复杂 YAML。对拍用例来自 Prow 官方测试，但不是直接运行 Prow 二进制。
 4. **没有接口注册表就不能验证接口变更**：`staging/src/k8s.io/kube-scheduler/framework/interface.go` 这类文件被跨子系统规则捕获，但不是因为 interface-change。
 5. **多模块 `go.mod/go.sum` 会放大 dependency L2**：26 条 dependency 原因；是否“依赖变更必 L2”需要真实团队校准。
 
@@ -86,6 +89,5 @@ OWNERS 验证：加载 **594 个 OWNERS**、50 个 PR 全部解析出 owner（`o
 
 ## 6. 下一步
 
-1. 用 Kubernetes 官方 `verify-owners`/OWNERS 测试数据对拍当前适配器，确认 filters 顺序与 aliases 语义；
-2. 决定 `testdata/*.pem` 是否应豁免 security L2；
-3. 再选 5 个 L2 做人工可接受性判定；没有这一步，不能谈误拦率。
+1. 用 Prow 官方测试集做 CI 对拍（当前是改编用例，不是运行 Prow 二进制）；
+2. 再选 5 个 L2 做人工可接受性判定；没有这一步，不能谈误拦率。

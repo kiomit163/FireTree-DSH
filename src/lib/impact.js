@@ -37,7 +37,7 @@ const DEPENDENCY_FILES = new Set([
 
 const SECURITY_SEGMENTS = new Set(['auth', 'security', 'crypto', 'secret', 'secrets', 'iam', 'rbac', 'permission', 'permissions']);
 const DATA_SEGMENTS = new Set(['migration', 'migrations', 'schema', 'schemas', 'database', 'databases', 'seed', 'seeds']);
-const TEST_SEGMENTS = new Set(['test', 'tests', '__tests__', 'spec', 'specs', 'e2e']);
+const TEST_SEGMENTS = new Set(['test', 'tests', '__tests__', 'spec', 'specs', 'e2e', 'testdata']);
 const DOC_SEGMENTS = new Set(['docs', 'doc', 'documentation']);
 const CONFIG_EXTENSIONS = new Set(['.json', '.yaml', '.yml', '.toml', '.ini', '.conf']);
 
