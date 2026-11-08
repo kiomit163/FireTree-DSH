@@ -1,6 +1,8 @@
 # Kubernetes 50-PR 规模预演
 
 > 日期：2026-11-08。性质：**Stage 0 规模预演**。OWNERS 适配器为最小实现，不是 M1，不冒充团队试点或 CI 证据。
+>
+> 后续证据升级：50 个 PR 已接入真实 Prow unit JUnit，见 [PILOT-EVIDENCE.md](PILOT-EVIDENCE.md)。
 
 ## 1. 方法与边界
 

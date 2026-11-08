@@ -15,7 +15,8 @@
 | W2.15 | DONE (autonomous) | 5 个 L2 规则一致性审计：`docs/L2-ADJUDICATION.md`；无 human signoff / 无 M1 声明 | 2026-11-08 |
 | W2.16 | DONE | autonomous 技术证据模式：`src/lib/technical.js`、`schemas/technical-evidence.schema.json`、`test/autonomous.test.mjs`（4/4）；A2 上限；live L2 build/check ok；state 投影 `technical_evidence` | 2026-11-08 |
 | W2.17 | DONE (mixed A1/A2) | OTel 50 + K8s 50 逐 PR autonomous 技术证据：`scripts/pilot-technical-evidence.mjs`、`docs/PILOT-EVIDENCE.md`；100/100 生成；49 OTel 已升级 A2 coverage，51 仍 A1 analysis-only | 2026-11-08 |
-| W2.18 | DONE (49/50) | Codecov coverage adapter：`scripts/pilot-codecov-evidence.mjs`；49 OTel A2/ci-evidence，`#16308` 无报告保持 A1；未接入 JUnit/SARIF/SBOM | 2026-11-08 |
+| W2.18 | DONE (49/50) | Codecov coverage adapter：`scripts/pilot-codecov-evidence.mjs`；49 OTel A2/ci-evidence，`#16308` 无报告保持 A1 | 2026-11-08 |
+| W2.19 | DONE (50/50) | Prow JUnit adapter：`scripts/pilot-prow-junit-evidence.mjs`；50 K8s A2/ci-evidence，真实 Prow unit JUnit | 2026-11-08 |
 | W9.4 | BLOCKED | 需 10 个真实 L2 与目标团队/仓库 | — |
 | W6.6 | BLOCKED | 需 50 条真实影响标注集 | — |
 
