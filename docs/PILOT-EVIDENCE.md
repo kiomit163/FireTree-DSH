@@ -1,75 +1,95 @@
-# 100 PR autonomous 技术证据
+# 100 PR autonomous 技术证据（含 49 个 A2 coverage）
 
-> 日期：2026-11-08。性质：**analysis-only / A1 技术证据**。不是交付回执，不是 CI 证据，不是 M1/M2。
+> 日期：2026-11-08。性质：49 个 OTel PR 为 **A2 / ci-evidence / coverage**；51 个为 **A1 / analysis-only**。不是交付回执，不是 M1/M2。
 
 ## 1. 结果
 
-| 项目 | 样本 | 生成 | 失败 | L0 | L1 | L2 |
+| 项目 | 样本 | A2 CI coverage | A1 analysis-only | L0 | L1 | L2 |
 |---|---:|---:|---:|---:|---:|---:|
-| OpenTelemetry Collector | 50 | 50 | 0 | 17 | 15 | 18 |
-| Kubernetes | 50 | 50 | 0 | 11 | 26 | 13 |
-| 合计 | 100 | 100 | 0 | 28 | 41 | 31 |
+| OpenTelemetry Collector | 50 | **49** | 1（`#16308` 无 Codecov 报告） | 17 | 15 | 18 |
+| Kubernetes | 50 | 0 | 50（未接入 TestGrid JUnit） | 11 | 26 | 13 |
+| 合计 | 100 | **49** | **51** | 28 | 41 | 31 |
 
-每个 PR 产出：
-
-- `.firetree/changes/pr-<number>/assessment.json`
-- `.firetree/pilot-analysis/pr-<number>.json`
-- `.firetree/evidence/pr-<number>.json`
-
-技术证据字段：
+A2 证据：
 
 ```json
 {
   "schema": "firetree.technical-evidence/v0",
   "mode": "autonomous",
-  "assurance": "A1",
-  "scope": "analysis-only",
+  "assurance": "A2",
+  "scope": "ci-evidence",
   "human_signoff": false,
   "completion_claim": false,
   "milestone_claim": false
 }
 ```
 
-证据 producer：`tool:firetree-pilot-assess`；kind：`analysis`。  
-它不是 test/coverage/SARIF/SBOM。
+- evidence kind：`coverage`
+- producer：`ci:codecov`
+- Codecov 报告：`ci_passed=true`、`state=complete`
+- coverage 范围：约 **91.25%–91.38%**
 
-## 2. 生成命令
+A1 证据：
+
+```json
+{
+  "scope": "analysis-only",
+  "assurance": "A1"
+}
+```
+
+## 2. 每个 PR 的工件
+
+- `.firetree/changes/pr-<number>/assessment.json`
+- `.firetree/pilot-analysis/pr-<number>.json`（A1）
+- `.firetree/pilot-ci/pr-<number>-codecov.json`（A2，49 个）
+- `.firetree/evidence/pr-<number>.json`
+
+49 个 A2 文件已由 `check mode=autonomous` 校验；100 个 per-PR 工件（49 A2 + 51 A1）全部通过 harness 语义检查。旧的 `pr-143751-owned4` 测试工件不属于这 100 个，缺少 `scope`，不计入。
+
+## 3. 生成命令
+
+A1 analysis 基线：
 
 ```powershell
 node scripts/pilot-technical-evidence.mjs `
   --root  D:\FireTree-DSH\.tmp\otel-pilot\opentelemetry-collector-main `
   --report D:\FireTree-DSH\.tmp\otel-pilot\report.json `
-  --repo open-telemetry/opentelemetry-collector `
-  --out D:\FireTree-DSH\.tmp\otel-pilot\evidence-summary.json
+  --repo open-telemetry/opentelemetry-collector
 ```
 
-Kubernetes 同理，`--repo kubernetes/kubernetes`，report 用 `report-owned.json`。
+A2 Codecov 升级：
 
-生成脚本内置 `check mode=autonomous`，100/100 通过。
+```powershell
+# 报告已用 curl 缓存在 .tmp/otel-pilot/codecov/<number>.json
+node scripts/pilot-codecov-evidence.mjs `
+  --root  D:\FireTree-DSH\.tmp\otel-pilot\opentelemetry-collector-main `
+  --report D:\FireTree-DSH\.tmp\otel-pilot\report.json `
+  --cache D:\FireTree-DSH\.tmp\otel-pilot\codecov `
+  --out   D:\FireTree-DSH\.tmp\otel-pilot\codecov-summary.json
+```
 
-重启 DSH host 后 live 抽查：
+`#16308` 返回 404，保留 A1 analysis-only。
 
-- K8s `pr-143751`：`firetree_receipt check mode=autonomous` → `ok=true`，state `0 pending`；
-- OTel `pr-16250`：`firetree_receipt check mode=autonomous` → `ok=true`，state `0 pending`。
+## 4. 这证明了什么
 
-## 3. 这证明了什么
+- 真实 OTel 提交的 Codecov coverage 报告可以下载、校验 `commitid`/`ci_passed`、作为外部 CI 证据；
+- `scope` 从 `analysis-only` 升级到 `ci-evidence`，`assurance` 从 A1 升级到 A2；
+- 49 个 PR 的 A2 工件全部通过 build/check；
+- 没有人类参与，也没有伪造 human signoff。
 
-- assessment → analysis evidence → technical evidence → check 的 autonomous 闭环可以在 100 个真实 PR 上跑通；
-- 每个工件有 assessment 哈希、impact、owner、tier、expiry；
-- 无人类参与，也没有伪造 human signoff；
-- state 对单个样本显示 0 pending（technical evidence 存在时不再报 governed gaps）。
+## 5. 没有证明什么
 
-## 4. 没有证明什么
+- coverage 不等于测试全部通过；它是 Codecov 上传的覆盖率报告；
+- 没有 JUnit 测试结果、SARIF、SBOM；
+- K8s 50 个仍是 A1 analysis-only；TestGrid JUnit 尚未接入；
+- 不是人类验收，不是 M1/M2；
+- coverage 百分比只说明覆盖，不说明变更行为正确；
+- Codecov 报告获取依赖公开 API；不可用时应降回 A1，不能伪造。
 
-- **没有 test/coverage/SARIF/SBOM 证据**：analysis-only 只证明“分析和分级已执行”，不证明代码行为正确；
-- 没有 A2 CI 证据；
-- 没有人类可接受性判定；
-- 没有 M1/M2 里程碑；
-- K8s 的 merge commit 文件集仍可能包含合并结果，不等于 PR 分支原始 diff；
-- OTel/K8s 的 source/registry 是 .tmp 中的隔离快照，不是目标团队试点。
+## 6. 下一步
 
-## 5. 下一步
-
-1. 对每个 PR 接入真实 JUnit/coverage/SARIF/SBOM，才能把 scope 从 `analysis-only` 升级为 `test-evidence` / `ci-evidence`；
-2. 没有这些证据时，技术证据只能停在 A1；
-3. 如果要回答“L2 是否过严”，仍需人类或组织政策，autonomous 不能替代。
+1. 为 K8s 接入 TestGrid/JUnit（需要可访问的 GCS artifact 路径或凭据）；
+2. 为 OTel 补齐 `#16308` 的 coverage 或声明其 A1；
+3. 如要 SARIF/SBOM，接入 CodeQL/SBOM 生成器；
+4. 没有这些证据的 PR 保持 `analysis-only`，不升级声明。
