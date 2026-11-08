@@ -111,6 +111,7 @@ K8s 流程：merge commit 的第二父提交 → GitHub statuses → Prow `targe
 ## 5. SARIF / SBOM 状态
 
 - `#16308` 已有**本地** SARIF + SPDX SBOM，A1/test-evidence；
+- 技术证据检查已加入 SARIF 2.1.0（runs/tool.driver）与 SPDX/CycloneDX 结构校验；
 - 其余 99 个 A2 仍以 coverage/JUnit 为主，没有把本地 SARIF/SBOM 混入 A2 工件；
 - per-PR 的 **CodeQL SARIF** 仍不可得：code-scanning API `Requires authentication`；
 - GitHub Actions artifact 下载 `401`；nightly.link 可下载公开 artifact，但需要 run ID（GitHub API 当前 rate limit=0）；

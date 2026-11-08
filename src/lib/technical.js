@@ -1,8 +1,10 @@
 /** Autonomous technical evidence checks. This artifact is not a delivery receipt. */
 
 import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 
 import { readFiretreeJson, resolveWithin, sha256File, sha256Text } from './artifacts.js';
+import { validateSarif, validateSbom } from './extra-evidence.js';
 import { validateJsonSchema } from './schema.js';
 
 const TECHNICAL_SCHEMA = JSON.parse(readFileSync(new URL('../../schemas/technical-evidence.schema.json', import.meta.url), 'utf8'));
@@ -12,6 +14,18 @@ function sameArray(left, right) {
   return Array.isArray(left) && Array.isArray(right)
     && left.length === right.length
     && [...left].sort().every((value, index) => value === [...right].sort()[index]);
+}
+
+async function evidenceFormatGaps(file, item) {
+  if (item.kind !== 'sarif' && item.kind !== 'sbom') return [];
+  let value;
+  try {
+    value = JSON.parse(await readFile(file, 'utf8'));
+  } catch {
+    return [`evidence is not valid JSON: ${item.run_ref}`];
+  }
+  const gaps = item.kind === 'sarif' ? validateSarif(value) : validateSbom(value);
+  return gaps.map((gap) => `${item.run_ref}: ${gap}`);
 }
 
 async function evidenceGap(root, item) {
@@ -51,6 +65,10 @@ export async function checkTechnicalEvidenceSemantics(evidence, options) {
     if (/^agent(?:$|[:/])/i.test(item.producer)) gaps.push('evidence producer must not be the agent');
     const gap = await evidenceGap(options.root, item);
     if (gap !== null) gaps.push(gap);
+    if (gap === null && !/^https?:\/\//i.test(item.run_ref)) {
+      const formatGaps = await evidenceFormatGaps(resolveWithin(options.root, item.run_ref), item);
+      gaps.push(...formatGaps);
+    }
   }
 
   let assessmentRecord;
