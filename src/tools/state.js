@@ -121,6 +121,9 @@ async function changeEntries(root, change) {
     receiptPath = `${base}/receipt.json`;
     receipt = await optionalJson(root, receiptPath);
   }
+  const technicalEvidencePath = `.firetree/evidence/${id}.json`;
+  const technicalEvidence = await optionalHashed(root, technicalEvidencePath);
+  const autonomous = technicalEvidence !== null;
 
   const synthesisPlanPath = `${base}/synthesis/plan.json`;
   const synthesisPlan = await optionalHashed(root, synthesisPlanPath);
@@ -139,23 +142,27 @@ async function changeEntries(root, change) {
 
   const entries = [
     entry('assessment', id, assessment === null ? 'missing' : 'present', `${base}/assessment.json`, assessment?.created_at),
-    entry('hypotheses', id, hypotheses === null ? 'missing' : 'present', `${base}/hypotheses.json`),
-    entry('review', id, review === null ? 'missing' : 'present', `${base}/verdict.json`),
-    entry('receipt', id, receipt === null ? 'missing' : 'present', receiptPath),
   ];
   const nextActions = [];
+  if (hypotheses !== null || !autonomous) entries.push(entry('hypotheses', id, hypotheses === null ? 'missing' : 'present', `${base}/hypotheses.json`));
+  if (review !== null || !autonomous) entries.push(entry('review', id, review === null ? 'missing' : 'present', `${base}/verdict.json`));
+  if (receipt !== null || !autonomous) entries.push(entry('receipt', id, receipt === null ? 'missing' : 'present', receiptPath));
   if (assessment === null) nextActions.push(`Run firetree_assess for ${id}.`);
-  if (hypotheses === null) nextActions.push(`Record hypotheses for ${id} before receipt.`);
-  if (review === null) nextActions.push(`Open a review for ${id}.`);
-  if (receipt === null) nextActions.push(`Build the delivery receipt for ${id}.`);
+  if (!autonomous && hypotheses === null) nextActions.push(`Record hypotheses for ${id} before receipt.`);
+  if (!autonomous && review === null) nextActions.push(`Open a review for ${id}.`);
+  if (!autonomous && receipt === null) nextActions.push(`Build the delivery receipt for ${id}.`);
 
   if (assessment?.tier === 'L2' || synthesisPlan !== null) {
-    entries.push(entry('synthesis_plan', id, synthesisPlan === null ? 'missing' : 'present', synthesisPlanPath, synthesisPlan?.created_at));
+    if (synthesisPlan !== null || !autonomous) {
+      entries.push(entry('synthesis_plan', id, synthesisPlan === null ? 'missing' : 'present', synthesisPlanPath, synthesisPlan?.created_at));
+    }
     if (synthesisPlan === null) {
-      nextActions.push(`Plan independent-seat synthesis for ${id}.`);
+      if (!autonomous) nextActions.push(`Plan independent-seat synthesis for ${id}.`);
     } else if (synthesisRounds.length === 0) {
-      entries.push(entry('synthesis_round', `${id}:round-1`, 'missing', `${base}/synthesis/round-1.json`));
-      nextActions.push(`Record synthesis round 1 for ${id}.`);
+      if (!autonomous) {
+        entries.push(entry('synthesis_round', `${id}:round-1`, 'missing', `${base}/synthesis/round-1.json`));
+        nextActions.push(`Record synthesis round 1 for ${id}.`);
+      }
     } else {
       for (const round of synthesisRounds) {
         entries.push(entry('synthesis_round', `${id}:round-${round.round}`, 'present', round.path, round.createdAt));
@@ -163,8 +170,6 @@ async function changeEntries(root, change) {
     }
   }
 
-  const technicalEvidencePath = `.firetree/evidence/${id}.json`;
-  const technicalEvidence = await optionalHashed(root, technicalEvidencePath);
   if (technicalEvidence !== null) {
     entries.push(entry('technical_evidence', id, 'present', technicalEvidencePath, technicalEvidence.created_at));
   }

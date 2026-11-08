@@ -168,6 +168,7 @@ test('change state projects autonomous technical evidence', async () => {
 
     const state = await createStateTool(ctx).execute({ change: 'chg-state-auto' }, EXEC);
     assert.equal(state.entries.find((entry) => entry.kind === 'technical_evidence').status, 'present');
+    assert.equal(state.counts.pending, 0);
     assert.deepEqual(validateJsonSchema(state, createStateTool(ctx).output.schema), []);
   } finally {
     await workspace.cleanup();
