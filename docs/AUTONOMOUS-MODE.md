@@ -78,13 +78,14 @@ M1/M2 原定义仍然需要人类；autonomous 模式是并行的技术轨道，
 
 ## 6. Live 验证
 
-2026-11-08，在 Kubernetes 预演 fixture 上对 `#143751`（L2）执行：
+2026-11-08 重启 DSH 后，在 Kubernetes/OTel fixture 上验证：
 
-- `firetree_receipt build mode=autonomous` → `ok=true`；
-- `firetree_receipt check mode=autonomous` → `ok=true`；
-- 工件：`.firetree/evidence/pr-143751-owned4.json`；
-- `schema=firetree.technical-evidence/v0`、`tier=L2`、`assurance=A1`；
+- `firetree_receipt check mode=autonomous change=pr-143751` → `ok=true; 0 gap(s)`；
+- `firetree_receipt check mode=autonomous change=pr-16250` → `ok=true; 0 gap(s)`；
+- `firetree_state change=pr-143751` / `pr-16250` → `0 pending`；
+- 工件：`.firetree/evidence/pr-143751.json` / `pr-16250.json`；
+- `schema=firetree.technical-evidence/v0`、`assurance=A1`、`scope=analysis-only`；
 - `human_signoff=false`、`completion_claim=false`、`milestone_claim=false`；
-- evidence producer：`local:node-test`（本地确定性测试输出，不是 CI A2，也不是 agent 自证）。
+- evidence producer：`tool:firetree-pilot-assess`（确定性分析，不是 CI A2，也不是 agent 自证）。
 
-这证明 autonomous 模式可以产出可复核的技术证据，但**不证明** L2 交付已被人类接受。
+注意：更新 schema 后，DSH host 需要重启才能加载新的工具模块；重启前 live check 会因旧 schema 误报 gap。重启后以上 live check 通过。

@@ -14,7 +14,7 @@
 | W2.14 | DONE (本地) | Prow 二进制级对拍：`tools/prow-owners-probe/`、`fixtures/owners-prow/`、`scripts/compare-prow-owners.mjs`、`.github/workflows/prow-owners-parity.yml`；Ubuntu Docker 官方测试 PASS，8/8 parity；GitHub runner 未跑 | 2026-11-08 |
 | W2.15 | DONE (autonomous) | 5 个 L2 规则一致性审计：`docs/L2-ADJUDICATION.md`；无 human signoff / 无 M1 声明 | 2026-11-08 |
 | W2.16 | DONE | autonomous 技术证据模式：`src/lib/technical.js`、`schemas/technical-evidence.schema.json`、`test/autonomous.test.mjs`（4/4）；A2 上限；live L2 build/check ok；state 投影 `technical_evidence` | 2026-11-08 |
-| W2.17 | DONE (A1/analysis-only) | OTel 50 + K8s 50 逐 PR autonomous 技术证据：`scripts/pilot-technical-evidence.mjs`、`docs/PILOT-EVIDENCE.md`；100/100 build+check，0 failed；scope=analysis-only | 2026-11-08 |
+| W2.17 | DONE (A1/analysis-only) | OTel 50 + K8s 50 逐 PR autonomous 技术证据：`scripts/pilot-technical-evidence.mjs`、`docs/PILOT-EVIDENCE.md`；100/100 build+check，0 failed；scope=analysis-only；重启 host 后 live 抽查 ok | 2026-11-08 |
 | W9.4 | BLOCKED | 需 10 个真实 L2 与目标团队/仓库 | — |
 | W6.6 | BLOCKED | 需 50 条真实影响标注集 | — |
 

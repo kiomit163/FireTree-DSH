@@ -47,6 +47,11 @@ Kubernetes 同理，`--repo kubernetes/kubernetes`，report 用 `report-owned.js
 
 生成脚本内置 `check mode=autonomous`，100/100 通过。
 
+重启 DSH host 后 live 抽查：
+
+- K8s `pr-143751`：`firetree_receipt check mode=autonomous` → `ok=true`，state `0 pending`；
+- OTel `pr-16250`：`firetree_receipt check mode=autonomous` → `ok=true`，state `0 pending`。
+
 ## 3. 这证明了什么
 
 - assessment → analysis evidence → technical evidence → check 的 autonomous 闭环可以在 100 个真实 PR 上跑通；
