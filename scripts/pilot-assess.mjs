@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import { normalizeRepoPath } from '../src/lib/glob.js';
 import { analyzeImpact } from '../src/lib/impact.js';
 import { loadCodeowners } from '../src/lib/codeowners.js';
+import { loadOwners } from '../src/lib/owners.js';
 import { loadRegistry } from '../src/lib/registry.js';
 
 function usage() {
@@ -50,6 +51,7 @@ async function main() {
 
   const registry = await loadRegistry(root);
   const codeowners = await loadCodeowners(root);
+  const owners = codeowners ?? await loadOwners(root);
   const prs = [];
   const failures = [];
 
@@ -64,7 +66,7 @@ async function main() {
         files,
         subsystems: registry.subsystems,
         interfaces: registry.interfaces,
-        codeowners,
+        codeowners: owners,
       });
       prs.push({
         number: pr.number,
@@ -103,6 +105,11 @@ async function main() {
     tiers: countBy(prs.map((pr) => pr.tier)),
     reason_counts: countBy(prs.flatMap((pr) => pr.reasons.map((reason) => reason.split(':')[0]))),
     confidence: countBy(prs.map((pr) => pr.confidence)),
+    owner_resolution: {
+      source: owners?.source ?? 'none',
+      files: owners?.files ?? 0,
+      ownerless_prs: prs.filter((pr) => pr.impact.owners.length === 0).map((pr) => pr.number),
+    },
     unknown_prs: prs.filter((pr) => pr.impact.unknown.length > 0).map((pr) => pr.number),
     interface_prs: prs.filter((pr) => pr.impact.interfaces.length > 0).map((pr) => pr.number),
     cross_subsystem_prs: prs.filter((pr) => pr.reasons.some((reason) => reason.startsWith('cross-subsystem:'))).map((pr) => pr.number),

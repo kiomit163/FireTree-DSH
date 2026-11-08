@@ -9,6 +9,7 @@
 | W2.5 | DONE | `src/tools/synthesize.js`、`schemas/synthesis.schema.json`；`test/synthesize.test.mjs`（3/3） | 2026-11-07 |
 | W2.10 | DONE | receipt↔review/synthesis 工件联动：`src/lib/receipt.js`、`src/tools/receipt.js`；L2 synthesis 摘要；`test/receipt.test.mjs`（6/6） | 2026-11-07 |
 | W2.11 | DONE | state synthesis 投影：`src/tools/state.js`；`test/state.test.mjs`（6/6） | 2026-11-07 |
+| W2.12 | DONE | Kubernetes OWNERS 适配器：`src/lib/owners.js`；`test/owners.test.mjs`（3/3）；594 OWNERS / 50 PR / 0 ownerless | 2026-11-08 |
 | W9.4 | BLOCKED | 需 10 个真实 L2 与目标团队/仓库 | — |
 | W6.6 | BLOCKED | 需 50 条真实影响标注集 | — |
 

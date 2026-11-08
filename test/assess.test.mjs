@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { rm } from 'node:fs/promises';
+import { rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
@@ -138,6 +138,27 @@ test('declared higher tier is allowed and recorded', async () => {
   }
 });
 
+test('assess falls back to OWNERS when CODEOWNERS is absent', async () => {
+  const workspace = await createM1Workspace();
+  try {
+    await rm(join(workspace.root, 'CODEOWNERS'));
+    await writeFile(join(workspace.root, 'OWNERS'), 'approvers:\n  - alice\nreviewers:\n  - bob\n', 'utf8');
+    const tool = createAssessTool(contextFor(workspace.root));
+    const output = await tool.execute(assessArgs({
+      change: 'change-owners',
+      files: ['services/billing/charge.mjs'],
+    }), EXEC);
+    assert.equal(output.ok, true);
+    assert.ok(output.impact.owners.includes('@alice'));
+    assert.ok(output.impact.owners.includes('@bob'));
+    const artifact = await readFiretreeJson(workspace.root, '.firetree/changes/change-owners/assessment.json', { verifyHash: true });
+    assert.ok(artifact.value.impact.owners.includes('@alice'));
+    assert.ok(artifact.value.impact.owners.includes('@bob'));
+  } finally {
+    await workspace.cleanup();
+  }
+});
+
 test('missing policy, empty files, invalid path, and missing agent fail closed', async () => {
   const workspace = await createM1Workspace();
   try {
@@ -152,3 +173,4 @@ test('missing policy, empty files, invalid path, and missing agent fail closed',
     await workspace.cleanup();
   }
 });
+

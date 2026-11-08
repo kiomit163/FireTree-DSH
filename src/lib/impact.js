@@ -178,8 +178,10 @@ export function analyzeImpact(input) {
       for (const test of subsystem.tests ?? []) tests.add(test);
     }
 
-    const codeownerMatch = resolveCodeowners(file, input.codeowners ?? null);
-    for (const owner of codeownerMatch.owners) owners.add(owner);
+    const ownerMatch = input.codeowners && typeof input.codeowners.resolve === 'function'
+      ? input.codeowners.resolve(file)
+      : resolveCodeowners(file, input.codeowners ?? null);
+    for (const owner of ownerMatch.owners) owners.add(owner);
 
     for (const contract of interfaces) {
       if (!matchesGlob(file, contract.file)) continue;

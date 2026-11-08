@@ -6,6 +6,7 @@ import { ArtifactError, assertSafeId, sha256Text, writeFiretreeJson } from '../l
 import { loadCodeowners } from '../lib/codeowners.js';
 import { normalizeRepoPath } from '../lib/glob.js';
 import { analyzeImpact, ImpactError } from '../lib/impact.js';
+import { loadOwners } from '../lib/owners.js';
 import { loadRegistry } from '../lib/registry.js';
 import { assertJsonSchemaValue } from '../lib/schema.js';
 import { toToolSchema } from '../lib/tool-schema.js';
@@ -161,6 +162,7 @@ export function createAssessTool(ctx) {
         throw error;
       }
       const codeowners = await loadCodeowners(root);
+      const owners = codeowners ?? await loadOwners(root);
 
       let analysis;
       try {
@@ -168,7 +170,7 @@ export function createAssessTool(ctx) {
           files: parsed.files,
           subsystems: registry.subsystems,
           interfaces: registry.interfaces,
-          codeowners,
+          codeowners: owners,
         });
       } catch (error) {
         if (error instanceof ImpactError) throw new AssessError(error.code, error.message);
