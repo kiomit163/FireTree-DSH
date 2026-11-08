@@ -151,6 +151,7 @@ test('assess falls back to OWNERS when CODEOWNERS is absent', async () => {
     assert.equal(output.ok, true);
     assert.ok(output.impact.owners.includes('@alice'));
     assert.ok(output.impact.owners.includes('@bob'));
+    assert.ok(!output.impact.owners.includes('@team-billing'));
     const artifact = await readFiretreeJson(workspace.root, '.firetree/changes/change-owners/assessment.json', { verifyHash: true });
     assert.ok(artifact.value.impact.owners.includes('@alice'));
     assert.ok(artifact.value.impact.owners.includes('@bob'));

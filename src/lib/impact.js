@@ -165,6 +165,9 @@ export function analyzeImpact(input) {
   const unknown = [];
   const unresolvedConsumers = new Set();
   const interfaceChanges = new Set();
+  const hasOwnerResolver = input.codeowners !== null
+    && input.codeowners !== undefined
+    && typeof input.codeowners.resolve === 'function';
   const dependencyFiles = [];
   const sensitiveFiles = [];
 
@@ -174,7 +177,9 @@ export function analyzeImpact(input) {
     for (const subsystem of matchedSubsystems) {
       changedSubsystems.add(subsystem.id);
       if (!isL0Path(file)) codeSubsystems.add(subsystem.id);
-      for (const owner of subsystem.owners ?? []) owners.add(owner);
+      if (!hasOwnerResolver) {
+        for (const owner of subsystem.owners ?? []) owners.add(owner);
+      }
       for (const test of subsystem.tests ?? []) tests.add(test);
     }
 
