@@ -6,9 +6,9 @@
 
 | 项目 | 样本 | A2 | A1 | 主要证据 |
 |---|---:|---:|---:|---|
-| OpenTelemetry Collector | 50 | **49** | 1（`#16308`） | Codecov coverage，`ci:codecov` |
+| OpenTelemetry Collector | 50 | **49** | 1（`#16308`） | Codecov coverage；`#16308` 为本地 SARIF+SBOM A1 |
 | Kubernetes | 50 | **50** | 0 | Prow JUnit XML，`ci:prow` |
-| 合计 | 100 | **99** | **1** | coverage + JUnit |
+| 合计 | 100 | **99** | **1** | coverage + JUnit；1 个本地 SARIF/SBOM A1 |
 
 Tier 分布不变：
 
@@ -52,10 +52,15 @@ A2 证据：
 A1 证据：
 
 ```json
-{ "scope": "analysis-only", "assurance": "A1" }
+{ "scope": "test-evidence", "assurance": "A1" }
 ```
 
-`#16308` 是 L0 的 `config/configgrpc` + `.chloggen` 变更，没有 Codecov 报告；**明确保持 A1**。
+`#16308` 是 L0 的 `config/configgrpc` + `.chloggen` 变更，没有 Codecov 报告；已用 PR head tarball 在本地生成：
+
+- `golangci-lint --out-format sarif` → `.firetree/pilot-ci/pr-16308-sarif.json`（0 findings）；
+- `trivy fs --format spdx-json` → `.firetree/pilot-ci/pr-16308-sbom.spdx.json`（SPDX-2.3）。
+
+因此 `#16308` 是 **A1 / test-evidence**，不是 A2；本地工具不是 CI/CodeQL，不能升级为 A2。
 
 ## 2. 每个 PR 的工件
 
@@ -105,19 +110,18 @@ K8s 流程：merge commit 的第二父提交 → GitHub statuses → Prow `targe
 
 ## 5. SARIF / SBOM 状态
 
-当前**没有**把 SARIF/SBOM 升级为 A2，因为拿不到 per-PR 的公开工件：
+- `#16308` 已有**本地** SARIF + SPDX SBOM，A1/test-evidence；
+- 其余 99 个 A2 仍以 coverage/JUnit 为主，没有把本地 SARIF/SBOM 混入 A2 工件；
+- per-PR 的 **CodeQL SARIF** 仍不可得：code-scanning API `Requires authentication`；
+- GitHub Actions artifact 下载 `401`；nightly.link 可下载公开 artifact，但需要 run ID（GitHub API 当前 rate limit=0）；
+- GitHub dependency-graph SBOM 是仓库级，不是 per-PR。
 
-- CodeQL code-scanning API：`Requires authentication`；
-- GitHub Actions artifact 下载：`401`（public artifact listing 可读，下载需凭据）；
-- GitHub dependency-graph SBOM：可公开读取，但它是**仓库级** SBOM，不是 per-PR，且 API 已触发 rate limit；
-- K8s GCS listing：`403`；JUnit 能通过 Prow `lensArtifacts` 直达，SARIF/SBOM 没有同等公开路径。
-
-没有用占位文件冒充 SARIF/SBOM。需要只读 GitHub token / CI artifact 访问，或本地跑 CodeQL/Syft 并明确标 A1。
+没有用占位文件冒充 CI SARIF/SBOM；#16308 的本地工具链已明确标 A1。
 
 ## 6. 没有证明什么
 
 - coverage ≠ 测试全部通过；K8s JUnit 是 **unit** presubmit，不等于 e2e/integration 全覆盖；
-- 没有 SARIF、SBOM；
+- 没有 per-PR 的 CodeQL SARIF/SBOM；`#16308` 只有本地 SARIF/SBOM A1；
 - `#16308` 仍是 A1；
 - 不是人类验收，不是 M1/M2；
 - 证据只证明“CI 产出了这份 coverage/JUnit 并被哈希引用”，不证明变更行为完全正确。
