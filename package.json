@@ -12,6 +12,7 @@
     "./icon": "./icon.svg"
   },
   "files": [
+    "bin/**/*.mjs",
     "index.js",
     "src/**/*.js",
     "skills/**/SKILL.md",
@@ -20,6 +21,9 @@
     "locale/*.json",
     "icon.svg"
   ],
+  "bin": {
+    "firetree-check": "./bin/firetree-check.mjs"
+  },
   "scripts": {
     "test": "node --test",
     "check:docs": "node scripts/check-docs.mjs"

@@ -20,6 +20,7 @@
 | W2.20 | DONE | JUnit 严格校验：`src/lib/junit.js`、`test/junit.test.mjs`；50/50，9,130,105 tests / 0 failures / 0 errors / 0 skipped | 2026-11-08 |
 | W2.21 | DONE (A1) | `#16308` 无 Codecov，且 Actions 无 build-and-test run/artifact；PR head 本地 `golangci-lint` SARIF + `trivy` SPDX SBOM；A1/test-evidence，不升级 A2 | 2026-11-08 |
 | W2.22 | PARTIAL | SARIF/SBOM 本地 A1 已接入；per-PR CodeQL/CI SARIF 仍受认证/artifact 访问限制，未伪造 | 2026-11-08 |
+| W5.2 | DONE (local) | CI 证据检查：`bin/firetree-check.mjs`；governed/autonomous 两模式；exit 0/1/2；`test/ci-check.test.mjs`；文档 `docs/CI-ENFORCEMENT.md`；尚未接入真实 required check | 2026-11-08 |
 | W9.4 | BLOCKED | 需 10 个真实 L2 与目标团队/仓库 | — |
 | W6.6 | BLOCKED | 需 50 条真实影响标注集 | — |
 
