@@ -16,6 +16,7 @@
 | `hypotheses.schema.json` | M1：变更级假设台账，含 detection 与外部 evidence_ref |
 | `review.schema.json` | M2：L1 三步/L2 七步评审的 package/round/verdict 工件 |
 | `synthesis.schema.json` | M2：L2 独立席位综合集成的 plan/round 工件 |
+| `technical-evidence.schema.json` | autonomous：A1/A2 技术证据，禁止 human signoff / completion / milestone 声明 |
 
 配套纯函数：
 

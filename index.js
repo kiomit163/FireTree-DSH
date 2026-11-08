@@ -28,7 +28,7 @@ export const PROMPT_SECTION = {
     '- Only humans sign; agent self-sign count is always zero.',
     '- L2 claims each need an invariant and evidence; an unaccepted residual blocks.',
     '- Use firetree_state for current state; load the FireTree skills for full rules.',
-    '- M2: all seven FireTree tools are live; use review/synthesize for L2 and receipt before claiming completion.',
+    '- M2: all seven FireTree tools are live; governed delivery requires human sign-off, while autonomous mode emits A2 technical evidence and never claims completion.',
     '</firetree_protocol>',
   ].join('\n'),
 };

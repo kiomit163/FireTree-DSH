@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://firetree.local/schemas/technical-evidence.schema.json",
+  "title": "FireTree autonomous technical evidence v0",
+  "description": "Evidence-complete technical artifact for AI-only operation. It is not a delivery receipt, never carries human signoff, and cannot claim completion or a milestone.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "mode",
+    "change",
+    "tier",
+    "intent",
+    "classification",
+    "assessment",
+    "hypotheses",
+    "evidence",
+    "impact",
+    "expires_at",
+    "assurance",
+    "human_signoff",
+    "completion_claim",
+    "milestone_claim",
+    "created_at"
+  ],
+  "properties": {
+    "schema": { "const": "firetree.technical-evidence/v0" },
+    "mode": { "const": "autonomous" },
+    "change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base", "head", "files_sha256"],
+      "properties": {
+        "base": { "type": "string", "minLength": 1 },
+        "head": { "type": "string", "minLength": 1 },
+        "files_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "tier": { "type": "string", "enum": ["L0", "L1", "L2"] },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spec", "sha256"],
+      "properties": {
+        "spec": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subsystem", "kind", "method", "dossier_sha256"],
+      "properties": {
+        "subsystem": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "enum": ["simple", "large", "simple-giant", "open-complex-giant", "unknown"] },
+        "method": { "type": "string", "enum": ["decompose", "metasynthesis"] },
+        "dossier_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "tier", "auto_tier", "confidence"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "tier": { "type": "string", "enum": ["L0", "L1", "L2"] },
+        "auto_tier": { "type": "string", "enum": ["L0", "L1", "L2"] },
+        "confidence": { "type": "string", "enum": ["high", "low"] }
+      }
+    },
+    "hypotheses": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "verified", "accepted_risk"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "verified": { "type": "integer", "minimum": 0 },
+        "accepted_risk": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "producer", "run_ref", "sha256", "produced_at"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["test", "coverage", "sarif", "sbom", "bench"] },
+          "producer": { "type": "string", "minLength": 1 },
+          "run_ref": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "produced_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "impact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files", "subsystems", "interfaces", "owners", "traversed", "confidence"],
+      "properties": {
+        "files": { "type": "array", "items": { "type": "string" } },
+        "subsystems": { "type": "array", "items": { "type": "string" } },
+        "interfaces": { "type": "array", "items": { "type": "string" } },
+        "owners": { "type": "array", "items": { "type": "string" } },
+        "traversed": { "type": "boolean" },
+        "confidence": { "type": "string", "enum": ["high", "low"] }
+      }
+    },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "assurance": { "type": "string", "enum": ["A1", "A2"] },
+    "human_signoff": { "const": false },
+    "completion_claim": { "const": false },
+    "milestone_claim": { "const": false },
+    "created_at": { "type": "string", "format": "date-time" }
+  }
+}

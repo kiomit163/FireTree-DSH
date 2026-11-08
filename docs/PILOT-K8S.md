@@ -90,4 +90,4 @@ OWNERS 验证：加载 **594 个 OWNERS**、50 个 PR 全部解析出 owner（`o
 ## 6. 下一步
 
 1. Prow 官方测试已接入 CI workflow，并在 Linux Docker 中通过官方测试 + 8/8 对拍；GitHub runner 待真实触发，见 [PROW-OWNERS-PARITY.md](PROW-OWNERS-PARITY.md)；
-2. 再选 5 个 L2 做人工可接受性判定；没有这一步，不能谈误拦率。见 [L2-ADJUDICATION.md](L2-ADJUDICATION.md)。
+2. 5 个 L2 已在 autonomous 模式下做规则一致性审计；人类可接受性仍未判定，见 [L2-ADJUDICATION.md](L2-ADJUDICATION.md)。

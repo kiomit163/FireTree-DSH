@@ -13,12 +13,14 @@ import {
   synthesisSummary,
 } from '../lib/receipt.js';
 import { assertJsonSchemaValue } from '../lib/schema.js';
+import { checkTechnicalEvidenceSemantics, TECHNICAL_SCHEMA } from '../lib/technical.js';
 import { toToolSchema } from '../lib/tool-schema.js';
 
 const KINDS = new Set(['test', 'coverage', 'sarif', 'sbom', 'bench']);
 const ALLOWED_ARGS = new Set([
   'action',
   'change',
+  'mode',
   'intent',
   'classification',
   'evidence',
@@ -51,6 +53,7 @@ const OUTPUT_SCHEMA = {
     schema: { type: 'string', const: 'firetree.receipt-tool/v0' },
     gaps: { type: 'array', items: { type: 'string' } },
     receipt: { type: 'object' },
+    technical_evidence: { type: 'object' },
     artifact: {
       type: 'object',
       additionalProperties: false,
@@ -70,6 +73,7 @@ const PARAMETERS = {
   properties: {
     action: { type: 'string', enum: ['build', 'check'] },
     change: { type: 'string' },
+    mode: { type: 'string', enum: ['governed', 'autonomous'] },
     intent: {
       type: 'object',
       additionalProperties: false,
@@ -286,8 +290,15 @@ function validateArgs(args) {
     if (!ALLOWED_ARGS.has(key)) throw new ReceiptError('INVALID_ARGS', `unknown argument ${key}`);
   }
   if (!['build', 'check'].includes(args.action)) throw new ReceiptError('INVALID_ARGS', 'action must be build or check');
+  const mode = args.mode ?? 'governed';
+  if (!['governed', 'autonomous'].includes(mode)) throw new ReceiptError('INVALID_ARGS', 'mode must be governed or autonomous');
   const change = assertSafeId(args.change, 'change');
-  if (args.action === 'check') return { action: 'check', change };
+  if (args.action === 'check') return { action: 'check', change, mode };
+  if (mode === 'autonomous') {
+    if (args.review !== undefined || args.signoff !== undefined || args.correctness_case !== undefined) {
+      throw new ReceiptError('INVALID_ARGS', 'autonomous mode does not accept review, signoff, or correctness_case');
+    }
+  }
   if (args.correctness_case !== undefined && typeof args.correctness_case !== 'string') {
     throw new ReceiptError('INVALID_ARGS', 'correctness_case must be a path');
   }
@@ -296,6 +307,7 @@ function validateArgs(args) {
   return {
     action: 'build',
     change,
+    mode,
     intent: validateIntent(args.intent),
     classification: validateClassification(args.classification),
     evidence: args.evidence,
@@ -323,13 +335,13 @@ function failure(gaps) {
 export function createReceiptTool(ctx) {
   return {
     name: 'firetree_receipt',
-    description: 'Build or check the delivery receipt from external evidence, review, hypotheses, human sign-off, and an optional correctness case. check returns gaps instead of auto-fixing.',
+    description: 'Build or check a governed delivery receipt, or build/check autonomous A2 technical evidence. Governed mode requires human sign-off; autonomous mode never carries human sign-off and cannot claim completion.',
     parameters: PARAMETERS,
     output: {
       schema: toToolSchema(OUTPUT_SCHEMA),
       render: (_args, value) => [{
         type: 'text',
-        text: `firetree_receipt: ok=${String(value.ok)}; ${value.gaps.length} gap(s)${value.artifact === undefined ? '' : `; ${value.artifact.path}`}`,
+        text: `${value.technical_evidence === undefined ? 'firetree_receipt' : 'firetree_technical_evidence'}: ok=${String(value.ok)}; ${value.gaps.length} gap(s)${value.artifact === undefined ? '' : `; ${value.artifact.path}`}`,
       }],
     },
     async execute(args, exec) {
@@ -337,6 +349,24 @@ export function createReceiptTool(ctx) {
       const root = await rootFor(ctx, exec);
 
       if (parsed.action === 'check') {
+        if (parsed.mode === 'autonomous') {
+          let record;
+          try {
+            record = await readFiretreeJson(root, `.firetree/evidence/${parsed.change}.json`, { verifyHash: true, missing: 'null' });
+          } catch (error) {
+            return failure([error instanceof ArtifactError ? error.message : 'technical evidence hash check failed']);
+          }
+          if (record === null) return failure(['technical evidence is missing']);
+          const semantics = await checkTechnicalEvidenceSemantics(record.value, { root, change: parsed.change });
+          if (!semantics.valid) return failure(semantics.gaps);
+          return {
+            ok: true,
+            schema: 'firetree.receipt-tool/v0',
+            gaps: [],
+            technical_evidence: record.value,
+            artifact: { path: `.firetree/evidence/${parsed.change}.json`, sha256: record.sha256 ?? '' },
+          };
+        }
         let record;
         try {
           record = await readFiretreeJson(root, `.firetree/receipts/${parsed.change}.json`, { verifyHash: true, missing: 'null' });
@@ -380,6 +410,55 @@ export function createReceiptTool(ctx) {
       const preparedCase = await prepareCase(root, parsed.correctness_case);
       const gaps = [...preparedEvidence.gaps, ...preparedCase.gaps];
       if (gaps.length > 0) return failure(gaps);
+
+      if (parsed.mode === 'autonomous') {
+        const technical = {
+          schema: 'firetree.technical-evidence/v0',
+          mode: 'autonomous',
+          change: {
+            base: assessment.change.base,
+            head: assessment.change.head,
+            files_sha256: sha256Text(assessment.change.files.join('\n')),
+          },
+          tier: assessment.tier,
+          intent: parsed.intent,
+          classification: parsed.classification,
+          assessment: {
+            path: `.firetree/changes/${parsed.change}/assessment.json`,
+            sha256: assessmentRecord.sha256 ?? '',
+            tier: assessment.tier,
+            auto_tier: assessment.auto_tier,
+            confidence: assessment.confidence,
+          },
+          hypotheses,
+          evidence: preparedEvidence.evidence,
+          impact: {
+            files: assessment.impact.files,
+            subsystems: assessment.impact.subsystems,
+            interfaces: assessment.impact.interfaces,
+            owners: assessment.impact.owners,
+            traversed: assessment.impact.traversed,
+            confidence: assessment.confidence,
+          },
+          expires_at: parsed.expires_at,
+          assurance: parsed.assurance,
+          human_signoff: false,
+          completion_claim: false,
+          milestone_claim: false,
+          created_at: new Date().toISOString(),
+        };
+        assertJsonSchemaValue(technical, TECHNICAL_SCHEMA);
+        const semantics = await checkTechnicalEvidenceSemantics(technical, { root, change: parsed.change });
+        if (!semantics.valid) return failure(semantics.gaps);
+        const artifact = await writeFiretreeJson(root, `.firetree/evidence/${parsed.change}.json`, technical);
+        return {
+          ok: true,
+          schema: 'firetree.receipt-tool/v0',
+          gaps: [],
+          technical_evidence: technical,
+          artifact: { path: artifact.path, sha256: artifact.sha256 },
+        };
+      }
 
       let review = null;
       let reviewSignoff = null;
