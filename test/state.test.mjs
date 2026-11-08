@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
 import { validateJsonSchema } from '../src/lib/schema.js';
 import { createAssessTool } from '../src/tools/assess.js';
 import { createClassifyTool } from '../src/tools/classify.js';
+import { createReceiptTool } from '../src/tools/receipt.js';
 import { createStateTool } from '../src/tools/state.js';
 import { createSynthesizeTool } from '../src/tools/synthesize.js';
 import { createM1Workspace } from '../test-support/m1-workspace.mjs';
@@ -134,6 +135,40 @@ test('change state projects synthesis plan and rounds for L2', async () => {
     assert.equal(after.entries.find((entry) => entry.kind === 'synthesis_plan').status, 'present');
     assert.equal(after.entries.find((entry) => entry.kind === 'synthesis_round').status, 'present');
     assert.equal(after.counts.pending, 3); // hypotheses, review, receipt
+  } finally {
+    await workspace.cleanup();
+  }
+});
+
+test('change state projects autonomous technical evidence', async () => {
+  const workspace = await createM1Workspace();
+  try {
+    const ctx = contextFor(workspace.root);
+    const assess = createAssessTool(ctx);
+    await assess.execute({
+      base: '1111111111111111111111111111111111111111',
+      head: '2222222222222222222222222222222222222222',
+      files: ['services/billing/charge.mjs'],
+      change: 'chg-state-auto',
+    }, EXEC);
+    await mkdir(join(workspace.root, 'evidence'), { recursive: true });
+    await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"/>\n', 'utf8');
+    const receipt = createReceiptTool(ctx);
+    const built = await receipt.execute({
+      action: 'build',
+      mode: 'autonomous',
+      change: 'chg-state-auto',
+      intent: { spec: 'specs/billing.md', sha256: 'a'.repeat(64) },
+      classification: { subsystem: 'billing', kind: 'large', method: 'decompose', dossier_sha256: 'a'.repeat(64) },
+      evidence: [{ kind: 'test', producer: 'ci:github-actions', run_ref: 'evidence/junit.xml', produced_at: '2026-11-08T00:00:00Z' }],
+      expires_at: '2026-12-08T00:00:00Z',
+      assurance: 'A2',
+    }, EXEC);
+    assert.equal(built.ok, true);
+
+    const state = await createStateTool(ctx).execute({ change: 'chg-state-auto' }, EXEC);
+    assert.equal(state.entries.find((entry) => entry.kind === 'technical_evidence').status, 'present');
+    assert.deepEqual(validateJsonSchema(state, createStateTool(ctx).output.schema), []);
   } finally {
     await workspace.cleanup();
   }

@@ -59,6 +59,8 @@ autonomous 模式把保证上限显式降到 **A2：外部确定性证据完整*
 
 `check` 时带 `"mode":"autonomous"` 读取 technical evidence。
 
+`firetree_state` 的 change 投影会显示 `technical_evidence`（若存在）。
+
 ## 4. 硬规则
 
 - 证据 producer 不得是 `agent`；本地文件必须存在且 hash 一致；

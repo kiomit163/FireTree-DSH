@@ -4,7 +4,7 @@ import { ArtifactError, assertSafeId, firetreePath, listJsonFiles, readFiretreeJ
 import { toToolSchema } from '../lib/tool-schema.js';
 
 const ALLOWED_ARGUMENTS = new Set(['change', 'subsystem']);
-const KIND = ['dossier', 'subsystem', 'assessment', 'hypotheses', 'review', 'receipt', 'synthesis_plan', 'synthesis_round'];
+const KIND = ['dossier', 'subsystem', 'assessment', 'hypotheses', 'review', 'receipt', 'synthesis_plan', 'synthesis_round', 'technical_evidence'];
 
 const OUTPUT_SCHEMA = Object.freeze({
   type: 'object',
@@ -161,6 +161,12 @@ async function changeEntries(root, change) {
         entries.push(entry('synthesis_round', `${id}:round-${round.round}`, 'present', round.path, round.createdAt));
       }
     }
+  }
+
+  const technicalEvidencePath = `.firetree/evidence/${id}.json`;
+  const technicalEvidence = await optionalHashed(root, technicalEvidencePath);
+  if (technicalEvidence !== null) {
+    entries.push(entry('technical_evidence', id, 'present', technicalEvidencePath, technicalEvidence.created_at));
   }
 
   return { entries, nextActions };
