@@ -32,6 +32,22 @@ test('docs-only change is L0 when mapped and owner-resolved', async () => {
   }
 });
 
+test('docs/config/test files do not create a cross-subsystem L2 by themselves', async () => {
+  const workspace = await createM1Workspace();
+  try {
+    const docsOnly = await analyze(workspace, ['docs/README.md', 'services/billing/README.md']);
+    assert.equal(docsOnly.auto_tier, 'L0');
+    assert.deepEqual(docsOnly.reasons, []);
+    assert.equal(docsOnly.impact.traversed, true);
+
+    const codeWithDocs = await analyze(workspace, ['services/billing/charge.mjs', 'docs/README.md']);
+    assert.equal(codeWithDocs.auto_tier, 'L1');
+    assert.ok(!codeWithDocs.reasons.some((reason) => reason.startsWith('cross-subsystem:')));
+  } finally {
+    await workspace.cleanup();
+  }
+});
+
 test('regular code change is L1 with subsystem tests and owners', async () => {
   const workspace = await createM1Workspace();
   try {
@@ -54,7 +70,7 @@ test('interface change is L2 and pulls consumers into the impact set', async () 
     assert.deepEqual(result.impact.interfaces, ['billing.api']);
     assert.deepEqual(result.impact.subsystems, ['billing', 'checkout']);
     assert.ok(result.reasons.includes('interface changed: billing.api'));
-    assert.ok(result.reasons.some((reason) => reason.startsWith('cross-subsystem:')));
+    assert.ok(!result.reasons.some((reason) => reason.startsWith('cross-subsystem:')));
   } finally {
     await workspace.cleanup();
   }

@@ -158,6 +158,7 @@ export function analyzeImpact(input) {
   const interfaces = input.interfaces ?? [];
   const subsystemById = new Map(subsystems.map((subsystem) => [subsystem.id, subsystem]));
   const changedSubsystems = new Set();
+  const codeSubsystems = new Set();
   const changedInterfaces = new Set();
   const owners = new Set();
   const tests = new Set();
@@ -172,6 +173,7 @@ export function analyzeImpact(input) {
     if (matchedSubsystems.length === 0) unknown.push(file);
     for (const subsystem of matchedSubsystems) {
       changedSubsystems.add(subsystem.id);
+      if (!isL0Path(file)) codeSubsystems.add(subsystem.id);
       for (const owner of subsystem.owners ?? []) owners.add(owner);
       for (const test of subsystem.tests ?? []) tests.add(test);
     }
@@ -186,6 +188,7 @@ export function analyzeImpact(input) {
       for (const consumer of contract.consumers ?? []) {
         if (subsystemById.has(consumer)) {
           changedSubsystems.add(consumer);
+          codeSubsystems.add(consumer);
           const subsystem = subsystemById.get(consumer);
           for (const owner of subsystem.owners ?? []) owners.add(owner);
           for (const test of subsystem.tests ?? []) tests.add(test);
@@ -204,7 +207,7 @@ export function analyzeImpact(input) {
   const reasons = [];
   for (const file of unknown) reasons.push(`unknown path: ${file}`);
   for (const id of [...interfaceChanges].sort()) reasons.push(`interface changed: ${id}`);
-  if (changedSubsystems.size > 1) reasons.push(`cross-subsystem: ${[...changedSubsystems].sort().join(', ')}`);
+  if (codeSubsystems.size > 1) reasons.push(`cross-subsystem: ${[...codeSubsystems].sort().join(', ')}`);
   for (const file of dependencyFiles) reasons.push(`dependency changed: ${file}`);
   for (const file of sensitiveFiles) reasons.push(`sensitive path: ${file}`);
   for (const consumer of [...unresolvedConsumers].sort()) reasons.push(`consumer not registered: ${consumer}`);
@@ -212,7 +215,7 @@ export function analyzeImpact(input) {
   const l0 = files.every(isL0Path);
   const l2 = unknown.length > 0
     || changedInterfaces.size > 0
-    || changedSubsystems.size > 1
+    || codeSubsystems.size > 1
     || dependencyFiles.length > 0
     || sensitiveFiles.length > 0
     || unresolvedConsumers.size > 0;
