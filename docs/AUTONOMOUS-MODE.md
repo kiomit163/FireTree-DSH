@@ -72,3 +72,16 @@ autonomous 模式把保证上限显式降到 **A2：外部确定性证据完整*
 AI 可以在没有人类工程师的情况下继续做 **技术验证、影响分析、证据收集、50-PR 预演、CI 对拍**。它不能把“没有人类验收”包装成“交付已验收”。
 
 M1/M2 原定义仍然需要人类；autonomous 模式是并行的技术轨道，不是里程碑替代品。
+
+## 6. Live 验证
+
+2026-11-08，在 Kubernetes 预演 fixture 上对 `#143751`（L2）执行：
+
+- `firetree_receipt build mode=autonomous` → `ok=true`；
+- `firetree_receipt check mode=autonomous` → `ok=true`；
+- 工件：`.firetree/evidence/pr-143751-owned4.json`；
+- `schema=firetree.technical-evidence/v0`、`tier=L2`、`assurance=A1`；
+- `human_signoff=false`、`completion_claim=false`、`milestone_claim=false`；
+- evidence producer：`local:node-test`（本地确定性测试输出，不是 CI A2，也不是 agent 自证）。
+
+这证明 autonomous 模式可以产出可复核的技术证据，但**不证明** L2 交付已被人类接受。

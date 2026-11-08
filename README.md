@@ -80,11 +80,11 @@ FireTree 4.0/V5 的诊断结论（详见 `docs/THESIS.md`）：
 
 技术预演：[OpenTelemetry Collector 50-PR 预演](docs/PILOT-OTEL.md)（L0 17 / L1 15 / L2 18，unknown 0；非 M1）与 [Kubernetes 50-PR 规模预演](docs/PILOT-K8S.md)（细化后 L0 11 / L1 26 / L2 13；OWNERS 适配器已对拍，594 个 OWNERS / 0 ownerless；非 M1）。
 
-Prow OWNERS 二进制级对拍：[docs/PROW-OWNERS-PARITY.md](docs/PROW-OWNERS-PARITY.md)；autonomous 技术模式：[docs/AUTONOMOUS-MODE.md](docs/AUTONOMOUS-MODE.md)；5 个 L2 规则审计：[docs/L2-ADJUDICATION.md](docs/L2-ADJUDICATION.md)。
+Prow OWNERS 二进制级对拍：[docs/PROW-OWNERS-PARITY.md](docs/PROW-OWNERS-PARITY.md)；autonomous 技术模式：[docs/AUTONOMOUS-MODE.md](docs/AUTONOMOUS-MODE.md)；5 个 L2 规则一致性审计：[docs/L2-ADJUDICATION.md](docs/L2-ADJUDICATION.md)。
 
 本仓库现在有：可安装/卸载的 DSH 骨架（7 个工具 + 6 个技能占位）、短 prompt section、四个 M0 schema（含 correctness case v0）加 M1/M2 dossier/assessment/hypotheses/review/synthesis schema、L0/L1/L2 样例、冻结的 `metrics-v0`、风险/红队、迁移删除清单、规模基线与 [plan/STATUS.md](plan/STATUS.md)。7 个工具均已本地实现；真实 M1 试点与 M2 的 10 个 L2 数据仍待目标团队/仓库。
 
-主要证据：[plan/STATUS.md](plan/STATUS.md)、[plan/M1-STATUS.md](plan/M1-STATUS.md)、[plan/M2-STATUS.md](plan/M2-STATUS.md)、[schemas/README.md](schemas/README.md)、[docs/SCALE-BASELINE.md](docs/SCALE-BASELINE.md)。下一步是 M1/M2 真实试点（需目标团队/仓库）；M0 不构成百万行规模验证：基线在文件数与 PR 量上低于 §2 假设 >2×。
+主要证据：[plan/STATUS.md](plan/STATUS.md)、[plan/M1-STATUS.md](plan/M1-STATUS.md)、[plan/M2-STATUS.md](plan/M2-STATUS.md)、[schemas/README.md](schemas/README.md)、[docs/SCALE-BASELINE.md](docs/SCALE-BASELINE.md)。下一步：autonomous 技术轨道可继续（A2 上限，不签人、不声称完成）；governed M1/M2 仍需目标团队/仓库与人类签字。M0 不构成百万行规模验证：基线在文件数与 PR 量上低于 §2 假设 >2×。
 
 ## 7. 硬规则（任何阶段不得违反）
 
