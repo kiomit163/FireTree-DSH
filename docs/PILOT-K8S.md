@@ -52,7 +52,7 @@ node scripts/pilot-assess.mjs `
 
 Live 抽样：`#143751` 经 `firetree_assess` 实际调用得到 **L2**，与脚本报告一致；打开 assessment 后可看到 `pkg/scheduler` 与 `staging/.../kube-scheduler` 的真实 owner。
 
-OWNERS 验证：加载 **594 个 OWNERS**、50 个 PR 全部解析出 owner（`ownerless_prs=[]`）。例如 `go.mod` 命中根 `filters` 的 `go\.(mod|sum|work|work\.sum)$`，`pkg/scheduler/...` 命中 `pkg/scheduler/OWNERS`，`staging/.../kube-scheduler/...` 命中对应 staging OWNERS。
+OWNERS 验证：加载 **594 个 OWNERS**、50 个 PR 全部解析出 owner（`ownerless_prs=[]`）。例如 `go.mod` 命中根 `filters` 的 `go\.(mod|sum|work|work\.sum)$`，`pkg/scheduler/...` 命中 `pkg/scheduler/OWNERS`，`staging/.../kube-scheduler/...` 命中对应 staging OWNERS。Live `#143751` 解析出 **19 个真实 owner**，不再含 `@kubernetes/pilot-owner`。
 
 ## 3. 发现
 
