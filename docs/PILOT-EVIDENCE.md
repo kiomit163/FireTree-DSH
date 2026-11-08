@@ -55,7 +55,7 @@ A1 证据：
 { "scope": "test-evidence", "assurance": "A1" }
 ```
 
-`#16308` 是 L0 的 `config/configgrpc` + `.chloggen` 变更，没有 Codecov 报告；已用 PR head tarball 在本地生成：
+`#16308` 是 L0 的 `config/configgrpc` + `.chloggen` 变更，没有 Codecov 报告；其 head SHA 的 GitHub Actions 只有 4 个 housekeeping workflow（Milestone/labels/codeowners），**没有 build-and-test run/artifact**，因此也没有 JUnit 可下载。已用 PR head tarball 在本地生成：
 
 - `golangci-lint --out-format sarif` → `.firetree/pilot-ci/pr-16308-sarif.json`（0 findings）；
 - `trivy fs --format spdx-json` → `.firetree/pilot-ci/pr-16308-sbom.spdx.json`（SPDX-2.3）。
