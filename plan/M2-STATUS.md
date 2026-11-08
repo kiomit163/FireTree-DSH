@@ -11,6 +11,8 @@
 | W2.11 | DONE | state synthesis 投影：`src/tools/state.js`；`test/state.test.mjs`（6/6） | 2026-11-07 |
 | W2.12 | DONE | Kubernetes OWNERS 适配器：`src/lib/owners.js`；`test/owners.test.mjs`（3/3）、`test/owners-official.test.mjs`（1/1）；594 OWNERS / 50 PR / 0 ownerless | 2026-11-08 |
 | W2.13 | DONE | testdata `*.pem` 不触发 security L2；`src/lib/impact.js`、`test/impact.test.mjs` | 2026-11-08 |
+| W2.14 | DONE (本地) | Prow 二进制级对拍：`tools/prow-owners-probe/`、`fixtures/owners-prow/`、`scripts/compare-prow-owners.mjs`、`.github/workflows/prow-owners-parity.yml`；Ubuntu Docker 官方测试 PASS，8/8 parity；GitHub runner 未跑 | 2026-11-08 |
+| W2.15 | PENDING | 5 个 L2 人工可接受性判定：`docs/L2-ADJUDICATION.md` 待人类填写 | 2026-11-08 |
 | W9.4 | BLOCKED | 需 10 个真实 L2 与目标团队/仓库 | — |
 | W6.6 | BLOCKED | 需 50 条真实影响标注集 | — |
 

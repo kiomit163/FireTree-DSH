@@ -1,0 +1,43 @@
+name: prow-owners-parity
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch pinned Prow
+        run: |
+          git init "$RUNNER_TEMP/prow"
+          git -C "$RUNNER_TEMP/prow" remote add origin https://github.com/kubernetes-sigs/prow.git
+          git -C "$RUNNER_TEMP/prow" fetch --depth=1 origin 86b2c49084b4bc31ed77ec8643ae3efbe9b82dc4
+          git -C "$RUNNER_TEMP/prow" checkout FETCH_HEAD
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ runner.temp }}/prow/go.mod
+          cache: false
+
+      - name: Install FireTree probe
+        run: cp tools/prow-owners-probe/official_probe_test.go "$RUNNER_TEMP/prow/pkg/repoowners/firetree_probe_test.go"
+
+      - name: Run official Prow repoowners tests
+        run: go -C "$RUNNER_TEMP/prow" test ./pkg/repoowners -count=1
+
+      - name: Run FireTree parity probe
+        env:
+          FIRE_TREE_OWNERS_ROOT: ${{ github.workspace }}/fixtures/owners-prow
+          FIRE_TREE_OWNERS_OUTPUT: ${{ runner.temp }}/prow-owners-official.json
+          FIRE_TREE_OWNERS_FILES: base/test.md,leaf/test.md,leaf-filter/test.md,leaf-filter/test.dat,no-parent/test.go,no-parent-filter/test.txt,no-parent-filter/test.go_to_parent,aliases/test.go
+        run: go -C "$RUNNER_TEMP/prow" test ./pkg/repoowners -run TestFireTreeOwnersProbe -count=1
+
+      - name: Compare FireTree with Prow
+        run: node scripts/compare-prow-owners.mjs --root fixtures/owners-prow --official "$RUNNER_TEMP/prow-owners-official.json"

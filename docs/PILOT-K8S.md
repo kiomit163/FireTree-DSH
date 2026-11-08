@@ -84,10 +84,10 @@ OWNERS 验证：加载 **594 个 OWNERS**、50 个 PR 全部解析出 owner（`o
 - 不是 M1；没有 50 个真实 PR 的团队误拦判定、成本、采用意愿。
 - 没有使用 Kubernetes TestGrid JUnit、SARIF、coverage 或 SBOM。
 - 没有跑 review/synthesize/receipt 全流程。
-- 没有验证 Kubernetes 官方 OWNERS 工具的全部语义；当前适配器是最小实现（filters 取最后一个匹配，忽略 emeritus/options/复杂 YAML）。
+- 没有验证 Kubernetes 官方 OWNERS 工具的全部语义；当前适配器是最小实现（忽略 emeritus/options 其他字段/复杂 YAML），但已用 Prow 官方 `repoowners` 二进制级探针做 8/8 对拍，见 [PROW-OWNERS-PARITY.md](PROW-OWNERS-PARITY.md)。
 - 50 个 merge commit 的文件列表是 merge 结果，不等于 PR 分支的原始 diff；对合并冲突的 PR 可能多出内容。
 
 ## 6. 下一步
 
-1. 用 Prow 官方测试集做 CI 对拍（当前是改编用例，不是运行 Prow 二进制）；
-2. 再选 5 个 L2 做人工可接受性判定；没有这一步，不能谈误拦率。
+1. Prow 官方测试已接入 CI workflow，并在 Linux Docker 中通过官方测试 + 8/8 对拍；GitHub runner 待真实触发，见 [PROW-OWNERS-PARITY.md](PROW-OWNERS-PARITY.md)；
+2. 再选 5 个 L2 做人工可接受性判定；没有这一步，不能谈误拦率。见 [L2-ADJUDICATION.md](L2-ADJUDICATION.md)。

@@ -1,0 +1,8 @@
+filters:
+  "\\.md$":
+    approvers:
+    - carl
+    - dave
+  "\\.txt$":
+    approvers:
+    - elic
