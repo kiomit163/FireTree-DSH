@@ -97,7 +97,7 @@
 | `node scripts/check-syntax.mjs` | `checked=80 failed=0` |
 | `node scripts/check-docs.mjs` | `docs=37 links=85 errors=0` |
 | live 安装 | `install_bundle` → `application: applied`；`firetree_state`/assess/receipt 实际调用通过 |
-| 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core）、`f9374cb`（WP2 A3/WP3/WP5） |
+| 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core）、`f9374cb`（WP2 A3/WP3/WP5）、`33a28ab`（WP4 policy + live install） |
 
 ## 仍未完成（下一步）
 
