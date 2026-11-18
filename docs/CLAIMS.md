@@ -21,7 +21,7 @@
 | policy 继承 tighten-only + digest | implemented | `test/policy-chain.test.mjs` |
 | policy triggers 驱动 tier / exceptions 消费 | implemented | `test/assess.test.mjs`；soft trigger 可配置/豁免，hard trigger（unknown/interface/security/data）不可豁免 |
 | coverage/SARIF/SBOM 内容校验 | partial | coverage/JUnit/SARIF/SBOM 结构已校验；阈值策略未做 |
-| interface hash/contract test | partial | interface hash 已校验；contract test 执行未做 |
+| interface hash/contract test | partial | interface hash 已校验；depends_on 递归已实现；contract test 执行未做 |
 | 事件链 + state expiry/metrics | partial | 事件/聚合/expiry 已做；SPC/调度未做 |
 | DSH 安装与 live 调用 | implemented | `install_bundle` applied；live smoke |
 | v0→v1 迁移 | partial | 报告/安全项迁移脚本；review hash 需人工重做 |

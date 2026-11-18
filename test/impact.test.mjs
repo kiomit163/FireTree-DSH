@@ -76,6 +76,23 @@ test('interface change is L2 and pulls consumers into the impact set', async () 
   }
 });
 
+test('interface depends_on pulls dependency consumers into impact', () => {
+  const subsystems = [
+    { id: 'billing', paths: ['services/billing/**'], owners: ['@billing'], tests: ['billing/contract'] },
+    { id: 'checkout', paths: ['services/checkout/**'], owners: ['@checkout'], tests: ['checkout/integration'] },
+  ];
+  const interfaces = [
+    { id: 'billing.api', file: 'contracts/billing/openapi.yaml', consumers: ['checkout'], depends_on: ['auth.api'] },
+    { id: 'auth.api', file: 'contracts/auth/openapi.yaml', consumers: ['billing'], depends_on: [] },
+  ];
+  const result = analyzeImpact({ files: ['contracts/billing/openapi.yaml'], subsystems, interfaces });
+  assert.equal(result.auto_tier, 'L2');
+  assert.deepEqual(result.impact.interfaces, ['billing.api']);
+  assert.ok(result.impact.subsystems.includes('checkout'));
+  assert.ok(result.impact.tests.includes('checkout/integration'));
+  assert.ok(result.impact.owners.includes('@checkout'));
+});
+
 test('unknown paths force L2 and low confidence', async () => {
   const workspace = await createM1Workspace();
   try {

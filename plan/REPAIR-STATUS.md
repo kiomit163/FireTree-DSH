@@ -66,7 +66,7 @@
 - **正确性论证**：`validateCorrectnessCase` 支持 `evidenceRefs`；mapping/invariant 的 evidence_ref 必须命中回执 evidence；tier-matrix/ receipt 测试使用真实 refs。
 - **accepted risk**：hypotheses ledger 增加 `accepted_risks`；`firetree_hypothesis` 新增 `accept`（human + approval_ref + expiry）；receipt 统计 active accepted risk 并复验；新增 `test/accepted-risk.test.mjs`。
 - **intent/classification**：governed receipt 的 `intent` 改为可选（policy 要求时再填）；`classification` 继续保持 optional/advisory。
-- **coverage/interface**：新增 `coverage.js`（Codecov/Istanbul/LCOV 结构校验）；governed receipt 与技术证据都校验 coverage；新增 `interface.js`，assess 校验 interface 文件 SHA-256（不匹配 `INTERFACE_HASH_MISMATCH`）。contract test 执行仍未做。
+- **coverage/interface**：新增 `coverage.js`（Codecov/Istanbul/LCOV 结构校验）；governed receipt 与技术证据都校验 coverage；新增 `interface.js`，assess 校验 interface 文件 SHA-256（不匹配 `INTERFACE_HASH_MISMATCH`）；impact 现在沿 `depends_on` 递归拉入依赖消费者。contract test 执行仍未做。
 - **事件与状态**：新增 `src/lib/events.js` 哈希链 `.firetree/events.jsonl`；assess/classify/hypothesis/synthesize/review/receipt 写入事件；`firetree_state` 的 expiring/blocked 由 receipt/technical evidence 的 `expires_at` 计算；新增 `scripts/metrics.mjs` 与 `scripts/spc.mjs`（L2 比例 p-chart）。
 
 ### WP4 policy chain（本轮追加）
@@ -109,7 +109,7 @@
 
 | 项 | 结果 |
 |---|---|
-| `node --test` | **183/183 通过**（新增 A3/approval、JUnit/coverage、accepted risk、policy chain、triggers/exceptions、L0 反例、interface hash、事件/状态测试） |
+| `node --test` | **184/184 通过**（新增 A3/approval、JUnit/coverage、accepted risk、policy chain、triggers/exceptions、L0 反例、interface hash/depends_on、事件/状态测试） |
 | `node scripts/lint-schemas.mjs` | `schemas=10 errors=0` |
 | `node scripts/check-syntax.mjs` | `checked=88 failed=0` |
 | `node scripts/check-docs.mjs` | `docs=40 links=89 errors=0` |

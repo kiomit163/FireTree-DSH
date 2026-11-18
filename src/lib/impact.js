@@ -163,6 +163,7 @@ export function analyzeImpact(input) {
   const subsystems = input.subsystems ?? [];
   const interfaces = input.interfaces ?? [];
   const subsystemById = new Map(subsystems.map((subsystem) => [subsystem.id, subsystem]));
+  const interfaceById = new Map(interfaces.map((contract) => [contract.id, contract]));
   const changedSubsystems = new Set();
   const codeSubsystems = new Set();
   const changedInterfaces = new Set();
@@ -176,6 +177,24 @@ export function analyzeImpact(input) {
     && typeof input.codeowners.resolve === 'function';
   const dependencyFiles = [];
   const sensitiveFiles = [];
+
+  const addInterfaceImpact = (contractId, seen) => {
+    if (seen.has(contractId)) return;
+    seen.add(contractId);
+    const contract = interfaceById.get(contractId);
+    if (contract === undefined) return;
+    for (const consumer of contract.consumers ?? []) {
+      if (subsystemById.has(consumer)) {
+        changedSubsystems.add(consumer);
+        const subsystem = subsystemById.get(consumer);
+        for (const owner of subsystem.owners ?? []) owners.add(owner);
+        for (const test of subsystem.tests ?? []) tests.add(test);
+      } else {
+        unresolvedConsumers.add(consumer);
+      }
+    }
+    for (const dependency of contract.depends_on ?? []) addInterfaceImpact(dependency, seen);
+  };
 
   for (const file of files) {
     const matchedSubsystems = subsystems.filter((subsystem) => subsystem.paths.some((pattern) => matchesGlob(file, pattern)));
@@ -198,19 +217,7 @@ export function analyzeImpact(input) {
       if (!matchesGlob(file, contract.file)) continue;
       changedInterfaces.add(contract.id);
       interfaceChanges.add(contract.id);
-      for (const consumer of contract.consumers ?? []) {
-        if (subsystemById.has(consumer)) {
-          // Consumers are impact context; they are not changed code. Counting
-          // them as changed would make every interface change also a
-          // cross-subsystem change.
-          changedSubsystems.add(consumer);
-          const subsystem = subsystemById.get(consumer);
-          for (const owner of subsystem.owners ?? []) owners.add(owner);
-          for (const test of subsystem.tests ?? []) tests.add(test);
-        } else {
-          unresolvedConsumers.add(consumer);
-        }
-      }
+      addInterfaceImpact(contract.id, new Set());
     }
 
     if (isDependencyPath(file)) dependencyFiles.push(file);
