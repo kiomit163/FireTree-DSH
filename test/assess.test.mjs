@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { rm, writeFile } from 'node:fs/promises';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
@@ -106,6 +106,23 @@ test('unknown paths force L2 with low confidence and no traversal claim', async 
     assert.equal(output.confidence, 'low');
     assert.equal(output.impact.traversed, false);
     assert.deepEqual(output.impact.unknown, ['tools/legacy/unknown.py']);
+  } finally {
+    await workspace.cleanup();
+  }
+});
+
+test('interface registry hash mismatch fails closed', async () => {
+  const workspace = await createM1Workspace();
+  try {
+    const path = join(workspace.root, '.firetree', 'interfaces', 'billing.api.json');
+    const contract = JSON.parse(await readFile(path, 'utf8'));
+    contract.sha256 = '0'.repeat(64);
+    await writeFile(path, `${JSON.stringify(contract, null, 2)}\n`, 'utf8');
+    const tool = createAssessTool(contextFor(workspace.root));
+    await assert.rejects(
+      tool.execute(assessArgs({ files: ['contracts/billing/openapi.yaml'], change: 'change-bad-interface' }), EXEC),
+      (error) => error.code === 'INTERFACE_HASH_MISMATCH',
+    );
   } finally {
     await workspace.cleanup();
   }

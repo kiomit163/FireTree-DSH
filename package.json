@@ -35,6 +35,7 @@
     "lint:schemas": "node scripts/lint-schemas.mjs",
     "check:syntax": "node scripts/check-syntax.mjs",
     "metrics": "node scripts/metrics.mjs",
+    "migrate": "node scripts/migrate-v0-to-v1.mjs",
     "check": "npm test && npm run check:docs && npm run lint:schemas && npm run check:syntax"
   },
   "dsh": {

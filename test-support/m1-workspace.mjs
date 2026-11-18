@@ -62,7 +62,7 @@ const INTERFACE = {
   id: 'billing.api',
   kind: 'openapi',
   file: 'contracts/billing/openapi.yaml',
-  sha256: HASH,
+  sha256: 'f39db8e8ede3dc2457c613e2a304e6d478f6e5ec660e4746464f41e76ac77006',
   contract_test: 'tests/contract/billing.spec.mjs',
   consumers: ['checkout'],
   depends_on: [],

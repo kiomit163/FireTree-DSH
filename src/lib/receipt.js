@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 
 import { firetreePath, listJsonFiles, readFiretreeJson, resolveWithin, sha256File, sha256Text } from './artifacts.js';
 import { validateCorrectnessCase } from './correctness.js';
+import { validateCoverageText } from './coverage.js';
 import { validateSarif, validateSbom } from './extra-evidence.js';
 import { validateJunitXml } from './junit.js';
 import { validateJsonSchema } from './schema.js';
@@ -44,6 +45,10 @@ async function localEvidenceGap(root, evidence) {
     if (evidence.kind === 'test') {
       const text = await readFile(file, 'utf8');
       const result = validateJunitXml(text);
+      if (!result.valid) return `${evidence.run_ref}: ${result.gaps.join('; ')}`;
+    } else if (evidence.kind === 'coverage') {
+      const text = await readFile(file, 'utf8');
+      const result = validateCoverageText(text);
       if (!result.valid) return `${evidence.run_ref}: ${result.gaps.join('; ')}`;
     } else if (evidence.kind === 'sarif' || evidence.kind === 'sbom') {
       const text = await readFile(file, 'utf8');

@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import { readFiretreeJson, resolveWithin, sha256File, sha256Text } from './artifacts.js';
+import { validateCoverageText } from './coverage.js';
 import { validateSarif, validateSbom } from './extra-evidence.js';
 import { validateJunitXml } from './junit.js';
 import { validateJsonSchema } from './schema.js';
@@ -21,6 +22,10 @@ async function evidenceFormatGaps(file, item) {
   if (item.kind === 'test') {
     const text = await readFile(file, 'utf8');
     return validateJunitXml(text).gaps.map((gap) => `${item.run_ref}: ${gap}`);
+  }
+  if (item.kind === 'coverage') {
+    const text = await readFile(file, 'utf8');
+    return validateCoverageText(text).gaps.map((gap) => `${item.run_ref}: ${gap}`);
   }
   if (item.kind !== 'sarif' && item.kind !== 'sbom') return [];
   let value;

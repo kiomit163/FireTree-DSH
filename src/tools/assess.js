@@ -16,6 +16,7 @@ import { appendEvent } from '../lib/events.js';
 import { GitError, verifyGitChange } from '../lib/git.js';
 import { normalizeRepoPath } from '../lib/glob.js';
 import { analyzeImpact, ImpactError } from '../lib/impact.js';
+import { verifyInterfaceHashes } from '../lib/interface.js';
 import { loadOwners } from '../lib/owners.js';
 import { loadRegistry } from '../lib/registry.js';
 import { assertJsonSchemaValue } from '../lib/schema.js';
@@ -192,6 +193,8 @@ export function createAssessTool(ctx) {
         }
         throw error;
       }
+      const interfaceHashes = await verifyInterfaceHashes(root, registry.interfaces);
+      if (!interfaceHashes.valid) throw new AssessError('INTERFACE_HASH_MISMATCH', interfaceHashes.gaps.join('; '));
       const codeowners = await loadCodeowners(root);
       const owners = codeowners ?? await loadOwners(root);
 
