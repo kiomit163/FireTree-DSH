@@ -10,6 +10,7 @@ import {
   sha256File,
   writeFiretreeJson,
 } from '../lib/artifacts.js';
+import { appendEvent } from '../lib/events.js';
 import { assertJsonSchemaValue, SchemaValidationError } from '../lib/schema.js';
 import { toToolSchema } from '../lib/tool-schema.js';
 
@@ -339,6 +340,10 @@ export function createHypothesisTool(ctx) {
         };
         record.value.hypotheses.push(hypothesis);
         const artifact = await writeLedger(root, parsed.change, record.value);
+        await appendEvent(root, {
+          change: parsed.change, actor: 'agent', tool: 'firetree_hypothesis', action: 'add', result: 'ok',
+          detail: { hypothesis: hypothesis.id, kind: hypothesis.kind },
+        });
         const summary = summarize(true, record.value, parsed.change, artifact.sha256);
         return { ...summary, action: 'add' };
       }
@@ -352,6 +357,10 @@ export function createHypothesisTool(ctx) {
         hypothesis.evidence_ref = evidence;
         hypothesis.updated_at = new Date().toISOString();
         const artifact = await writeLedger(root, parsed.change, record.value);
+        await appendEvent(root, {
+          change: parsed.change, actor: 'agent', tool: 'firetree_hypothesis', action: 'verify', result: 'ok',
+          detail: { hypothesis: hypothesis.id, status: hypothesis.status },
+        });
         const summary = summarize(true, record.value, parsed.change, artifact.sha256);
         return { ...summary, action: 'verify' };
       }
@@ -375,6 +384,10 @@ export function createHypothesisTool(ctx) {
           expires_at: parsed.expires_at,
         });
         const artifact = await writeLedger(root, parsed.change, record.value);
+        await appendEvent(root, {
+          change: parsed.change, actor: 'agent', tool: 'firetree_hypothesis', action: 'accept', result: 'ok',
+          detail: { hypothesis: parsed.id, expires_at: parsed.expires_at },
+        });
         const summary = summarize(true, record.value, parsed.change, artifact.sha256);
         return { ...summary, action: 'accept' };
       }

@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 
 import { assertSafeId, firetreePath, listJsonFiles, readFiretreeJson, writeFiretreeJson } from '../lib/artifacts.js';
+import { appendEvent } from '../lib/events.js';
 import { assertJsonSchemaValue } from '../lib/schema.js';
 import { toToolSchema } from '../lib/tool-schema.js';
 
@@ -308,6 +309,10 @@ export function createSynthesizeTool(ctx) {
         };
         assertJsonSchemaValue(plan, PLAN_SCHEMA, { rootSchema: SYNTHESIS_SCHEMA });
         const artifact = await writeFiretreeJson(root, planPath(parsed.change), plan);
+        await appendEvent(root, {
+          change: parsed.change, actor: 'agent', tool: 'firetree_synthesize', action: 'plan', tier: 'L2', result: 'ok',
+          detail: { seats: plan.seats.length },
+        });
         return {
           ok: true,
           schema: 'firetree.synthesize/v1',
@@ -355,6 +360,10 @@ export function createSynthesizeTool(ctx) {
       };
       assertJsonSchemaValue(round, ROUND_SCHEMA, { rootSchema: SYNTHESIS_SCHEMA });
       const artifact = await writeFiretreeJson(root, roundPath(parsed.change, next), round);
+      await appendEvent(root, {
+        change: parsed.change, actor: 'agent', tool: 'firetree_synthesize', action: 'record', tier: 'L2', result: 'ok',
+        detail: { round: next, converged: metrics.converged },
+      });
       return {
         ok: true,
         schema: 'firetree.synthesize/v1',

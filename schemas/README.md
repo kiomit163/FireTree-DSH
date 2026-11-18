@@ -1,4 +1,6 @@
-# FireTree 规模契约 v0（M0 冻结）
+# FireTree 规模契约（v1）
+
+> **v1 更新（2026-11-18）**：契约已从 v0 断代到 v1。主要变化：L0 review 可空/采样时人类 spot-check；receipt impact 增加 `unknown`/`unresolved_consumers`/`reasons`；review 绑定 assessment/diff/package；synthesis/classification 降级为 advisory；`intent` 在 governed receipt 中可选。旧 v0 样例仅用于迁移/拒绝测试，具体差异见 [plan/REPAIR-STATUS.md](../plan/REPAIR-STATUS.md)。
 
 > 冻结日期：2026-11-06。M0 的四个 schema 是规模契约；M1/M2 增加 `dossier.schema.json`、`assessment.schema.json`、`hypotheses.schema.json`、`review.schema.json`。M1/M2 只按这些字段实现，不静默扩字段。
 > 变更契约必须走 `docs/DECISIONS.md`，并同步更新样例与测试。

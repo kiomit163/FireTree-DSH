@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 
 import { ArtifactError, assertSafeId, readFiretreeJson, writeFiretreeJson } from '../lib/artifacts.js';
+import { appendEvent } from '../lib/events.js';
 import { assertJsonSchemaValue } from '../lib/schema.js';
 import { toToolSchema } from '../lib/tool-schema.js';
 
@@ -286,6 +287,10 @@ export function createClassifyTool(ctx) {
       };
       assertJsonSchemaValue(dossier, DOSSIER_SCHEMA);
       const artifact = await writeFiretreeJson(root, relativePath, dossier);
+      await appendEvent(root, {
+        change: parsed.subsystem, actor: 'agent', tool: 'firetree_classify', action: 'set', result: 'ok',
+        detail: { kind: dossier.kind, method: dossier.method },
+      });
       return {
         ok: true,
         schema: 'firetree.classify/v1',

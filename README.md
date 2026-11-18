@@ -1,5 +1,7 @@
 # FireTree-DSH
 
+> **2026-11-18 修复状态**：当前在 `repair/v0.1` 分支落地 v1 契约、L0/unknown 修复、git 身份绑定、OIDC/A3 信任根、JUnit 标准解析、policy chain、事件/指标，并已在当前 DSH profile 安装（live smoke 通过）。逐项状态与剩余工作见 [plan/REPAIR-STATUS.md](plan/REPAIR-STATUS.md)；审计与计划见 [AUDIT-2026-11-18.md](AUDIT-2026-11-18.md) 与 [REPAIR-PLAN-2026-11-18.md](REPAIR-PLAN-2026-11-18.md)。
+
 **一个 DSH 原生的「可审计交付协议」**：用钱学森系统科学的**判据**、中国航天工程实践的**机制**、DSH 宿主原语的**执行底座**，让「做完了」这句话变成一份可验证的交付回执。
 
 > 本仓库是重写，不是移植。FireTree V5 归档为方法论来源与基线证据；这里只保留其中真正值得留下的东西。
