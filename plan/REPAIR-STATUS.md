@@ -114,7 +114,7 @@
 | `node scripts/check-syntax.mjs` | `checked=88 failed=0` |
 | `node scripts/check-docs.mjs` | `docs=40 links=89 errors=0` |
 | live 安装 | `install_bundle` → `application: applied`；`firetree_state`/assess/receipt 实际调用通过 |
-| 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core）、`f9374cb`（WP2 A3/WP3/WP5）、`33a28ab`（WP4 policy + live install）、`4731150`（L0 收窄/optional intent）、`20473b1`（全工具事件 + docs v1）、`a79a135`（coverage/interface/migration）、`6f4a8dc`（triggers/exceptions）、`0e3deaf`（approval CLI）、`af7cfd1`（bootstrap/SPC） |
+| 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core）、`f9374cb`（WP2 A3/WP3/WP5）、`33a28ab`（WP4 policy + live install）、`4731150`（L0 收窄/optional intent）、`20473b1`（全工具事件 + docs v1）、`a79a135`（coverage/interface/migration）、`6f4a8dc`（triggers/exceptions）、`0e3deaf`（approval CLI）、`af7cfd1`（bootstrap/SPC）、`bedede2`（depends_on） |
 
 ## 仍未完成（下一步）
 
