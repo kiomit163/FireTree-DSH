@@ -39,7 +39,8 @@ const SECURITY_SEGMENTS = new Set(['auth', 'security', 'crypto', 'secret', 'secr
 const DATA_SEGMENTS = new Set(['migration', 'migrations', 'schema', 'schemas', 'database', 'databases', 'seed', 'seeds']);
 const TEST_SEGMENTS = new Set(['test', 'tests', '__tests__', 'spec', 'specs', 'e2e', 'testdata']);
 const DOC_SEGMENTS = new Set(['docs', 'doc', 'documentation']);
-const CONFIG_EXTENSIONS = new Set(['.json', '.yaml', '.yml', '.toml', '.ini', '.conf']);
+const LOW_RISK_CONFIG = /^(?:\.editorconfig|\.gitignore|\.gitattributes|\.prettierrc(?:\..*)?|\.npmrc|\.nvmrc|\.markdownlint.*)$/;
+const DOC_EXTENSIONS = /\.(md|mdx|rst|txt|adoc|png|jpe?g|gif|svg|webp)$/i;
 
 function basename(path) {
   return path.split('/').at(-1) ?? path;
@@ -79,10 +80,9 @@ export function isDocsPath(repoPath) {
  * @returns {boolean} Whether this is configuration.
  */
 export function isConfigPath(repoPath) {
-  const name = basename(repoPath);
-  return name.startsWith('.env')
-    || CONFIG_EXTENSIONS.has(extension(repoPath))
-    || repoPath.startsWith('.github/');
+  // Only tooling metadata is L0. `.env`, CI workflows, service config, and
+  // arbitrary JSON/YAML are not low-risk just because of their extension.
+  return LOW_RISK_CONFIG.test(basename(repoPath));
 }
 
 /**
@@ -116,7 +116,13 @@ export function isDataSensitivePath(repoPath) {
  * @returns {boolean} Whether the path is document/config/test-only.
  */
 export function isL0Path(repoPath) {
-  return isDocsPath(repoPath) || isConfigPath(repoPath) || isTestPath(repoPath);
+  const name = basename(repoPath);
+  const docs = isDocsPath(repoPath) && DOC_EXTENSIONS.test(name);
+  const test = isTestPath(repoPath)
+    && (repoPath.split('/').some((segment) => ['testdata', '__tests__'].includes(segment))
+      || /\.(test|spec)\./.test(name)
+      || /_test\.[^.]+$/.test(name));
+  return docs || isConfigPath(repoPath) || test;
 }
 
 function uniqueSorted(values) {
@@ -194,8 +200,10 @@ export function analyzeImpact(input) {
       interfaceChanges.add(contract.id);
       for (const consumer of contract.consumers ?? []) {
         if (subsystemById.has(consumer)) {
+          // Consumers are impact context; they are not changed code. Counting
+          // them as changed would make every interface change also a
+          // cross-subsystem change.
           changedSubsystems.add(consumer);
-          codeSubsystems.add(consumer);
           const subsystem = subsystemById.get(consumer);
           for (const owner of subsystem.owners ?? []) owners.add(owner);
           for (const test of subsystem.tests ?? []) tests.add(test);

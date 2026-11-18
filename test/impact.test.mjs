@@ -106,6 +106,16 @@ test('cross-subsystem and dependency changes are L2', async () => {
   }
 });
 
+test('config, env, CI, and code hidden in docs/test are not L0', () => {
+  assert.equal(isL0Path('services/billing/config.yaml'), false);
+  assert.equal(isL0Path('services/billing/.env.production'), false);
+  assert.equal(isL0Path('docs/scripts/deploy.js'), false);
+  assert.equal(isL0Path('services/billing/test/chargeRuntime.mjs'), false);
+  assert.equal(isL0Path('docs/security/policy.md'), true);
+  assert.equal(isL0Path('tests/auth/token.test.mjs'), true);
+  assert.equal(isL0Path('services/billing/testdata/cert.pem'), true);
+});
+
 test('security-sensitive code is L2 while test/docs paths remain L0', async () => {
   const workspace = await createM1Workspace();
   try {

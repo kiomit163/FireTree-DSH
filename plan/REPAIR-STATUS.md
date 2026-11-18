@@ -64,6 +64,7 @@
 - **证据格式**：governed receipt 与技术证据都校验 JUnit/SARIF/SBOM 内容；L1/L2 evidence 不再是“只哈希不看内容”。
 - **正确性论证**：`validateCorrectnessCase` 支持 `evidenceRefs`；mapping/invariant 的 evidence_ref 必须命中回执 evidence；tier-matrix/ receipt 测试使用真实 refs。
 - **accepted risk**：hypotheses ledger 增加 `accepted_risks`；`firetree_hypothesis` 新增 `accept`（human + approval_ref + expiry）；receipt 统计 active accepted risk 并复验；新增 `test/accepted-risk.test.mjs`。
+- **intent/classification**：governed receipt 的 `intent` 改为可选（policy 要求时再填）；`classification` 继续保持 optional/advisory。
 - **事件与状态**：新增 `src/lib/events.js` 哈希链 `.firetree/events.jsonl`；assess/review/receipt 写入事件；`firetree_state` 的 expiring/blocked 由 receipt/technical evidence 的 `expires_at` 计算；新增 `scripts/metrics.mjs`。
 
 ### WP4 policy chain（本轮追加）
@@ -75,6 +76,7 @@
   - cycle/missing parent/relaxation 分类错误。
 - `src/lib/registry.js` 的 `loadPolicy` 改走 policy chain；assessment/receipt 的 `policy.version` 现在是真实 digest。
 - 新增 `test/policy-chain.test.mjs`（继承、放松拒绝、缺父、环、digest）。
+- **L0 收窄**：`.env*`、`.github/**`、任意服务 config、`docs/` 下的代码、`test/` 目录中的运行时代码不再 L0；接口 consumers 不再被算作“changed code subsystems”，避免接口变更误报 cross-subsystem。新增 impact 反例测试。
 
 ### WP6 安装与 live smoke（本轮追加）
 
@@ -92,7 +94,7 @@
 
 | 项 | 结果 |
 |---|---|
-| `node --test` | **176/176 通过**（新增 A3、JUnit 解析、accepted risk、policy chain、事件/状态测试） |
+| `node --test` | **177/177 通过**（新增 A3、JUnit 解析、accepted risk、policy chain、L0 反例、事件/状态测试） |
 | `node scripts/lint-schemas.mjs` | `schemas=10 errors=0` |
 | `node scripts/check-syntax.mjs` | `checked=80 failed=0` |
 | `node scripts/check-docs.mjs` | `docs=37 links=85 errors=0` |
