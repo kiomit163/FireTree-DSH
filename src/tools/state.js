@@ -37,6 +37,7 @@ const OUTPUT_SCHEMA = Object.freeze({
           status: { type: 'string', enum: ['present', 'missing'] },
           path: { type: 'string' },
           updated_at: { type: 'string' },
+          expires_at: { type: 'string' },
         },
       },
     },
@@ -68,8 +69,27 @@ function validateArgs(args) {
   return args;
 }
 
-function entry(kind, id, status, path, updatedAt) {
-  return { kind, id, status, path, ...(updatedAt === undefined ? {} : { updated_at: updatedAt }) };
+function entry(kind, id, status, path, updatedAt, expiresAt) {
+  return {
+    kind,
+    id,
+    status,
+    path,
+    ...(updatedAt === undefined ? {} : { updated_at: updatedAt }),
+    ...(expiresAt === undefined ? {} : { expires_at: expiresAt }),
+  };
+}
+
+function expiryCounts(values) {
+  const now = Date.now();
+  const active = values.filter((value) => typeof value === 'string' && !Number.isNaN(Date.parse(value)));
+  return {
+    expiring: active.some((value) => {
+      const diff = Date.parse(value) - now;
+      return diff > 0 && diff <= 7 * 24 * 60 * 60 * 1000;
+    }) ? 1 : 0,
+    blocked: active.some((value) => Date.parse(value) <= now) ? 1 : 0,
+  };
 }
 
 async function optionalHashed(root, relativePath) {
@@ -106,7 +126,7 @@ async function subsystemEntries(root, subsystem) {
   const nextActions = [];
   if (dossier === null) nextActions.push(`Run firetree_classify set for ${id}.`);
   if (registry === null) nextActions.push(`Add .firetree/subsystems/${id}.json registry entry.`);
-  return { entries, nextActions };
+  return { entries, nextActions, expiring: 0, blocked: 0 };
 }
 
 async function changeEntries(root, change) {
@@ -155,7 +175,9 @@ async function changeEntries(root, change) {
   if (needsReview && (review !== null || !autonomous)) {
     entries.push(entry('review', id, review === null ? 'missing' : 'present', `${base}/verdict.json`));
   }
-  if (receipt !== null || !autonomous) entries.push(entry('receipt', id, receipt === null ? 'missing' : 'present', receiptPath));
+  if (receipt !== null || !autonomous) {
+    entries.push(entry('receipt', id, receipt === null ? 'missing' : 'present', receiptPath, undefined, receipt?.expires_at));
+  }
   if (assessment === null) nextActions.push(`Run firetree_assess for ${id}.`);
   if (needsHypotheses && !autonomous && hypotheses === null) nextActions.push(`Record hypotheses for ${id} before receipt.`);
   if (needsReview && !autonomous && review === null) nextActions.push(`Open a review for ${id}.`);
@@ -170,10 +192,10 @@ async function changeEntries(root, change) {
   }
 
   if (technicalEvidence !== null) {
-    entries.push(entry('technical_evidence', id, 'present', technicalEvidencePath, technicalEvidence.created_at));
+    entries.push(entry('technical_evidence', id, 'present', technicalEvidencePath, technicalEvidence.created_at, technicalEvidence.expires_at));
   }
 
-  return { entries, nextActions };
+  return { entries, nextActions, ...expiryCounts([receipt?.expires_at, technicalEvidence?.expires_at]) };
 }
 
 async function rootFor(ctx, exec) {
@@ -209,14 +231,16 @@ export function createStateTool(ctx) {
       const root = await rootFor(ctx, exec);
       let entries = [];
       let nextActions = [];
+      let expiring = 0;
+      let blocked = 0;
       let mode = 'empty';
 
       if (query.change !== undefined) {
         mode = 'change';
-        ({ entries, nextActions } = await changeEntries(root, query.change));
+        ({ entries, nextActions, expiring, blocked } = await changeEntries(root, query.change));
       } else if (query.subsystem !== undefined) {
         mode = 'subsystem';
-        ({ entries, nextActions } = await subsystemEntries(root, query.subsystem));
+        ({ entries, nextActions, expiring, blocked } = await subsystemEntries(root, query.subsystem));
       } else {
         nextActions = ['Run firetree_assess at the change entry point (M1).'];
       }
@@ -228,8 +252,8 @@ export function createStateTool(ctx) {
         mode,
         counts: {
           pending: entries.filter((item) => item.status === 'missing').length,
-          expiring: 0,
-          blocked: 0,
+          expiring,
+          blocked,
         },
         entries,
         next_actions: nextActions,

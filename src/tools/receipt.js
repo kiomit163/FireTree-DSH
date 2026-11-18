@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 import { ArtifactError, assertSafeId, readFiretreeJson, readJsonFile, resolveWithin, sha256File, sha256Text, writeFiretreeJson } from '../lib/artifacts.js';
 import { validateCorrectnessCase } from '../lib/correctness.js';
+import { appendEvent } from '../lib/events.js';
 import {
   checkReceiptSemantics,
   readReviewVerdict,
@@ -398,12 +399,20 @@ export function createReceiptTool(ctx) {
         `.firetree/changes/${parsed.change}/hypotheses.json`,
         { verifyHash: true, missing: 'null' },
       );
+      const nowMs = Date.now();
+      const ledgerHypotheses = ledgerRecord === null ? [] : ledgerRecord.value.hypotheses;
+      const activeAccepted = ledgerRecord === null
+        ? 0
+        : (ledgerRecord.value.accepted_risks ?? []).filter((risk) => {
+            const hypothesis = ledgerHypotheses.find((candidate) => candidate.id === risk.hypothesis_id);
+            return hypothesis?.status === 'untested' && Date.parse(risk.expires_at) > nowMs;
+          }).length;
       const hypotheses = ledgerRecord === null
         ? { total: 0, verified: 0, accepted_risk: 0 }
         : {
-            total: ledgerRecord.value.hypotheses.length,
-            verified: ledgerRecord.value.hypotheses.filter((hypothesis) => hypothesis.status === 'verified').length,
-            accepted_risk: 0,
+            total: ledgerHypotheses.length,
+            verified: ledgerHypotheses.filter((hypothesis) => hypothesis.status === 'verified').length,
+            accepted_risk: activeAccepted,
           };
 
       const preparedEvidence = await prepareEvidence(root, parsed.evidence);
@@ -543,6 +552,15 @@ export function createReceiptTool(ctx) {
       const semantics = await checkReceiptSemantics(receipt, { root, change: parsed.change });
       if (!semantics.valid) return failure(semantics.gaps);
       const artifact = await writeFiretreeJson(root, `.firetree/receipts/${parsed.change}.json`, receipt);
+      await appendEvent(root, {
+        change: parsed.change,
+        actor: 'agent',
+        tool: 'firetree_receipt',
+        action: 'build',
+        tier: receipt.tier,
+        result: 'ok',
+        detail: { evidence: receipt.evidence.length, assurance: receipt.assurance },
+      });
       return {
         ok: true,
         schema: 'firetree.receipt-tool/v1',

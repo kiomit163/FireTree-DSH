@@ -32,7 +32,7 @@ async function prepare(workspace, files = ['services/billing/charge.mjs'], chang
     change,
   }, EXEC);
   await mkdir(join(workspace.root, 'evidence'), { recursive: true });
-  await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"/>\n', 'utf8');
+  await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"><testcase name="x"/></testsuite>\n', 'utf8');
   return ctx;
 }
 
@@ -68,7 +68,7 @@ test('autonomous technical evidence builds and checks without human signoff', as
     assert.equal(built.technical_evidence.completion_claim, false);
     assert.equal(built.technical_evidence.milestone_claim, false);
     assert.equal(built.technical_evidence.assurance, 'A2');
-    assert.equal(built.technical_evidence.evidence[0].sha256, sha256Text('<testsuite tests="1" failures="0"/>\n'));
+    assert.equal(built.technical_evidence.evidence[0].sha256, sha256Text('<testsuite tests="1" failures="0"><testcase name="x"/></testsuite>\n'));
 
     const checked = await tool.execute({ action: 'check', mode: 'autonomous', change: 'chg-auto' }, EXEC);
     assert.equal(checked.ok, true);

@@ -17,7 +17,10 @@ const HYPOTHESES_SCHEMA = JSON.parse(readFileSync(new URL('../../schemas/hypothe
 const METHODS = new Set(['test', 'metric', 'experiment', 'analysis']);
 const KINDS = new Set(['assumption', 'risk', 'claim']);
 const RESULTS = new Set(['verified', 'falsified']);
-const ALLOWED_ARGS = new Set(['action', 'change', 'id', 'statement', 'kind', 'detection', 'result', 'evidence_ref']);
+const ALLOWED_ARGS = new Set([
+  'action', 'change', 'id', 'statement', 'kind', 'detection', 'result', 'evidence_ref',
+  'reason', 'accepted_by', 'approval_ref', 'expires_at',
+]);
 
 /** Hypothesis input/rule failure. */
 export class HypothesisError extends Error {
@@ -106,11 +109,15 @@ const PARAMETERS = {
   additionalProperties: false,
   required: ['action', 'change'],
   properties: {
-    action: { type: 'string', enum: ['add', 'verify', 'list'] },
+    action: { type: 'string', enum: ['add', 'verify', 'accept', 'list'] },
     change: { type: 'string' },
     id: { type: 'string' },
     statement: { type: 'string' },
     kind: { type: 'string', enum: [...KINDS] },
+    reason: { type: 'string', description: 'Reason for accepting residual risk (accept action).' },
+    accepted_by: { type: 'string', description: 'Human identifier for risk acceptance (accept action).' },
+    approval_ref: { type: 'string', description: 'Approval record reference (accept action).' },
+    expires_at: { type: 'string', description: 'Risk acceptance expiry date-time (accept action).' },
     detection: {
       type: 'object',
       additionalProperties: false,
@@ -193,7 +200,7 @@ function validateArgs(args) {
     if (!ALLOWED_ARGS.has(key)) throw new HypothesisError('INVALID_ARGS', `unknown argument ${key}`);
   }
   const action = args.action;
-  if (!['add', 'verify', 'list'].includes(action)) throw new HypothesisError('INVALID_ARGS', 'action must be add, verify, or list');
+  if (!['add', 'verify', 'accept', 'list'].includes(action)) throw new HypothesisError('INVALID_ARGS', 'action must be add, verify, accept, or list');
   const change = assertSafeId(args.change, 'change');
   if (action === 'add') {
     return {
@@ -209,6 +216,23 @@ function validateArgs(args) {
     if (!RESULTS.has(args.result)) throw new HypothesisError('INVALID_ARGS', 'result must be verified or falsified');
     return { action, change, id: args.id, result: args.result, evidence_ref: args.evidence_ref };
   }
+  if (action === 'accept') {
+    if (typeof args.id !== 'string' || !/^h[0-9]+$/.test(args.id)) throw new HypothesisError('INVALID_ARGS', 'id must match h<number>');
+    const acceptedBy = text(args.accepted_by, 'accepted_by');
+    if (!acceptedBy.startsWith('human:')) throw new HypothesisError('INVALID_ARGS', 'accepted_by must start with human:');
+    const expiresAt = text(args.expires_at, 'expires_at');
+    if (Number.isNaN(Date.parse(expiresAt))) throw new HypothesisError('INVALID_ARGS', 'expires_at must be a date-time');
+    if (Date.parse(expiresAt) <= Date.now()) throw new HypothesisError('INVALID_ARGS', 'expires_at must be in the future');
+    return {
+      action,
+      change,
+      id: args.id,
+      reason: text(args.reason, 'reason'),
+      accepted_by: acceptedBy,
+      approval_ref: text(args.approval_ref, 'approval_ref'),
+      expires_at: expiresAt,
+    };
+  }
   return { action, change };
 }
 
@@ -220,7 +244,11 @@ async function readLedger(root, change) {
   const path = ledgerPath(change);
   const record = await readFiretreeJson(root, path, { verifyHash: true, missing: 'null' });
   if (record === null) {
-    return { exists: false, sha256: '', value: { schema: 'firetree.hypotheses/v1', change, hypotheses: [], updated_at: null } };
+    return {
+      exists: false,
+      sha256: '',
+      value: { schema: 'firetree.hypotheses/v1', change, hypotheses: [], accepted_risks: [], updated_at: null },
+    };
   }
   try {
     assertJsonSchemaValue(record.value, HYPOTHESES_SCHEMA);
@@ -326,6 +354,29 @@ export function createHypothesisTool(ctx) {
         const artifact = await writeLedger(root, parsed.change, record.value);
         const summary = summarize(true, record.value, parsed.change, artifact.sha256);
         return { ...summary, action: 'verify' };
+      }
+
+      if (parsed.action === 'accept') {
+        if (!record.exists) throw new HypothesisError('HYPOTHESES_NOT_FOUND', `no hypotheses ledger for ${parsed.change}`);
+        const hypothesis = record.value.hypotheses.find((candidate) => candidate.id === parsed.id);
+        if (!hypothesis) throw new HypothesisError('HYPOTHESIS_NOT_FOUND', `no hypothesis ${parsed.id}`);
+        if (hypothesis.status === 'verified') throw new HypothesisError('ALREADY_VERIFIED', `${parsed.id} is already verified`);
+        record.value.accepted_risks ??= [];
+        const now = Date.now();
+        const existing = record.value.accepted_risks.find(
+          (risk) => risk.hypothesis_id === parsed.id && Date.parse(risk.expires_at) > now,
+        );
+        if (existing !== undefined) throw new HypothesisError('RISK_ALREADY_ACCEPTED', `${parsed.id} already has an active risk acceptance`);
+        record.value.accepted_risks.push({
+          hypothesis_id: parsed.id,
+          reason: parsed.reason,
+          accepted_by: parsed.accepted_by,
+          approval_ref: parsed.approval_ref,
+          expires_at: parsed.expires_at,
+        });
+        const artifact = await writeLedger(root, parsed.change, record.value);
+        const summary = summarize(true, record.value, parsed.change, artifact.sha256);
+        return { ...summary, action: 'accept' };
       }
 
       return summarize(record.exists, record.value, parsed.change, record.sha256);

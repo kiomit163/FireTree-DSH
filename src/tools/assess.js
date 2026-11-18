@@ -12,6 +12,7 @@ import {
   writeFiretreeJson,
 } from '../lib/artifacts.js';
 import { loadCodeowners } from '../lib/codeowners.js';
+import { appendEvent } from '../lib/events.js';
 import { GitError, verifyGitChange } from '../lib/git.js';
 import { normalizeRepoPath } from '../lib/glob.js';
 import { analyzeImpact, ImpactError } from '../lib/impact.js';
@@ -294,6 +295,16 @@ export function createAssessTool(ctx) {
       assertJsonSchemaValue(assessment, ASSESSMENT_SCHEMA);
 
       const artifact = await writeFiretreeJson(root, assessmentPath, assessment);
+      await appendEvent(root, {
+        change: parsed.change,
+        actor: 'agent',
+        tool: 'firetree_assess',
+        action: 'assess',
+        tier,
+        result: 'ok',
+        policy_digest: registry.policy.version,
+        detail: { revision, files: files.length, unknown: analysis.impact.unknown.length },
+      });
       const output = {
         ok: true,
         ...assessment,

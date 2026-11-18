@@ -1,9 +1,12 @@
 /** Receipt v0 semantic checks: evidence, sign-off, tier rules, expiry, and artifact consistency. */
 
 import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 
 import { firetreePath, listJsonFiles, readFiretreeJson, resolveWithin, sha256File, sha256Text } from './artifacts.js';
 import { validateCorrectnessCase } from './correctness.js';
+import { validateSarif, validateSbom } from './extra-evidence.js';
+import { validateJunitXml } from './junit.js';
 import { validateJsonSchema } from './schema.js';
 
 const RECEIPT_SCHEMA = JSON.parse(readFileSync(new URL('../../schemas/receipt.schema.json', import.meta.url), 'utf8'));
@@ -36,7 +39,22 @@ async function localEvidenceGap(root, evidence) {
   } catch {
     return `evidence file is missing: ${evidence.run_ref}`;
   }
-  return actual === evidence.sha256 ? null : `evidence hash mismatch: ${evidence.run_ref}`;
+  if (actual !== evidence.sha256) return `evidence hash mismatch: ${evidence.run_ref}`;
+  try {
+    if (evidence.kind === 'test') {
+      const text = await readFile(file, 'utf8');
+      const result = validateJunitXml(text);
+      if (!result.valid) return `${evidence.run_ref}: ${result.gaps.join('; ')}`;
+    } else if (evidence.kind === 'sarif' || evidence.kind === 'sbom') {
+      const text = await readFile(file, 'utf8');
+      const value = JSON.parse(text);
+      const gaps = evidence.kind === 'sarif' ? validateSarif(value) : validateSbom(value);
+      if (gaps.length > 0) return `${evidence.run_ref}: ${gaps.join('; ')}`;
+    }
+  } catch (error) {
+    return `${evidence.run_ref}: evidence format is invalid (${error instanceof Error ? error.message : String(error)})`;
+  }
+  return null;
 }
 
 /**
@@ -332,8 +350,13 @@ export async function checkReceiptSemantics(receipt, options) {
     if (ledgerErrors.length > 0) gaps.push('hypotheses ledger is invalid');
     const total = ledgerRecord.value.hypotheses.length;
     const verified = ledgerRecord.value.hypotheses.filter((hypothesis) => hypothesis.status === 'verified').length;
+    const activeAccepted = (ledgerRecord.value.accepted_risks ?? []).filter((risk) => {
+      const hypothesis = ledgerRecord.value.hypotheses.find((candidate) => candidate.id === risk.hypothesis_id);
+      return hypothesis?.status === 'untested' && Date.parse(risk.expires_at) > now.getTime();
+    }).length;
     if (receipt.hypotheses.total !== total) gaps.push('receipt hypothesis total does not match ledger');
     if (receipt.hypotheses.verified !== verified) gaps.push('receipt verified hypothesis count does not match ledger');
+    if (receipt.hypotheses.accepted_risk !== activeAccepted) gaps.push('receipt accepted risk count does not match active ledger acceptances');
   }
 
   if (reviewRequired && receipt.review !== null) {
@@ -358,7 +381,11 @@ export async function checkReceiptSemantics(receipt, options) {
       const caseFile = caseValue.value;
       const caseErrors = validateJsonSchema(caseFile, RECEIPT_SCHEMA.$defs.correctnessCase, { rootSchema: RECEIPT_SCHEMA });
       if (caseErrors.length > 0) gaps.push('correctness case does not match schema');
-      const semantic = validateCorrectnessCase(caseFile, RECEIPT_SCHEMA.$defs.correctnessCase, { rootSchema: RECEIPT_SCHEMA, now });
+      const semantic = validateCorrectnessCase(caseFile, RECEIPT_SCHEMA.$defs.correctnessCase, {
+        rootSchema: RECEIPT_SCHEMA,
+        now,
+        evidenceRefs: receipt.evidence.map((item) => item.run_ref),
+      });
       for (const error of semantic.errors) gaps.push(`correctness case ${error.path}: ${error.message}`);
       const actualHash = await sha256File(resolveWithin(options.root, summary.path));
       if (actualHash !== summary.sha256) gaps.push('correctness case hash does not match receipt');

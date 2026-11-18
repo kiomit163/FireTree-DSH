@@ -33,7 +33,7 @@ async function setSampleRate(workspace, rate) {
 
 async function writeEvidence(workspace) {
   await mkdir(join(workspace.root, 'evidence'), { recursive: true });
-  await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"/>\n', 'utf8');
+  await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"><testcase name="x"/></testsuite>\n', 'utf8');
 }
 
 function buildArgs(change, overrides = {}) {

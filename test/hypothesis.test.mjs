@@ -9,7 +9,7 @@ import { createHypothesisTool } from '../src/tools/hypothesis.js';
 import { createM1Workspace } from '../test-support/m1-workspace.mjs';
 
 const EXEC = { agent: { id: 'agent-1' }, signal: new AbortController().signal };
-const EVIDENCE_TEXT = '<testsuite tests="1" failures="0"/>\n';
+const EVIDENCE_TEXT = '<testsuite tests="1" failures="0"><testcase name="x"/></testsuite>\n';
 const EVIDENCE_HASH = sha256Text(EVIDENCE_TEXT);
 
 function contextFor(root) {

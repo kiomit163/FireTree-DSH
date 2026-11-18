@@ -35,7 +35,7 @@ async function prepareL1(workspace) {
     change: 'chg-l1',
   }, EXEC);
   await mkdir(join(workspace.root, 'evidence'), { recursive: true });
-  await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"/>\n', 'utf8');
+  await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"><testcase name="x"/></testsuite>\n', 'utf8');
 
   const review = createReviewTool(ctx);
   await review.execute({
@@ -121,7 +121,7 @@ test('build assembles an L1 receipt from external evidence and check accepts it'
     assert.equal(built.receipt.schema, 'firetree.receipt/v1');
     assert.equal(built.receipt.tier, 'L1');
     assert.equal(built.receipt.evidence[0].producer, 'ci:github-actions');
-    assert.equal(built.receipt.evidence[0].sha256, sha256Text('<testsuite tests="1" failures="0"/>\n'));
+    assert.equal(built.receipt.evidence[0].sha256, sha256Text('<testsuite tests="1" failures="0"><testcase name="x"/></testsuite>\n'));
     assert.equal(built.receipt.correctness_case, null);
     assert.deepEqual(validateJsonSchema(built, tool.output.schema), []);
 
@@ -147,10 +147,23 @@ test('build and check enforce L2 correctness case and human sign-off', async () 
     }, EXEC);
 
     await mkdir(join(workspace.root, 'evidence'), { recursive: true });
-    await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="2" failures="0"/>\n', 'utf8');
+    await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="2" failures="0"><testcase name="a"/><testcase name="b"/></testsuite>\n', 'utf8');
     await mkdir(join(workspace.root, '.firetree', 'changes', 'chg-l2'), { recursive: true });
-    const caseText = await readFile(new URL('../fixtures/correctness-case-l2.json', import.meta.url), 'utf8');
-    await writeFile(join(workspace.root, '.firetree', 'changes', 'chg-l2', 'correctness-case.json'), caseText, 'utf8');
+    await writeFile(join(workspace.root, '.firetree', 'changes', 'chg-l2', 'correctness-case.json'), `${JSON.stringify({
+      schema: 'firetree.correctness-case/v1',
+      claims: [
+        { id: 'c1', statement: 'Concurrent duplicate charges are prevented.', kind: 'safety', owner: 'human:author-01' },
+        { id: 'c2', statement: 'Retries return the original result.', kind: 'functional', owner: 'human:author-01' },
+      ],
+      invariants: [
+        { id: 'i1', statement: 'The idempotency key is written before capture.', enforced_by: 'code', evidence_ref: 'evidence/junit.xml' },
+      ],
+      mapping: [
+        { claim_id: 'c1', invariant_ids: ['i1'], tests: ['BillingIdempotencyTest'], evidence_refs: ['evidence/junit.xml'] },
+        { claim_id: 'c2', invariant_ids: ['i1'], tests: ['BillingRetryTest'], evidence_refs: ['evidence/junit.xml'] },
+      ],
+      residual: [],
+    }, null, 2)}\n`, 'utf8');
 
     const review = createReviewTool(ctx);
     await review.execute({
@@ -320,7 +333,7 @@ test('receipt linkage fails closed when review artifact is missing or tampered',
       change: 'chg-l1',
     }, EXEC);
     await mkdir(join(workspace.root, 'evidence'), { recursive: true });
-    await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"/>\n', 'utf8');
+    await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"><testcase name="x"/></testsuite>\n', 'utf8');
     const tool = createReceiptTool(ctx);
     const missingReview = await tool.execute(l1BuildArgs(), EXEC);
     assert.equal(missingReview.ok, false);

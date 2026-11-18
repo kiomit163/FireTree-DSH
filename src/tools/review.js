@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 
 import { assertSafeId, firetreePath, listJsonFiles, readFiretreeJson, writeFiretreeJson } from '../lib/artifacts.js';
+import { appendEvent } from '../lib/events.js';
 import { assertJsonSchemaValue } from '../lib/schema.js';
 import { toToolSchema } from '../lib/tool-schema.js';
 
@@ -380,6 +381,10 @@ export function createReviewTool(ctx) {
         };
         assertJsonSchemaValue(pkg, PACKAGE_SCHEMA, { rootSchema: REVIEW_SCHEMA });
         const artifact = await writeFiretreeJson(root, `.firetree/changes/${parsed.change}/package.json`, pkg);
+        await appendEvent(root, {
+          change: parsed.change, actor: 'agent', tool: 'firetree_review', action: 'open', tier, result: 'ok',
+          detail: { seats: pkg.seats.length },
+        });
         return {
           ok: true,
           schema: 'firetree.review/v1',
@@ -414,6 +419,10 @@ export function createReviewTool(ctx) {
         };
         assertJsonSchemaValue(round, ROUND_SCHEMA, { rootSchema: REVIEW_SCHEMA });
         const artifact = await writeFiretreeJson(root, `.firetree/changes/${parsed.change}/round-${next}.json`, round);
+        await appendEvent(root, {
+          change: parsed.change, actor: 'agent', tool: 'firetree_review', action: 'round', tier, result: 'ok',
+          detail: { round: next, findings: round.findings.length },
+        });
         return {
           ok: true,
           schema: 'firetree.review/v1',
@@ -469,6 +478,10 @@ export function createReviewTool(ctx) {
       };
       assertJsonSchemaValue(verdict, VERDICT_SCHEMA, { rootSchema: REVIEW_SCHEMA });
       const artifact = await writeFiretreeJson(root, `.firetree/changes/${parsed.change}/verdict.json`, verdict);
+      await appendEvent(root, {
+        change: parsed.change, actor: 'agent', tool: 'firetree_review', action: 'verdict', tier, result: 'ok',
+        detail: { decision: verdict.decision, rounds: verdict.rounds },
+      });
       return {
         ok: true,
         schema: 'firetree.review/v1',

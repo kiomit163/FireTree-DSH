@@ -153,7 +153,7 @@ test('change state projects autonomous technical evidence', async () => {
       change: 'chg-state-auto',
     }, EXEC);
     await mkdir(join(workspace.root, 'evidence'), { recursive: true });
-    await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"/>\n', 'utf8');
+    await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"><testcase name="x"/></testsuite>\n', 'utf8');
     const receipt = createReceiptTool(ctx);
     const built = await receipt.execute({
       action: 'build',

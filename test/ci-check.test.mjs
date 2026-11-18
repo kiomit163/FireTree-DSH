@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
+import { generateKeyPairSync, sign } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { test } from 'node:test';
 
+import { buildBundleManifest } from '../src/lib/bundle.js';
 import { createAssessTool } from '../src/tools/assess.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
 import { createM1Workspace } from '../test-support/m1-workspace.mjs';
@@ -51,7 +53,7 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
     policy.tiers.L0.sample_rate = 0;
     await writeFile(policyPath, `${JSON.stringify(policy, null, 2)}\n`, 'utf8');
     await mkdir(join(workspace.root, 'evidence'), { recursive: true });
-    await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"/>\n', 'utf8');
+    await writeFile(join(workspace.root, 'evidence', 'junit.xml'), '<testsuite tests="1" failures="0"><testcase name="x"/></testsuite>\n', 'utf8');
 
     const ctx = { workingDirectory: { async ensure() { return workspace.root; } } };
     const exec = { agent: { id: 'agent-1' }, signal: new AbortController().signal };
@@ -105,7 +107,7 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
     assert.equal(parsed.ok, true);
     assert.equal(parsed.assurance, 'A2');
 
-    const a3 = await cli([
+    const a3Missing = await cli([
       '--mode', 'governed',
       '--change', 'chg-cli-a2',
       '--root', workspace.root,
@@ -113,8 +115,45 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
       '--repository', 'owner/repo',
       '--require', 'A3',
     ]);
-    assert.equal(a3.code, 1);
-    assert.ok(JSON.parse(a3.stdout).gaps.some((gap) => /A3 verification is not implemented/.test(gap)));
+    assert.equal(a3Missing.code, 1);
+    assert.ok(JSON.parse(a3Missing.stdout).gaps.some((gap) => /required assurance A3/.test(gap)));
+
+    const { publicKey, privateKey } = generateKeyPairSync('ed25519');
+    const bundle = await buildBundleManifest(join(workspace.root, '.firetree'));
+    await writeFile(join(workspace.root, '.firetree', 'bundle-manifest.json'), `${JSON.stringify(bundle, null, 2)}\n`, 'utf8');
+    const signaturePath = join(workspace.root, 'signature.json');
+    await writeFile(signaturePath, `${JSON.stringify({
+      schema: 'firetree.signature/v1',
+      algorithm: 'ed25519',
+      digest: bundle.digest,
+      signature: sign(null, Buffer.from(bundle.digest, 'utf8'), privateKey).toString('base64'),
+    }, null, 2)}\n`, 'utf8');
+    await writeFile(join(workspace.root, 'public.pem'), publicKey.export({ type: 'spki', format: 'pem' }), 'utf8');
+    const approvalPath = join(workspace.root, 'approval.json');
+    await writeFile(approvalPath, `${JSON.stringify({
+      schema: 'firetree.approval/v1',
+      change: { head: assessment.change.head },
+      reviewer: 'github:alice',
+      source: 'github-review',
+      decision: 'approved',
+      submitted_at: '2026-11-18T01:00:00Z',
+      ref: 'pull/1#review-1',
+    }, null, 2)}\n`, 'utf8');
+
+    const a3 = await cli([
+      '--mode', 'governed',
+      '--change', 'chg-cli-a2',
+      '--root', workspace.root,
+      '--claims', claimsPath,
+      '--repository', 'owner/repo',
+      '--bundle', join(workspace.root, '.firetree'),
+      '--approval', approvalPath,
+      '--signature', signaturePath,
+      '--public-key', join(workspace.root, 'public.pem'),
+      '--require', 'A3',
+    ]);
+    assert.equal(a3.code, 0, a3.stdout + a3.stderr);
+    assert.equal(JSON.parse(a3.stdout).assurance, 'A3');
 
     const noClaims = await cli([
       '--mode', 'governed',

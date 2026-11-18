@@ -57,15 +57,24 @@
   - claimed assurance 高于 derived → gap。
 - 新增 `test/identity.test.mjs`、`bin/firetree-check` 的 A2/A3 CLI 测试。
 
+### WP2 A3 / WP3 证据 / WP5 事件（本轮追加）
+
+- **A3**：新增 `approval.js`、`signature.js`；`firetree-check` 支持 `--approval`、`--signature`、`--public-key`；A3 = claims + CI 证据 + 人类审批 + Ed25519 签名 bundle。`--require A3` 现在真验签，不再占位。
+- **JUnit**：按 D6 引入 `fast-xml-parser` 5.11.2，替换正则校验；拒绝 DOCTYPE/ENTITY、限制大小/testcase 数、从 `<testcase>` 计数，防止 `tests="999999"` 伪造。
+- **证据格式**：governed receipt 与技术证据都校验 JUnit/SARIF/SBOM 内容；L1/L2 evidence 不再是“只哈希不看内容”。
+- **正确性论证**：`validateCorrectnessCase` 支持 `evidenceRefs`；mapping/invariant 的 evidence_ref 必须命中回执 evidence；tier-matrix/ receipt 测试使用真实 refs。
+- **accepted risk**：hypotheses ledger 增加 `accepted_risks`；`firetree_hypothesis` 新增 `accept`（human + approval_ref + expiry）；receipt 统计 active accepted risk 并复验；新增 `test/accepted-risk.test.mjs`。
+- **事件与状态**：新增 `src/lib/events.js` 哈希链 `.firetree/events.jsonl`；assess/review/receipt 写入事件；`firetree_state` 的 expiring/blocked 由 receipt/technical evidence 的 `expires_at` 计算；新增 `scripts/metrics.mjs`。
+
 ## 验证
 
 | 项 | 结果 |
 |---|---|
-| `node --test` | **171/171 通过**（新增 L0、unknown、git、identity、bundle、schema lint、CLI A2 测试） |
+| `node --test` | **173/173 通过**（新增 A3、JUnit 解析、accepted risk、事件/状态测试） |
 | `node scripts/lint-schemas.mjs` | `schemas=10 errors=0` |
-| `node scripts/check-syntax.mjs` | `checked=73 failed=0` |
-| `node scripts/check-docs.mjs` | `docs=36 links=85 errors=0` |
-| 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core） |
+| `node scripts/check-syntax.mjs` | `checked=78 failed=0` |
+| `node scripts/check-docs.mjs` | `docs=37 links=85 errors=0` |
+| 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core）、本轮待提交（WP2 A3/WP3/WP5） |
 
 ## 仍未完成（下一步）
 

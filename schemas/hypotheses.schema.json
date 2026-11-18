@@ -13,6 +13,10 @@
     "hypotheses": {
       "type": "array",
       "items": { "$ref": "#/$defs/hypothesis" }
+    },
+    "accepted_risks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/acceptedRisk" }
     }
   },
   "$defs": {
@@ -41,6 +45,22 @@
         "run_ref": { "type": "string", "minLength": 1 },
         "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
         "produced_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "acceptedRisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hypothesis_id", "reason", "accepted_by", "approval_ref", "expires_at"],
+      "properties": {
+        "hypothesis_id": { "type": "string", "pattern": "^h[0-9]+$" },
+        "reason": { "type": "string", "minLength": 1 },
+        "accepted_by": {
+          "type": "string",
+          "pattern": "^human:",
+          "description": "A human accepts the residual risk; an agent cannot."
+        },
+        "approval_ref": { "type": "string", "minLength": 1 },
+        "expires_at": { "type": "string", "format": "date-time" }
       }
     },
     "hypothesis": {

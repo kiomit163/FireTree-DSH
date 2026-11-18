@@ -33,11 +33,15 @@
     "check:docs": "node scripts/check-docs.mjs",
     "lint:schemas": "node scripts/lint-schemas.mjs",
     "check:syntax": "node scripts/check-syntax.mjs",
+    "metrics": "node scripts/metrics.mjs",
     "check": "npm test && npm run check:docs && npm run lint:schemas && npm run check:syntax"
   },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
+  },
+  "dependencies": {
+    "fast-xml-parser": "5.11.2"
   }
 }

@@ -16,13 +16,14 @@ function push(errors, path, keyword, message) {
  *
  * @param {unknown} value - Correctness-case value.
  * @param {object} schema - `#/$defs/correctnessCase` from receipt.schema.json.
- * @param {{now?: Date, rootSchema?: object}} [options] - Clock override and root schema for local $refs.
+ * @param {{now?: Date, rootSchema?: object, evidenceRefs?: string[]}} [options] - Clock, root schema, and known evidence references.
  * @returns {{valid: boolean, errors: Array<{path: string, keyword: string, message: string}>}} Result.
  */
 export function validateCorrectnessCase(value, schema, options = {}) {
   const errors = validateJsonSchema(value, schema, { rootSchema: options.rootSchema ?? schema });
   if (errors.length > 0) return { valid: false, errors };
 
+  const evidenceRefs = options.evidenceRefs === undefined ? null : new Set(options.evidenceRefs);
   const now = options.now ?? new Date();
   const claims = new Map();
   for (let index = 0; index < value.claims.length; index += 1) {
@@ -60,6 +61,21 @@ export function validateCorrectnessCase(value, schema, options = {}) {
     if (mapping.evidence_refs.length === 0) {
       push(errors, `$.mapping[${index}].evidence_refs`, 'coverage', 'a mapping needs at least one evidence reference');
     }
+    if (evidenceRefs !== null) {
+      for (let refIndex = 0; refIndex < mapping.evidence_refs.length; refIndex += 1) {
+        const ref = mapping.evidence_refs[refIndex];
+        if (!evidenceRefs.has(ref)) {
+          push(errors, `$.mapping[${index}].evidence_refs[${refIndex}]`, 'evidence_ref', `unknown evidence reference "${ref}"`);
+        }
+      }
+    }
+  }
+
+  for (let index = 0; index < value.invariants.length; index += 1) {
+    const invariant = value.invariants[index];
+    if (evidenceRefs !== null && !evidenceRefs.has(invariant.evidence_ref)) {
+      push(errors, `$.invariants[${index}].evidence_ref`, 'evidence_ref', `unknown evidence reference "${invariant.evidence_ref}"`);
+    }
   }
 
   for (const [claimId] of claims) {
@@ -90,7 +106,7 @@ export function validateCorrectnessCase(value, schema, options = {}) {
 /**
  * @param {unknown} value - Correctness-case value.
  * @param {object} schema - Correctness-case schema.
- * @param {{now?: Date, rootSchema?: object}} [options] - Clock override and root schema for local $refs.
+ * @param {{now?: Date, rootSchema?: object, evidenceRefs?: string[]}} [options] - Clock, root schema, and known evidence references.
  * @returns {void}
  */
 export function assertCorrectnessCase(value, schema, options = {}) {
