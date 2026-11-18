@@ -25,6 +25,7 @@
     "icon.svg"
   ],
   "bin": {
+    "firetree-assess": "./bin/firetree-assess.mjs",
     "firetree-check": "./bin/firetree-check.mjs"
   },
   "scripts": {
