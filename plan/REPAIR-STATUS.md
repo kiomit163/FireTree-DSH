@@ -38,6 +38,7 @@
   - 未评审的不同评估 → 旧 assessment 归档到 `revisions/<n>.json`，新评估 `revision+1`。
 - `review.open` 自动绑定 assessment SHA；若 assessment 有 git diff 而传入 `diff_sha256` 不一致 → `DIFF_MISMATCH`。
 - `review.verdict` 写入 `assessment_sha256`、`package_sha256`；receipt 的 review 摘要携带二者；`checkReceiptSemantics` 复验 assessment/package 哈希。
+- 新增 `bin/firetree-assess.mjs`：从 git 计算 diff、调用 assess、输出 JSON。
 - 新增 `test/git-assess.test.mjs`（git 绑定、评审绑定、不可变/修订）。
 
 ### WP2 信任根（核心部分）
@@ -64,7 +65,7 @@
 | `node scripts/lint-schemas.mjs` | `schemas=10 errors=0` |
 | `node scripts/check-syntax.mjs` | `checked=73 failed=0` |
 | `node scripts/check-docs.mjs` | `docs=36 links=85 errors=0` |
-| 分支 | `repair/v0.1`，已提交 `e30963b`（WP0/WP1） |
+| 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core） |
 
 ## 仍未完成（下一步）
 
