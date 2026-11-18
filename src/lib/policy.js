@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { readJsonFile, resolveWithin, sha256Text } from './artifacts.js';
+import { matchesGlob } from './glob.js';
 import { canonicalJson } from './json.js';
 import { validateJsonSchema } from './schema.js';
 
@@ -133,4 +134,69 @@ export async function loadPolicyChain(root, policyPath = '.firetree/policy.json'
   return loadOne(root, policyPath, new Set());
 }
 
-export { POLICY_SCHEMA };
+const HARD_TRIGGERS = new Set(['unknown-impact', 'interface-change', 'security', 'data']);
+
+function triggerForReason(reason) {
+  if (reason.startsWith('unknown path:') || reason.startsWith('consumer not registered:')) return 'unknown-impact';
+  if (reason.startsWith('interface changed:')) return 'interface-change';
+  if (reason.startsWith('cross-subsystem:')) return 'cross-subsystem';
+  if (reason.startsWith('dependency changed:')) return 'dependency';
+  if (reason.startsWith('sensitive path:')) return 'security';
+  return null;
+}
+
+function exceptionActive(exception, now) {
+  const createdAt = Date.parse(exception.created_at);
+  const expiresAt = Date.parse(exception.expires_at);
+  return !Number.isNaN(createdAt) && !Number.isNaN(expiresAt) && createdAt <= now && expiresAt > now;
+}
+
+function exceptionCovers(exception, change, files) {
+  if (exception.scope === change) return true;
+  return files.length > 0 && files.every((file) => {
+    try {
+      return matchesGlob(file, exception.scope);
+    } catch {
+      return false;
+    }
+  });
+}
+
+/**
+ * Apply policy L2 triggers and active exceptions to a raw impact tier.
+ *
+ * Hard triggers (unknown impact, interface, security, data) can never be waived.
+ * Soft triggers are L2 only when the policy lists them in `triggers.L2`.
+ *
+ * @param {object} policy - Resolved policy.
+ * @param {{change: string, files: string[], rawTier: string, reasons: string[], now?: Date}} input - Decision input.
+ * @returns {{tier: string, reasons: string[], waived: string[], exceptions: string[]}} Decision.
+ */
+export function evaluatePolicy(policy, input) {
+  const now = (input.now ?? new Date()).getTime();
+  const files = input.files ?? [];
+  const active = (policy.exceptions ?? []).filter((exception) => exceptionActive(exception, now) && exceptionCovers(exception, input.change, files));
+  const waived = new Set(active.flatMap((exception) => exception.waives ?? []).filter((trigger) => !HARD_TRIGGERS.has(trigger)));
+  const reasons = [];
+  let tier = input.rawTier;
+  if (input.rawTier === 'L2') {
+    const triggers = [...new Set((input.reasons ?? []).map(triggerForReason).filter(Boolean))];
+    const effective = triggers.filter((trigger) => HARD_TRIGGERS.has(trigger) || !waived.has(trigger));
+    const l2Configured = effective.filter((trigger) => HARD_TRIGGERS.has(trigger) || policy.triggers.L2.includes(trigger));
+    if (l2Configured.length === 0) {
+      tier = input.reasons.some((reason) => reason.startsWith('cross-subsystem:') || reason.startsWith('dependency changed:'))
+        ? 'L1'
+        : 'L2';
+      reasons.push('policy: soft L2 trigger not configured or waived');
+    }
+    for (const exception of active) {
+      reasons.push(`exception active: ${exception.id}`);
+    }
+    for (const trigger of waived) {
+      reasons.push(`exception waives: ${trigger}`);
+    }
+  }
+  return { tier, reasons, waived: [...waived].sort(), exceptions: active.map((exception) => exception.id) };
+}
+
+export { HARD_TRIGGERS, POLICY_SCHEMA };

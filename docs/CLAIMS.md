@@ -19,7 +19,7 @@
 | 未验证假设必须有人类风险接受 | implemented | `test/accepted-risk.test.mjs` |
 | JUnit 标准解析，拒绝伪造计数 | implemented | `test/junit.test.mjs`、`test/coverage.test.mjs` |
 | policy 继承 tighten-only + digest | implemented | `test/policy-chain.test.mjs` |
-| policy triggers 驱动 tier / exceptions 消费 | planned | impact 仍用内置规则；见 plan/REPAIR-STATUS.md |
+| policy triggers 驱动 tier / exceptions 消费 | implemented | `test/assess.test.mjs`；soft trigger 可配置/豁免，hard trigger（unknown/interface/security/data）不可豁免 |
 | coverage/SARIF/SBOM 内容校验 | partial | coverage/JUnit/SARIF/SBOM 结构已校验；阈值策略未做 |
 | interface hash/contract test | partial | interface hash 已校验；contract test 执行未做 |
 | 事件链 + state expiry/metrics | partial | 事件/聚合/expiry 已做；SPC/调度未做 |

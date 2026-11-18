@@ -18,6 +18,7 @@ import { normalizeRepoPath } from '../lib/glob.js';
 import { analyzeImpact, ImpactError } from '../lib/impact.js';
 import { verifyInterfaceHashes } from '../lib/interface.js';
 import { loadOwners } from '../lib/owners.js';
+import { evaluatePolicy } from '../lib/policy.js';
 import { loadRegistry } from '../lib/registry.js';
 import { assertJsonSchemaValue } from '../lib/schema.js';
 import { toToolSchema } from '../lib/tool-schema.js';
@@ -211,14 +212,20 @@ export function createAssessTool(ctx) {
         throw error;
       }
 
-      const autoTier = analysis.auto_tier;
+      const policyDecision = evaluatePolicy(registry.policy, {
+        change: parsed.change,
+        files,
+        rawTier: analysis.auto_tier,
+        reasons: analysis.reasons,
+      });
+      const autoTier = policyDecision.tier;
       if (parsed.declared_tier !== undefined && TIER_ORDER[parsed.declared_tier] < TIER_ORDER[autoTier]) {
         throw new AssessError('TIER_DOWNGRADE_REJECTED', `declared tier ${parsed.declared_tier} is lower than automatic tier ${autoTier}`);
       }
       const tier = parsed.declared_tier !== undefined && TIER_ORDER[parsed.declared_tier] > TIER_ORDER[autoTier]
         ? parsed.declared_tier
         : autoTier;
-      const reasons = [...analysis.reasons];
+      const reasons = [...analysis.reasons, ...policyDecision.reasons];
       if (tier !== autoTier) reasons.push(`declared tier raised to ${tier}`);
 
       const created = new Date().toISOString();

@@ -128,6 +128,40 @@ test('interface registry hash mismatch fails closed', async () => {
   }
 });
 
+test('policy L2 triggers can tune soft dependency changes; exceptions can waive them', async () => {
+  const workspace = await createM1Workspace();
+  try {
+    const policyPath = join(workspace.root, '.firetree', 'policy.json');
+    const policy = JSON.parse(await readFile(policyPath, 'utf8'));
+    policy.triggers.L2 = policy.triggers.L2.filter((trigger) => trigger !== 'dependency');
+    await writeFile(policyPath, `${JSON.stringify(policy, null, 2)}\n`, 'utf8');
+    const tool = createAssessTool(contextFor(workspace.root));
+    const tuned = await tool.execute(assessArgs({ files: ['services/billing/go.sum'], change: 'change-tuned' }), EXEC);
+    assert.equal(tuned.auto_tier, 'L1');
+    assert.ok(tuned.reasons.some((reason) => reason.includes('soft L2 trigger not configured')));
+
+    policy.triggers.L2.push('dependency');
+    policy.exceptions = [{
+      id: 'EX-900', reason: 'hotfix', approver: 'human:architect-01', scope: 'services/billing/**',
+      created_at: '2026-01-01T00:00:00Z', expires_at: '2030-01-01T00:00:00Z', waives: ['dependency'],
+    }];
+    await writeFile(policyPath, `${JSON.stringify(policy, null, 2)}\n`, 'utf8');
+    const waived = await tool.execute(assessArgs({ files: ['services/billing/go.sum'], change: 'change-waived' }), EXEC);
+    assert.equal(waived.auto_tier, 'L1');
+    assert.ok(waived.reasons.some((reason) => reason.includes('exception active: EX-900')));
+
+    policy.exceptions = [{
+      id: 'EX-901', reason: 'cannot waive hard trigger', approver: 'human:architect-01', scope: '**',
+      created_at: '2026-01-01T00:00:00Z', expires_at: '2030-01-01T00:00:00Z', waives: ['unknown-impact'],
+    }];
+    await writeFile(policyPath, `${JSON.stringify(policy, null, 2)}\n`, 'utf8');
+    const hard = await tool.execute(assessArgs({ files: ['tools/legacy/x.py'], change: 'change-hard' }), EXEC);
+    assert.equal(hard.auto_tier, 'L2');
+  } finally {
+    await workspace.cleanup();
+  }
+});
+
 test('declared tier cannot be lower than automatic tier', async () => {
   const workspace = await createM1Workspace();
   try {

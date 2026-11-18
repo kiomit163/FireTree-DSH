@@ -78,6 +78,12 @@
 - `src/lib/registry.js` 的 `loadPolicy` 改走 policy chain；assessment/receipt 的 `policy.version` 现在是真实 digest。
 - 新增 `test/policy-chain.test.mjs`（继承、放松拒绝、缺父、环、digest）。
 - **L0 收窄**：`.env*`、`.github/**`、任意服务 config、`docs/` 下的代码、`test/` 目录中的运行时代码不再 L0；接口 consumers 不再被算作“changed code subsystems”，避免接口变更误报 cross-subsystem。新增 impact 反例测试。
+- **triggers/exceptions**：`evaluatePolicy` 已驱动 assess 的 auto tier：
+  - soft trigger（dependency/cross-subsystem）仅在 `triggers.L2` 配置时升 L2，可由 active exception 的 `waives` 豁免；
+  - hard trigger（unknown-impact/interface-change/security/data）不可豁免；
+  - exception 要求 human approver + 未过期 + scope 覆盖全部变更文件；
+  - assessment.reasons 记录 exception id/waived trigger。
+  - 新增 assess 测试；`policy.schema.json` 的 exception 增加可选 `waives`。
 
 ### WP7 文档/迁移（本轮追加）
 
@@ -101,7 +107,7 @@
 
 | 项 | 结果 |
 |---|---|
-| `node --test` | **180/180 通过**（新增 A3、JUnit/coverage、accepted risk、policy chain、L0 反例、interface hash、事件/状态测试） |
+| `node --test` | **181/181 通过**（新增 A3、JUnit/coverage、accepted risk、policy chain、triggers/exceptions、L0 反例、interface hash、事件/状态测试） |
 | `node scripts/lint-schemas.mjs` | `schemas=10 errors=0` |
 | `node scripts/check-syntax.mjs` | `checked=84 failed=0` |
 | `node scripts/check-docs.mjs` | `docs=40 links=89 errors=0` |
@@ -112,7 +118,7 @@
 
 1. **WP2 收尾**：GitHub `actions/attest-build-provenance` keyless 真验签适配（当前 A3 用 Ed25519 离线签名，是可用但非 keyless 的路径）；`bin/firetree-approval.mjs`（从 GitHub API 生成 approval.json）；CI 模板端到端跑一次。
 2. **WP3 收尾**：SARIF/SBOM/coverage 的 policy 阈值；interface contract test/depends_on；`intent` 按 policy 必填开关。
-3. **WP4 收尾**：triggers 真正驱动 tier（当前 policy chain/digest 已落地，但 impact 仍用内置规则）；exceptions 在 assess 中消费；bootstrap registry。
+3. **WP4 收尾**：bootstrap registry（自动从目录树/CODEOWNERS 生成候选）；policy 模板。
 4. **WP5 收尾**：metrics 周报/SPC 模板；state 过期夹具测试；schedule/re-eval。
 5. **WP6 收尾**：`ctx.effect` 清理、Config schema、LICENSE/NOTICE、README/详情页、升级/回滚 smoke。
 6. **WP8/WP9**：本仓 + 1 外部代码仓试点、shadow/warn/enforce、安全/性能/回滚。
