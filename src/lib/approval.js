@@ -59,6 +59,38 @@ export function parseApproval(value) {
 }
 
 /**
+ * Normalize a GitHub PR review object into a FireTree approval.
+ *
+ * @param {object} review - GitHub review object.
+ * @param {{head: string, change?: string}} options - Expected head and change id.
+ * @returns {object} Approval record.
+ */
+export function approvalFromGithubReview(review, options) {
+  if (typeof review !== 'object' || review === null) throw new ApprovalError('INVALID_APPROVAL', 'review must be an object');
+  if (review.state !== 'APPROVED') throw new ApprovalError('INVALID_APPROVAL', `review state is ${String(review.state)}, not APPROVED`);
+  const login = review.user?.login;
+  if (typeof login !== 'string' || login.length === 0) throw new ApprovalError('INVALID_APPROVAL', 'review.user.login is missing');
+  if (typeof review.commit_id !== 'string' || review.commit_id.toLowerCase() !== options.head.toLowerCase()) {
+    throw new ApprovalError('INVALID_APPROVAL', 'review commit does not match --head');
+  }
+  if (typeof review.submitted_at !== 'string' || Number.isNaN(Date.parse(review.submitted_at))) {
+    throw new ApprovalError('INVALID_APPROVAL', 'review.submitted_at is missing or invalid');
+  }
+  return {
+    schema: 'firetree.approval/v1',
+    change: {
+      ...(options.change === undefined ? {} : { id: options.change }),
+      head: options.head.toLowerCase(),
+    },
+    reviewer: `github:${login}`,
+    source: 'github-review',
+    decision: 'approved',
+    submitted_at: review.submitted_at,
+    ref: String(review.html_url ?? `github-review:${review.id ?? 'unknown'}`),
+  };
+}
+
+/**
  * Verify approval against the change head and optional reviewer policy.
  *
  * @param {object} approval - Normalized approval.

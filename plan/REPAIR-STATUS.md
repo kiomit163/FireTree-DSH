@@ -60,6 +60,7 @@
 ### WP2 A3 / WP3 证据 / WP5 事件（本轮追加）
 
 - **A3**：新增 `approval.js`、`signature.js`；`firetree-check` 支持 `--approval`、`--signature`、`--public-key`；A3 = claims + CI 证据 + 人类审批 + Ed25519 签名 bundle。`--require A3` 现在真验签，不再占位。
+- **approval CLI**：新增 `bin/firetree-approval.mjs`，把 GitHub PR review JSON 归一化为 `firetree.approval/v1`；新增 `test/approval.test.mjs`。
 - **JUnit**：按 D6 引入 `fast-xml-parser` 5.11.2，替换正则校验；拒绝 DOCTYPE/ENTITY、限制大小/testcase 数、从 `<testcase>` 计数，防止 `tests="999999"` 伪造。
 - **证据格式**：governed receipt 与技术证据都校验 JUnit/SARIF/SBOM 内容；L1/L2 evidence 不再是“只哈希不看内容”。
 - **正确性论证**：`validateCorrectnessCase` 支持 `evidenceRefs`；mapping/invariant 的 evidence_ref 必须命中回执 evidence；tier-matrix/ receipt 测试使用真实 refs。
@@ -107,16 +108,16 @@
 
 | 项 | 结果 |
 |---|---|
-| `node --test` | **181/181 通过**（新增 A3、JUnit/coverage、accepted risk、policy chain、triggers/exceptions、L0 反例、interface hash、事件/状态测试） |
+| `node --test` | **183/183 通过**（新增 A3/approval、JUnit/coverage、accepted risk、policy chain、triggers/exceptions、L0 反例、interface hash、事件/状态测试） |
 | `node scripts/lint-schemas.mjs` | `schemas=10 errors=0` |
-| `node scripts/check-syntax.mjs` | `checked=84 failed=0` |
+| `node scripts/check-syntax.mjs` | `checked=86 failed=0` |
 | `node scripts/check-docs.mjs` | `docs=40 links=89 errors=0` |
 | live 安装 | `install_bundle` → `application: applied`；`firetree_state`/assess/receipt 实际调用通过 |
 | 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core）、`f9374cb`（WP2 A3/WP3/WP5）、`33a28ab`（WP4 policy + live install）、`4731150`（L0 收窄/optional intent）、`20473b1`（全工具事件 + docs v1）、`a79a135`（coverage/interface/migration）、`6f4a8dc`（triggers/exceptions） |
 
 ## 仍未完成（下一步）
 
-1. **WP2 收尾**：GitHub `actions/attest-build-provenance` keyless 真验签适配（当前 A3 用 Ed25519 离线签名，是可用但非 keyless 的路径）；`bin/firetree-approval.mjs`（从 GitHub API 生成 approval.json）；CI 模板端到端跑一次。
+1. **WP2 收尾**：GitHub `actions/attest-build-provenance` keyless 真验签适配（当前 A3 用 Ed25519 离线签名，是可用但非 keyless 的路径）；CI 模板端到端跑一次。
 2. **WP3 收尾**：SARIF/SBOM/coverage 的 policy 阈值；interface contract test/depends_on；`intent` 按 policy 必填开关。
 3. **WP4 收尾**：bootstrap registry（自动从目录树/CODEOWNERS 生成候选）；policy 模板。
 4. **WP5 收尾**：metrics 周报/SPC 模板；state 过期夹具测试；schedule/re-eval。

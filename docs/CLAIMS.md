@@ -11,7 +11,7 @@
 | L0 未采样不需要 review；采样需要人类 spot-check | implemented | `test/tier-matrix.test.mjs` |
 | 证据由 CI/确定性工具产生，插件只读 | partial | 哈希/格式/claims 已校验；producer 仍是字符串，OIDC 只证明 CI 运行 |
 | A2 需要 OIDC claims | implemented | `test/identity.test.mjs`、CLI A2 测试 |
-| A3 需要人类审批 + 签名 bundle | partial | Ed25519 A3 已验证；GitHub keyless/Sigstore 适配未做 |
+| A3 需要人类审批 + 签名 bundle | partial | Ed25519 A3 已验证；GitHub review→approval CLI 已完成；GitHub keyless/Sigstore 适配未做 |
 | 变更集来自 git diff，不可自述 | implemented | `test/git-assess.test.mjs` |
 | 重评估不能覆盖已评审 change | implemented | `test/git-assess.test.mjs` |
 | 评审绑定 assessment/diff/package | implemented | `test/git-assess.test.mjs`、receipt 复验 |

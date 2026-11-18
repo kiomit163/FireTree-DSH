@@ -26,6 +26,7 @@
     "README.md"
   ],
   "bin": {
+    "firetree-approval": "./bin/firetree-approval.mjs",
     "firetree-assess": "./bin/firetree-assess.mjs",
     "firetree-check": "./bin/firetree-check.mjs"
   },
