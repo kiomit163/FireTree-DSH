@@ -66,24 +66,47 @@
 - **accepted risk**：hypotheses ledger 增加 `accepted_risks`；`firetree_hypothesis` 新增 `accept`（human + approval_ref + expiry）；receipt 统计 active accepted risk 并复验；新增 `test/accepted-risk.test.mjs`。
 - **事件与状态**：新增 `src/lib/events.js` 哈希链 `.firetree/events.jsonl`；assess/review/receipt 写入事件；`firetree_state` 的 expiring/blocked 由 receipt/technical evidence 的 `expires_at` 计算；新增 `scripts/metrics.mjs`。
 
+### WP4 policy chain（本轮追加）
+
+- 新增 `src/lib/policy.js`：
+  - `extends` 递归解析；
+  - tighten-only 合并（sample_rate/review_rounds/signoff/correctness_case/token_budget 只能加严）；
+  - `version` 改为 canonical policy 的 SHA-256（不再信任文件里的字面值）；
+  - cycle/missing parent/relaxation 分类错误。
+- `src/lib/registry.js` 的 `loadPolicy` 改走 policy chain；assessment/receipt 的 `policy.version` 现在是真实 digest。
+- 新增 `test/policy-chain.test.mjs`（继承、放松拒绝、缺父、环、digest）。
+
+### WP6 安装与 live smoke（本轮追加）
+
+- 已通过 `plugin_manager install_bundle` 安装 `@local/firetree-dsh@0.1.0`，结果 `application: applied`。
+- 当前 DSH 会话技能目录已出现 6 个 FireTree 技能；7 个 `firetree_*` 工具已可调用。
+- 在 `.tmp/live` fixture 上完成 live：
+  - `firetree_assess` → L0（subsystems=1, unknown=0）；
+  - `firetree_state` → 1 pending；
+  - `firetree_receipt build` → `ok=true; 0 gap(s)`；
+  - `firetree_receipt check` → `ok=true; 0 gap(s)`；
+  - `firetree_state` → 0 pending。
+- 说明：这是“插件真实安装 + 工具真实调用”的 smoke，不是团队试点。
+
 ## 验证
 
 | 项 | 结果 |
 |---|---|
-| `node --test` | **173/173 通过**（新增 A3、JUnit 解析、accepted risk、事件/状态测试） |
+| `node --test` | **176/176 通过**（新增 A3、JUnit 解析、accepted risk、policy chain、事件/状态测试） |
 | `node scripts/lint-schemas.mjs` | `schemas=10 errors=0` |
-| `node scripts/check-syntax.mjs` | `checked=78 failed=0` |
+| `node scripts/check-syntax.mjs` | `checked=80 failed=0` |
 | `node scripts/check-docs.mjs` | `docs=37 links=85 errors=0` |
-| 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core）、本轮待提交（WP2 A3/WP3/WP5） |
+| live 安装 | `install_bundle` → `application: applied`；`firetree_state`/assess/receipt 实际调用通过 |
+| 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core）、`f9374cb`（WP2 A3/WP3/WP5） |
 
 ## 仍未完成（下一步）
 
-1. **WP2 剩余**：A3 签名/审批（Sigstore/`actions/attest-build-provenance` 验签、`approval.json` 验证）；`bin/firetree-approval.mjs`；`firetree-check --require A3` 真验签。
-2. **WP3**：JUnit/SARIF/SBOM/coverage adapter（按 D6 引入隔离 XML 解析器）；correctness case evidence_refs 连回执；accepted_risks；interface hash/contract test/depends_on。
-3. **WP4**：自研 JSON policy 编译器（triggers/exceptions/inheritance/digest/decision log）；L0 收窄；bootstrap registry。
-4. **WP5**：events.jsonl + 投影 + metrics/SPC + state expiry/blocked。
-5. **WP6**：DSH `ctx.effect` 清理、Config、Files/README、LICENSE/NOTICE、安装 smoke。
-6. **WP7**：文档 v1 同步、CLAIMS、COMPATIBILITY、THREAT-MODEL、v0→v1 迁移。
+1. **WP2 收尾**：GitHub `actions/attest-build-provenance` 真验签适配（当前 A3 用 Ed25519 离线签名，是可用但非 keyless 的路径）；`bin/firetree-approval.mjs`（从 GitHub API 生成 approval.json）；CI 模板端到端跑一次。
+2. **WP3 收尾**：coverage adapter；SARIF/SBOM 的 policy 阈值；interface hash/contract test/depends_on；`intent` 按 policy 可选（D9/P-30）。
+3. **WP4 收尾**：triggers 真正驱动 tier（当前 policy chain/digest 已落地，但 impact 仍用内置规则）；exceptions 在 assess 中消费；L0 收窄（`.env`/config/CI/代码在 docs/test 目录）；bootstrap registry。
+4. **WP5 收尾**：events 全工具覆盖（classify/hypothesis/synthesize/state 尚未写事件）；metrics 周报/SPC 模板；state 过期夹具测试；schedule/re-eval。
+5. **WP6 收尾**：`ctx.effect` 清理、Config schema、LICENSE/NOTICE、README/详情页、升级/回滚 smoke。
+6. **WP7**：文档 v1 同步、CLAIMS、COMPATIBILITY、THREAT-MODEL、v0→v1 迁移脚本。
 7. **WP8/WP9**：本仓 + 1 外部代码仓试点、shadow/warn/enforce、安全/性能/回滚。
 
 ## 已知限制

@@ -3,9 +3,9 @@
 import { readFileSync } from 'node:fs';
 
 import { listJsonFiles, readJsonFile, resolveWithin } from './artifacts.js';
+import { loadPolicyChain, PolicyError } from './policy.js';
 import { validateJsonSchema } from './schema.js';
 
-const POLICY_SCHEMA = JSON.parse(readFileSync(new URL('../../schemas/policy.schema.json', import.meta.url), 'utf8'));
 const SUBSYSTEM_SCHEMA = JSON.parse(readFileSync(new URL('../../schemas/subsystems.schema.json', import.meta.url), 'utf8'));
 const INTERFACE_SCHEMA = JSON.parse(readFileSync(new URL('../../schemas/interfaces.schema.json', import.meta.url), 'utf8'));
 
@@ -38,18 +38,14 @@ function schemaErrors(value, schema, label) {
  * @returns {Promise<object>} Validated policy.
  */
 export async function loadPolicy(root, policyPath = '.firetree/policy.json') {
-  const file = resolveWithin(root, policyPath);
-  let value;
   try {
-    value = await readJsonFile(file);
+    return await loadPolicyChain(root, policyPath);
   } catch (error) {
-    if (error && typeof error === 'object' && error.code === 'READ_FAILED' && error.cause?.code === 'ENOENT') {
-      throw new RegistryError('POLICY_MISSING', `policy not found at ${policyPath}`, { path: policyPath });
+    if (error instanceof PolicyError) {
+      throw new RegistryError(error.code, error.message, { path: error.path, errors: error.errors });
     }
     throw error;
   }
-  schemaErrors(value, POLICY_SCHEMA, policyPath);
-  return value;
 }
 
 async function loadEntries(root, relativeDirectory, schema, label) {

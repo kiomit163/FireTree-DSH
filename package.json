@@ -22,7 +22,8 @@
     "schemas/*.schema.json",
     "cordis.patch.yml",
     "locale/*.json",
-    "icon.svg"
+    "icon.svg",
+    "README.md"
   ],
   "bin": {
     "firetree-assess": "./bin/firetree-assess.mjs",

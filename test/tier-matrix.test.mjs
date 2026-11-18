@@ -7,6 +7,7 @@ import { sha256Text } from '../src/lib/artifacts.js';
 import { createAssessTool } from '../src/tools/assess.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
 import { createReviewTool } from '../src/tools/review.js';
+import { createStateTool } from '../src/tools/state.js';
 import { createM1Workspace } from '../test-support/m1-workspace.mjs';
 
 const EXEC = { agent: { id: 'agent-1' }, signal: new AbortController().signal };
@@ -76,6 +77,11 @@ test('L0 unsampled receipt builds and checks without a review artifact', async (
 
     const checked = await receipt.execute({ action: 'check', change: 'chg-l0-unsampled' }, EXEC);
     assert.equal(checked.ok, true, checked.gaps?.join('; '));
+
+    const state = await createStateTool(ctx).execute({ change: 'chg-l0-unsampled' }, EXEC);
+    assert.equal(state.counts.pending, 0);
+    assert.equal(state.counts.expiring, 0);
+    assert.equal(state.counts.blocked, 0);
   } finally {
     await workspace.cleanup();
   }
