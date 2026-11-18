@@ -64,7 +64,7 @@ test('L1 review runs open, two rounds, and a three-step verdict', async () => {
 
     const opened = await tool.execute(openArgs(), EXEC);
     assert.equal(opened.tier, 'L1');
-    assert.equal(opened.record.schema, 'firetree.review-package/v0');
+    assert.equal(opened.record.schema, 'firetree.review-package/v1');
     assert.deepEqual(validateJsonSchema(opened, tool.output.schema), []);
 
     await tool.execute({ action: 'round', change: 'chg-r1', findings: [resolvedFinding] }, EXEC);
@@ -88,7 +88,7 @@ test('L1 review runs open, two rounds, and a three-step verdict', async () => {
       signoff: { by: 'human', identity: 'human:reviewer-01', at: '2026-11-07T00:00:00Z', scope: 'L1 review' },
       decision: 'ready',
     }, EXEC);
-    assert.equal(verdict.record.schema, 'firetree.review-verdict/v0');
+    assert.equal(verdict.record.schema, 'firetree.review-verdict/v1');
     assert.deepEqual(verdict.record.new_findings, [1, 0]);
     assert.equal(verdict.record.decision, 'ready');
 
@@ -140,7 +140,7 @@ test('L2 review requires two seats, two rounds, seven steps, and human sign-off'
       signoff: { by: 'human', identity: 'human:architect-01', at: '2026-11-07T00:00:00Z', scope: 'L2 review' },
       decision: 'ready',
     }, EXEC);
-    assert.equal(verdict.record.schema, 'firetree.review-verdict/v0');
+    assert.equal(verdict.record.schema, 'firetree.review-verdict/v1');
     assert.deepEqual(verdict.record.new_findings, [1, 0]);
   } finally {
     await workspace.cleanup();

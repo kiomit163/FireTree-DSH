@@ -2,8 +2,17 @@
 
 import { readFileSync } from 'node:fs';
 
-import { ArtifactError, assertSafeId, sha256Text, writeFiretreeJson } from '../lib/artifacts.js';
+import {
+  ArtifactError,
+  assertSafeId,
+  firetreePath,
+  pathExists,
+  readFiretreeJson,
+  sha256Text,
+  writeFiretreeJson,
+} from '../lib/artifacts.js';
 import { loadCodeowners } from '../lib/codeowners.js';
+import { GitError, verifyGitChange } from '../lib/git.js';
 import { normalizeRepoPath } from '../lib/glob.js';
 import { analyzeImpact, ImpactError } from '../lib/impact.js';
 import { loadOwners } from '../lib/owners.js';
@@ -14,11 +23,11 @@ import { toToolSchema } from '../lib/tool-schema.js';
 const ASSESSMENT_SCHEMA = JSON.parse(readFileSync(new URL('../../schemas/assessment.schema.json', import.meta.url), 'utf8'));
 const TIER_ORDER = { L0: 0, L1: 1, L2: 2 };
 const REQUIRED_ARTIFACTS = Object.freeze({
-  L0: ['test_evidence', 'receipt', 'light_review'],
+  L0: ['test_evidence', 'receipt'],
   L1: ['test_evidence', 'hypotheses', 'three_step_review', 'impact_traversal', 'receipt'],
   L2: ['test_evidence', 'hypotheses', 'synthesis', 'seven_step_review', 'correctness_case', 'human_signoff', 'impact_traversal', 'receipt'],
 });
-const ALLOWED_ARGS = new Set(['base', 'head', 'files', 'declared_tier', 'policy_path', 'change']);
+const ALLOWED_ARGS = new Set(['base', 'head', 'files', 'declared_tier', 'policy_path', 'change', 'verify_git']);
 
 /** Assessment input/rule failure. */
 export class AssessError extends Error {
@@ -67,6 +76,7 @@ const PARAMETERS = {
     declared_tier: { type: 'string', enum: ['L0', 'L1', 'L2'] },
     policy_path: { type: 'string', description: 'Optional repo-relative policy path.' },
     change: { type: 'string', description: 'Optional safe change id.' },
+    verify_git: { type: 'boolean', description: 'Require files to match `git diff base..head` and bind the tree/diff hashes.' },
   },
 };
 
@@ -101,6 +111,9 @@ function validateArgs(args) {
   if (args.policy_path !== undefined && (typeof args.policy_path !== 'string' || !isSafeRepoPath(args.policy_path))) {
     throw new AssessError('INVALID_ARGS', 'policy_path must be a safe repo-relative path');
   }
+  if (args.verify_git !== undefined && typeof args.verify_git !== 'boolean') {
+    throw new AssessError('INVALID_ARGS', 'verify_git must be a boolean');
+  }
   const change = args.change === undefined
     ? `chg-${sha256Text(`${args.base}..${args.head}`).slice(0, 12)}`
     : assertSafeId(args.change, 'change');
@@ -111,6 +124,7 @@ function validateArgs(args) {
     declared_tier: args.declared_tier,
     policy_path: args.policy_path,
     change,
+    verify_git: args.verify_git === true,
   };
 }
 
@@ -152,6 +166,22 @@ export function createAssessTool(ctx) {
       const root = await rootFor(ctx, exec);
       const policyPath = parsed.policy_path ?? '.firetree/policy.json';
 
+      let base = parsed.base;
+      let head = parsed.head;
+      let files = parsed.files;
+      let gitIdentity = null;
+      if (parsed.verify_git) {
+        try {
+          gitIdentity = verifyGitChange(root, base, head, files);
+        } catch (error) {
+          if (error instanceof GitError) throw new AssessError(error.code, error.message);
+          throw error;
+        }
+        base = gitIdentity.base;
+        head = gitIdentity.head;
+        files = gitIdentity.files;
+      }
+
       let registry;
       try {
         registry = await loadRegistry(root, { policyPath });
@@ -167,7 +197,7 @@ export function createAssessTool(ctx) {
       let analysis;
       try {
         analysis = analyzeImpact({
-          files: parsed.files,
+          files,
           subsystems: registry.subsystems,
           interfaces: registry.interfaces,
           codeowners: owners,
@@ -188,22 +218,72 @@ export function createAssessTool(ctx) {
       if (tier !== autoTier) reasons.push(`declared tier raised to ${tier}`);
 
       const created = new Date().toISOString();
+      const samplingDecision = sampling(registry.policy, tier, parsed.change, files);
+      const requiredArtifacts = [...REQUIRED_ARTIFACTS[tier]];
+      if (tier === 'L0' && samplingDecision.selected) requiredArtifacts.push('light_review');
+
+      const assessmentPath = `.firetree/changes/${parsed.change}/assessment.json`;
+      let existing = null;
+      try {
+        existing = await readFiretreeJson(root, assessmentPath, { verifyHash: true, missing: 'null' });
+      } catch (error) {
+        if (error instanceof ArtifactError && error.code === 'READ_FAILED' && error.cause?.code === 'ENOENT') {
+          existing = null;
+        } else {
+          throw error;
+        }
+      }
+
+      let revision = 1;
+      let prevAssessment = null;
+      if (existing !== null) {
+        const old = existing.value;
+        const sameChange = old.change?.base === base
+          && old.change?.head === head
+          && Array.isArray(old.change?.files)
+          && sha256Text(old.change.files.join('\n')) === sha256Text(files.join('\n'));
+        if (sameChange) {
+          const sameOutput = {
+            ok: true,
+            ...old,
+            artifact: { path: assessmentPath, sha256: existing.sha256 },
+          };
+          assertJsonSchemaValue(sameOutput, OUTPUT_SCHEMA);
+          return sameOutput;
+        }
+        if (pathExists(firetreePath(root, 'changes', parsed.change, 'package.json'))
+          || pathExists(firetreePath(root, 'changes', parsed.change, 'verdict.json'))
+          || pathExists(firetreePath(root, 'receipts', `${parsed.change}.json`))
+          || pathExists(firetreePath(root, 'changes', parsed.change, 'synthesis', 'plan.json'))) {
+          throw new AssessError('CHANGE_IMMUTABLE', 'change has review/receipt/synthesis artifacts; use a new change id');
+        }
+        revision = (Number.isInteger(old.revision) ? old.revision : 1) + 1;
+        prevAssessment = existing.sha256;
+        const archivePath = `.firetree/changes/${parsed.change}/revisions/${revision - 1}.json`;
+        await writeFiretreeJson(root, archivePath, { ...old, revision: revision - 1 });
+      }
+
       const assessment = {
-        schema: 'firetree.assessment/v0',
+        schema: 'firetree.assessment/v1',
         change: {
           id: parsed.change,
-          base: parsed.base,
-          head: parsed.head,
-          files: parsed.files,
+          base,
+          head,
+          files,
         },
+        revision,
+        ...(prevAssessment === null ? {} : { prev_assessment: prevAssessment }),
+        ...(gitIdentity === null
+          ? {}
+          : { git: { tree_sha: gitIdentity.tree_sha, diff_sha256: gitIdentity.diff_sha256 } }),
         tier,
         auto_tier: autoTier,
         ...(parsed.declared_tier === undefined ? {} : { declared_tier: parsed.declared_tier }),
         reasons,
         impact: analysis.impact,
         confidence: analysis.confidence,
-        required_artifacts: [...REQUIRED_ARTIFACTS[tier]],
-        sampling: sampling(registry.policy, tier, parsed.change, parsed.files),
+        required_artifacts: requiredArtifacts,
+        sampling: samplingDecision,
         signoff_required: registry.policy.tiers[tier].signoff,
         policy: {
           path: policyPath,
@@ -213,7 +293,7 @@ export function createAssessTool(ctx) {
       };
       assertJsonSchemaValue(assessment, ASSESSMENT_SCHEMA);
 
-      const artifact = await writeFiretreeJson(root, `.firetree/changes/${parsed.change}/assessment.json`, assessment);
+      const artifact = await writeFiretreeJson(root, assessmentPath, assessment);
       const output = {
         ok: true,
         ...assessment,

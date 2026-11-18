@@ -11,7 +11,7 @@ test('loads policy, subsystems, and interfaces from .firetree', async () => {
   const workspace = await createM1Workspace();
   try {
     const policy = await loadPolicy(workspace.root);
-    assert.equal(policy.schema, 'firetree.policy/v0');
+    assert.equal(policy.schema, 'firetree.policy/v1');
     assert.equal(policy.scope, 'org');
 
     const subsystems = await loadSubsystems(workspace.root);
@@ -21,7 +21,7 @@ test('loads policy, subsystems, and interfaces from .firetree', async () => {
     assert.deepEqual(interfaces.map((entry) => entry.id), ['billing.api']);
 
     const registry = await loadRegistry(workspace.root);
-    assert.equal(registry.policy.schema, 'firetree.policy/v0');
+    assert.equal(registry.policy.schema, 'firetree.policy/v1');
     assert.equal(registry.subsystems.length, 3);
     assert.equal(registry.interfaces.length, 1);
   } finally {
@@ -42,7 +42,7 @@ test('invalid registry entry fails with schema errors', async () => {
   const root = await mkdtemp(join(tmpdir(), 'firetree-registry-'));
   try {
     await mkdir(join(root, '.firetree', 'subsystems'), { recursive: true });
-    await writeFile(join(root, '.firetree', 'subsystems', 'bad.json'), '{"schema":"firetree.subsystem/v0"}\n', 'utf8');
+    await writeFile(join(root, '.firetree', 'subsystems', 'bad.json'), '{"schema":"firetree.subsystem/v1"}\n', 'utf8');
     await assert.rejects(
       loadSubsystems(root),
       (error) => error instanceof RegistryError && error.code === 'SCHEMA_INVALID' && error.errors.length > 0,

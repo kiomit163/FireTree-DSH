@@ -41,7 +41,7 @@ const DOSSIER_OUTPUT = {
   additionalProperties: false,
   required: ['schema', 'subsystem', 'kind', 'layers_known', 'layers_unknown', 'coupling_evidence', 'reducibility_test', 'method', 'owner_of_unknowns', 'learning_plan', 'allowed', 'updated_at'],
   properties: {
-    schema: { type: 'string', const: 'firetree.oid/v0' },
+    schema: { type: 'string', const: 'firetree.oid/v1' },
     subsystem: { type: 'string' },
     kind: { type: 'string', enum: [...KINDS] },
     layers_known: { type: 'array', items: { type: 'string' } },
@@ -79,7 +79,7 @@ const OUTPUT_SCHEMA = {
   required: ['ok', 'schema', 'action', 'subsystem', 'dossier', 'allowed', 'artifact'],
   properties: {
     ok: { type: 'boolean', const: true },
-    schema: { type: 'string', const: 'firetree.classify/v0' },
+    schema: { type: 'string', const: 'firetree.classify/v1' },
     action: { type: 'string', enum: ['set', 'show'] },
     subsystem: { type: 'string' },
     dossier: DOSSIER_OUTPUT,
@@ -261,7 +261,7 @@ export function createClassifyTool(ctx) {
         assertJsonSchemaValue(dossier, DOSSIER_SCHEMA);
         return {
           ok: true,
-          schema: 'firetree.classify/v0',
+          schema: 'firetree.classify/v1',
           action: 'show',
           subsystem: parsed.subsystem,
           dossier,
@@ -271,7 +271,7 @@ export function createClassifyTool(ctx) {
       }
 
       const dossier = {
-        schema: 'firetree.oid/v0',
+        schema: 'firetree.oid/v1',
         subsystem: parsed.subsystem,
         kind: parsed.kind,
         layers_known: parsed.layers_known,
@@ -288,7 +288,7 @@ export function createClassifyTool(ctx) {
       const artifact = await writeFiretreeJson(root, relativePath, dossier);
       return {
         ok: true,
-        schema: 'firetree.classify/v0',
+        schema: 'firetree.classify/v1',
         action: 'set',
         subsystem: parsed.subsystem,
         dossier,

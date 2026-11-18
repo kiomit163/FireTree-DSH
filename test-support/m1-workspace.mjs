@@ -6,7 +6,7 @@ const HASH = 'a'.repeat(64);
 
 const SUBSYSTEMS = {
   billing: {
-    schema: 'firetree.subsystem/v0',
+    schema: 'firetree.subsystem/v1',
     id: 'billing',
     name: 'Billing',
     paths: ['services/billing/**', 'contracts/billing/**'],
@@ -23,7 +23,7 @@ const SUBSYSTEMS = {
     },
   },
   checkout: {
-    schema: 'firetree.subsystem/v0',
+    schema: 'firetree.subsystem/v1',
     id: 'checkout',
     name: 'Checkout',
     paths: ['services/checkout/**'],
@@ -40,7 +40,7 @@ const SUBSYSTEMS = {
     },
   },
   docs: {
-    schema: 'firetree.subsystem/v0',
+    schema: 'firetree.subsystem/v1',
     id: 'docs',
     name: 'Documentation',
     paths: ['docs/**'],
@@ -58,7 +58,7 @@ const SUBSYSTEMS = {
 };
 
 const INTERFACE = {
-  schema: 'firetree.interface/v0',
+  schema: 'firetree.interface/v1',
   id: 'billing.api',
   kind: 'openapi',
   file: 'contracts/billing/openapi.yaml',

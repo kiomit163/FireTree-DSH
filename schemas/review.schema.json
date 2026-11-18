@@ -1,17 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://firetree.local/schemas/review.schema.json",
-  "title": "FireTree review artifacts v0",
+  "title": "FireTree review artifacts v1",
   "description": "Review package, round, and verdict artifacts for L1 three-step and L2 seven-step reviews.",
   "$defs": {
     "package": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schema", "change", "tier", "diff_sha256", "spec_sha256", "criteria", "evidence", "seats", "opened_at"],
+      "required": ["schema", "change", "tier", "mode", "assessment_sha256", "diff_sha256", "spec_sha256", "criteria", "evidence", "seats", "opened_at"],
       "properties": {
-        "schema": { "const": "firetree.review-package/v0" },
+        "schema": { "const": "firetree.review-package/v1" },
         "change": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
-        "tier": { "type": "string", "enum": ["L1", "L2"] },
+        "tier": { "type": "string", "enum": ["L0", "L1", "L2"] },
+        "mode": { "type": "string", "enum": ["light", "standard", "full"] },
+        "assessment_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
         "diff_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
         "spec_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
         "criteria": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
@@ -42,7 +44,7 @@
       "additionalProperties": false,
       "required": ["schema", "change", "round", "findings", "created_at"],
       "properties": {
-        "schema": { "const": "firetree.review-round/v0" },
+        "schema": { "const": "firetree.review-round/v1" },
         "change": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
         "round": { "type": "integer", "minimum": 1, "maximum": 3 },
         "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
@@ -66,11 +68,14 @@
     "verdict": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schema", "change", "tier", "steps", "rounds", "new_findings", "dissent", "decision", "created_at"],
+      "required": ["schema", "change", "tier", "mode", "assessment_sha256", "package_sha256", "steps", "rounds", "new_findings", "dissent", "decision", "created_at"],
       "properties": {
-        "schema": { "const": "firetree.review-verdict/v0" },
+        "schema": { "const": "firetree.review-verdict/v1" },
         "change": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
-        "tier": { "type": "string", "enum": ["L1", "L2"] },
+        "tier": { "type": "string", "enum": ["L0", "L1", "L2"] },
+        "mode": { "type": "string", "enum": ["light", "standard", "full"] },
+        "assessment_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "package_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
         "steps": {
           "type": "array",
           "minItems": 3,
@@ -90,6 +95,7 @@
         "dissent": { "type": "integer", "minimum": 0 },
         "decision": { "type": "string", "enum": ["ready", "not-ready"] },
         "zero_dissent_checks": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "human_spot_check": { "$ref": "#/$defs/humanSpotCheck" },
         "signoff": {
           "type": "object",
           "additionalProperties": false,
@@ -102,6 +108,29 @@
           }
         },
         "created_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "tier": { "const": "L0" } },
+            "required": ["tier"]
+          },
+          "then": {
+            "required": ["human_spot_check"]
+          }
+        }
+      ]
+    },
+    "humanSpotCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["by", "at", "source", "ref"],
+      "properties": {
+        "by": { "type": "string", "pattern": "^human:" },
+        "identity": { "type": "string", "minLength": 1 },
+        "at": { "type": "string", "format": "date-time" },
+        "source": { "type": "string", "enum": ["github-review", "dsh-approval", "manual"] },
+        "ref": { "type": "string", "minLength": 1 }
       }
     }
   }

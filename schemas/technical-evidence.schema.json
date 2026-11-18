@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://firetree.local/schemas/technical-evidence.schema.json",
-  "title": "FireTree autonomous technical evidence v0",
+  "title": "FireTree autonomous technical evidence v1",
   "description": "Evidence-complete technical artifact for AI-only operation. It is not a delivery receipt, never carries human signoff, and cannot claim completion or a milestone.",
   "type": "object",
   "additionalProperties": false,
@@ -25,7 +25,7 @@
     "created_at"
   ],
   "properties": {
-    "schema": { "const": "firetree.technical-evidence/v0" },
+    "schema": { "const": "firetree.technical-evidence/v1" },
     "mode": { "const": "autonomous" },
     "change": {
       "type": "object",

@@ -62,7 +62,7 @@ test('autonomous technical evidence builds and checks without human signoff', as
     const tool = createReceiptTool(ctx);
     const built = await tool.execute(buildArgs(), EXEC);
     assert.equal(built.ok, true);
-    assert.equal(built.technical_evidence.schema, 'firetree.technical-evidence/v0');
+    assert.equal(built.technical_evidence.schema, 'firetree.technical-evidence/v1');
     assert.equal(built.technical_evidence.mode, 'autonomous');
     assert.equal(built.technical_evidence.human_signoff, false);
     assert.equal(built.technical_evidence.completion_claim, false);
@@ -72,7 +72,7 @@ test('autonomous technical evidence builds and checks without human signoff', as
 
     const checked = await tool.execute({ action: 'check', mode: 'autonomous', change: 'chg-auto' }, EXEC);
     assert.equal(checked.ok, true);
-    assert.equal(checked.technical_evidence.schema, 'firetree.technical-evidence/v0');
+    assert.equal(checked.technical_evidence.schema, 'firetree.technical-evidence/v1');
 
     const record = await readFiretreeJson(workspace.root, '.firetree/evidence/chg-auto.json', { verifyHash: true });
     assert.equal(record.value.human_signoff, false);

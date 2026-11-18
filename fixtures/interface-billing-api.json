@@ -1,5 +1,5 @@
 {
-  "schema": "firetree.interface/v0",
+  "schema": "firetree.interface/v1",
   "id": "billing.api",
   "kind": "openapi",
   "file": "contracts/billing/openapi.yaml",

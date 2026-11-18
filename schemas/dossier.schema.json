@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://firetree.local/schemas/dossier.schema.json",
-  "title": "FireTree OID dossier v0",
+  "title": "FireTree OID dossier v1",
   "description": "Object-identification dossier for one subsystem or program. It records what is known, what is unknown, how reducibility was tested, who owns the unknowns, and which delivery autonomy is allowed.",
   "type": "object",
   "additionalProperties": false,
@@ -21,7 +21,7 @@
   ],
   "properties": {
     "schema": {
-      "const": "firetree.oid/v0"
+      "const": "firetree.oid/v1"
     },
     "subsystem": {
       "type": "string",

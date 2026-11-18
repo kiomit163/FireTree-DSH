@@ -40,7 +40,7 @@ const OUTPUT_SCHEMA = {
   required: ['ok', 'schema', 'action', 'change', 'record', 'artifact'],
   properties: {
     ok: { type: 'boolean', const: true },
-    schema: { type: 'string', const: 'firetree.synthesize/v0' },
+    schema: { type: 'string', const: 'firetree.synthesize/v1' },
     action: { type: 'string', enum: [...ACTIONS] },
     change: { type: 'string' },
     record: { type: 'object' },
@@ -289,7 +289,7 @@ export function createSynthesizeTool(ctx) {
         const existing = await readFiretreeJson(root, planPath(parsed.change), { verifyHash: true, missing: 'null' });
         if (existing !== null) throw new SynthesisError('PLAN_EXISTS', 'synthesis plan already exists');
         const plan = {
-          schema: 'firetree.synthesis-plan/v0',
+          schema: 'firetree.synthesis-plan/v1',
           change: parsed.change,
           tier: 'L2',
           question: parsed.question,
@@ -310,7 +310,7 @@ export function createSynthesizeTool(ctx) {
         const artifact = await writeFiretreeJson(root, planPath(parsed.change), plan);
         return {
           ok: true,
-          schema: 'firetree.synthesize/v0',
+          schema: 'firetree.synthesize/v1',
           action: 'plan',
           change: parsed.change,
           record: plan,
@@ -345,7 +345,7 @@ export function createSynthesizeTool(ctx) {
         timed_out: timedOut,
       };
       const round = {
-        schema: 'firetree.synthesis-round/v0',
+        schema: 'firetree.synthesis-round/v1',
         change: parsed.change,
         round: next,
         seats,
@@ -357,7 +357,7 @@ export function createSynthesizeTool(ctx) {
       const artifact = await writeFiretreeJson(root, roundPath(parsed.change, next), round);
       return {
         ok: true,
-        schema: 'firetree.synthesize/v0',
+        schema: 'firetree.synthesize/v1',
         action: 'record',
         change: parsed.change,
         record: round,

@@ -16,6 +16,7 @@ const ROUTES = new Set(['blocker', 'non-blocker', 'question']);
 const LENSES = new Set(['correctness', 'security', 'compatibility', 'performance', 'operations', 'tests', 'other']);
 const STEP_IDS = new Set(['criteria', 'review', 'conclusion', 'data', 'seats', 'pre_read', 'discussion', 'written_conclusion', 'notify']);
 const REQUIRED_STEPS = Object.freeze({
+  L0: ['criteria', 'review', 'conclusion'],
   L1: ['criteria', 'review', 'conclusion'],
   L2: ['criteria', 'data', 'seats', 'pre_read', 'discussion', 'written_conclusion', 'notify'],
 });
@@ -33,6 +34,7 @@ const ALLOWED_ARGS = new Set([
   'dissent',
   'zero_dissent_checks',
   'signoff',
+  'human_spot_check',
   'decision',
 ]);
 
@@ -55,10 +57,10 @@ const OUTPUT_SCHEMA = {
   required: ['ok', 'schema', 'action', 'change', 'tier', 'record', 'artifact'],
   properties: {
     ok: { type: 'boolean', const: true },
-    schema: { type: 'string', const: 'firetree.review/v0' },
+    schema: { type: 'string', const: 'firetree.review/v1' },
     action: { type: 'string', enum: [...ACTIONS] },
     change: { type: 'string' },
-    tier: { type: 'string', enum: ['L1', 'L2'] },
+    tier: { type: 'string', enum: ['L0', 'L1', 'L2'] },
     record: { type: 'object' },
     artifact: {
       type: 'object',
@@ -134,6 +136,17 @@ const PARAMETERS = {
         identity: { type: 'string' },
         at: { type: 'string' },
         scope: { type: 'string' },
+      },
+    },
+    human_spot_check: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        by: { type: 'string' },
+        identity: { type: 'string' },
+        at: { type: 'string' },
+        source: { type: 'string', enum: ['github-review', 'dsh-approval', 'manual'] },
+        ref: { type: 'string' },
       },
     },
     decision: { type: 'string', enum: ['ready', 'not-ready'] },
@@ -228,6 +241,22 @@ function validateSignoff(value) {
   };
 }
 
+function validateHumanSpotCheck(value) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new ReviewError('HUMAN_SPOT_CHECK_REQUIRED', 'sampled L0 requires a human_spot_check object');
+  }
+  const by = text(value.by, 'human_spot_check.by');
+  if (!by.startsWith('human:')) throw new ReviewError('HUMAN_SPOT_CHECK_REQUIRED', 'human_spot_check.by must start with human:');
+  const at = text(value.at, 'human_spot_check.at');
+  if (Number.isNaN(Date.parse(at))) throw new ReviewError('INVALID_ARGS', 'human_spot_check.at must be a date-time');
+  if (!['github-review', 'dsh-approval', 'manual'].includes(value.source)) {
+    throw new ReviewError('INVALID_ARGS', 'human_spot_check.source must be github-review, dsh-approval, or manual');
+  }
+  const spot = { by, at, source: value.source, ref: text(value.ref, 'human_spot_check.ref') };
+  if (value.identity !== undefined) spot.identity = text(value.identity, 'human_spot_check.identity');
+  return spot;
+}
+
 function validateArgs(args) {
   if (typeof args !== 'object' || args === null || Array.isArray(args)) throw new ReviewError('INVALID_ARGS', 'arguments must be an object');
   for (const key of Object.keys(args)) {
@@ -265,6 +294,7 @@ function validateArgs(args) {
     dissent: args.dissent,
     zero_dissent_checks: zeroChecks,
     signoff: validateSignoff(args.signoff),
+    human_spot_check: args.human_spot_check === undefined ? null : validateHumanSpotCheck(args.human_spot_check),
     decision: args.decision,
   };
 }
@@ -278,8 +308,11 @@ async function assessmentFor(root, change) {
   const record = await readFiretreeJson(root, `.firetree/changes/${change}/assessment.json`, { verifyHash: true, missing: 'null' });
   if (record === null) throw new ReviewError('ASSESSMENT_REQUIRED', 'run firetree_assess before opening a review');
   const tier = record.value.tier;
-  if (tier !== 'L1' && tier !== 'L2') throw new ReviewError('TIER_NOT_REVIEWABLE', 'only L1/L2 changes require a review');
-  return record.value;
+  if (!['L0', 'L1', 'L2'].includes(tier)) throw new ReviewError('TIER_NOT_REVIEWABLE', 'tier must be L0, L1, or L2');
+  if (tier === 'L0' && record.value.sampling?.selected !== true) {
+    throw new ReviewError('L0_NOT_SAMPLED', 'an L0 review is only valid when the assessment sampled it');
+  }
+  return { value: record.value, sha256: record.sha256 ?? '' };
 }
 
 async function readPackage(root, change) {
@@ -324,15 +357,20 @@ export function createReviewTool(ctx) {
       const parsed = validateArgs(args);
       const root = await rootFor(ctx, exec);
       const assessment = await assessmentFor(root, parsed.change);
-      const tier = assessment.tier;
+      const tier = assessment.value.tier;
+      if (assessment.value.git?.diff_sha256 && assessment.value.git.diff_sha256 !== parsed.diff_sha256) {
+        throw new ReviewError('DIFF_MISMATCH', 'review diff_sha256 does not match assessment git diff');
+      }
 
       if (parsed.action === 'open') {
         const existing = await readFiretreeJson(root, `.firetree/changes/${parsed.change}/package.json`, { verifyHash: true, missing: 'null' });
         if (existing !== null) throw new ReviewError('REVIEW_ALREADY_OPEN', 'review package already exists');
         const pkg = {
-          schema: 'firetree.review-package/v0',
+          schema: 'firetree.review-package/v1',
           change: parsed.change,
           tier,
+          mode: tier === 'L0' ? 'light' : tier === 'L1' ? 'standard' : 'full',
+          assessment_sha256: assessment.sha256,
           diff_sha256: parsed.diff_sha256,
           spec_sha256: parsed.spec_sha256,
           criteria: parsed.criteria,
@@ -344,7 +382,7 @@ export function createReviewTool(ctx) {
         const artifact = await writeFiretreeJson(root, `.firetree/changes/${parsed.change}/package.json`, pkg);
         return {
           ok: true,
-          schema: 'firetree.review/v0',
+          schema: 'firetree.review/v1',
           action: 'open',
           change: parsed.change,
           tier,
@@ -354,17 +392,20 @@ export function createReviewTool(ctx) {
       }
 
       const pkg = await readPackage(root, parsed.change);
+      if (pkg.value.assessment_sha256 !== assessment.sha256) {
+        throw new ReviewError('ASSESSMENT_CHANGED', 'assessment changed after the review package was opened');
+      }
       const rounds = await readRounds(root, parsed.change);
 
       if (parsed.action === 'round') {
-        const maxRounds = tier === 'L1' ? 2 : 3;
+        const maxRounds = tier === 'L0' ? 1 : tier === 'L1' ? 2 : 3;
         const next = (rounds.at(-1)?.round ?? 0) + 1;
         if (next > maxRounds) throw new ReviewError('ROUND_LIMIT', `${tier} allows at most ${maxRounds} rounds`);
         if (parsed.findings.length === 0 && parsed.checked.length === 0) {
           throw new ReviewError('ZERO_FINDINGS_CHECK_REQUIRED', 'a zero-finding round must record what was checked');
         }
         const round = {
-          schema: 'firetree.review-round/v0',
+          schema: 'firetree.review-round/v1',
           change: parsed.change,
           round: next,
           findings: parsed.findings,
@@ -375,7 +416,7 @@ export function createReviewTool(ctx) {
         const artifact = await writeFiretreeJson(root, `.firetree/changes/${parsed.change}/round-${next}.json`, round);
         return {
           ok: true,
-          schema: 'firetree.review/v0',
+          schema: 'firetree.review/v1',
           action: 'round',
           change: parsed.change,
           tier,
@@ -403,10 +444,20 @@ export function createReviewTool(ctx) {
         if (parsed.signoff === null) throw new ReviewError('HUMAN_SIGNOFF_REQUIRED', 'L2 verdict requires human sign-off');
         if (parsed.signoff.by !== 'human') throw new ReviewError('HUMAN_SIGNOFF_REQUIRED', 'L2 verdict sign-off must be human');
       }
+      if (tier === 'L0' && parsed.human_spot_check === null) {
+        throw new ReviewError('HUMAN_SPOT_CHECK_REQUIRED', 'sampled L0 verdict requires a human spot-check');
+      }
+      if (tier !== 'L0' && parsed.human_spot_check !== null) {
+        throw new ReviewError('INVALID_ARGS', 'human_spot_check is only valid for sampled L0');
+      }
       const verdict = {
-        schema: 'firetree.review-verdict/v0',
+        schema: 'firetree.review-verdict/v1',
         change: parsed.change,
         tier,
+        mode: tier === 'L0' ? 'light' : tier === 'L1' ? 'standard' : 'full',
+        assessment_sha256: pkg.value.assessment_sha256,
+        package_sha256: pkg.sha256,
+        ...(parsed.human_spot_check === null ? {} : { human_spot_check: parsed.human_spot_check }),
         steps,
         rounds: rounds.length,
         new_findings: rounds.map((round) => round.findings.length),
@@ -420,7 +471,7 @@ export function createReviewTool(ctx) {
       const artifact = await writeFiretreeJson(root, `.firetree/changes/${parsed.change}/verdict.json`, verdict);
       return {
         ok: true,
-        schema: 'firetree.review/v0',
+        schema: 'firetree.review/v1',
         action: 'verdict',
         change: parsed.change,
         tier,

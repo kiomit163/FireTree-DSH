@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://firetree.local/schemas/receipt.schema.json",
-  "title": "FireTree delivery receipt v0",
-  "description": "The auditable exit artifact for one change. It references external evidence; it never creates evidence. The full correctness-case file validates against #/$defs/correctnessCase. Empty mapping is a semantic rejection implemented by the v0 correctness-case checker, because JSON Schema cannot compare claim ids across arrays.",
-  "$comment": "M0 v0 contract. Full cross-field verification (claim coverage, last-round zero findings, residual expiry, local A1 provenance) belongs to M2; the schema already exposes every field those checks need.",
+  "title": "FireTree delivery receipt v1",
+  "description": "The auditable exit artifact for one change. It references external evidence; it never creates evidence. The full correctness-case file validates against #/$defs/correctnessCase. Empty mapping is a semantic rejection implemented by the v1 correctness-case checker, because JSON Schema cannot compare claim ids across arrays.",
+  "$comment": "M0 v1 contract. Full cross-field verification (claim coverage, last-round zero findings, residual expiry, local A1 provenance) belongs to M2; the schema already exposes every field those checks need.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -12,7 +12,6 @@
     "tier",
     "policy",
     "intent",
-    "classification",
     "hypotheses",
     "evidence",
     "review",
@@ -24,7 +23,7 @@
   ],
   "properties": {
     "schema": {
-      "const": "firetree.receipt/v0"
+      "const": "firetree.receipt/v1"
     },
     "change": {
       "type": "object",
@@ -95,36 +94,11 @@
       "items": { "$ref": "#/$defs/evidence" }
     },
     "review": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["rounds", "new_findings", "dissent", "verdict"],
-      "properties": {
-        "rounds": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 3
-        },
-        "new_findings": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "type": "integer", "minimum": 0 }
-        },
-        "dissent": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "verdict": {
-          "type": "string",
-          "enum": ["ready", "not-ready"]
-        },
-        "zero_dissent_checks": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 },
-          "description": "Required when dissent is zero: what the reviewer actually checked."
-        }
-      }
+      "description": "Review summary. null only for an unsampled L0; L1/L2 require an object; sampled L0 requires a human spot-check.",
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/reviewSummary" }
+      ]
     },
     "correctness_case": {
       "description": "Summary of the separate correctness-case file. null for L0; required object for L2.",
@@ -145,6 +119,9 @@
         "subsystems",
         "interfaces",
         "owners",
+        "unknown",
+        "unresolved_consumers",
+        "reasons",
         "traversed",
         "confidence"
       ],
@@ -157,7 +134,6 @@
         },
         "subsystems": {
           "type": "array",
-          "minItems": 1,
           "uniqueItems": true,
           "items": { "type": "string", "minLength": 1 }
         },
@@ -168,8 +144,22 @@
         },
         "owners": {
           "type": "array",
-          "minItems": 1,
           "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "unknown": {
+          "description": "Changed paths that no registered subsystem matched. L2 may have an empty subsystem set only when this is non-empty.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "unresolved_consumers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "reasons": {
+          "type": "array",
           "items": { "type": "string", "minLength": 1 }
         },
         "traversed": {
@@ -194,8 +184,8 @@
     },
     "assurance": {
       "type": "string",
-      "enum": ["A1", "A2"],
-      "description": "A1 is local-only evidence; A2 requires CI-produced evidence. Never claim A2 without it."
+      "enum": ["A1", "A2", "A3"],
+      "description": "A1 local-only; A2 CI OIDC-verified; A3 A2 plus verified human approval and a signed/attested bundle. Derived by the verifier, never taken from the caller."
     }
   },
   "allOf": [
@@ -207,7 +197,6 @@
         "required": ["tier"]
       },
       "then": {
-        "required": ["synthesis"],
         "properties": {
           "correctness_case": { "type": "object" },
           "synthesis": { "type": "object" },
@@ -219,7 +208,9 @@
             }
           },
           "review": {
+            "type": "object",
             "properties": {
+              "mode": { "const": "full" },
               "rounds": { "minimum": 2 },
               "new_findings": { "minItems": 2 }
             }
@@ -279,7 +270,54 @@
           "impact": {
             "properties": {
               "traversed": { "const": true },
-              "confidence": { "const": "high" }
+              "confidence": { "const": "high" },
+              "subsystems": { "minItems": 1 },
+              "owners": { "minItems": 1 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tier": { "const": "L1" }
+        },
+        "required": ["tier"]
+      },
+      "then": {
+        "properties": {
+          "review": {
+            "type": "object",
+            "required": ["mode"],
+            "properties": {
+              "mode": { "const": "standard" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tier": { "const": "L0" },
+          "policy": {
+            "properties": {
+              "sampling": { "const": "sampled" }
+            },
+            "required": ["sampling"]
+          }
+        },
+        "required": ["tier", "policy"]
+      },
+      "then": {
+        "properties": {
+          "review": {
+            "type": "object",
+            "required": ["mode", "human_spot_check"],
+            "properties": {
+              "mode": { "const": "light" },
+              "human_spot_check": { "$ref": "#/$defs/humanSpotCheck" }
             }
           }
         }
@@ -413,6 +451,43 @@
         "scope": { "type": "string", "minLength": 1 }
       }
     },
+    "humanSpotCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["by", "at", "source", "ref"],
+      "properties": {
+        "by": { "type": "string", "pattern": "^human:" },
+        "identity": { "type": "string", "minLength": 1 },
+        "at": { "type": "string", "format": "date-time" },
+        "source": { "type": "string", "enum": ["github-review", "dsh-approval", "manual"] },
+        "ref": { "type": "string", "minLength": 1 }
+      }
+    },
+    "reviewSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "assessment_sha256", "package_sha256", "rounds", "new_findings", "dissent", "verdict"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["light", "standard", "full"] },
+        "assessment_sha256": { "$ref": "#/$defs/sha256" },
+        "package_sha256": { "$ref": "#/$defs/sha256" },
+        "rounds": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "new_findings": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "integer", "minimum": 0 }
+        },
+        "dissent": { "type": "integer", "minimum": 0 },
+        "verdict": { "type": "string", "enum": ["ready", "not-ready"] },
+        "zero_dissent_checks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "human_spot_check": { "$ref": "#/$defs/humanSpotCheck" }
+      }
+    },
     "correctnessCaseSummary": {
       "type": "object",
       "additionalProperties": false,
@@ -437,7 +512,7 @@
       "required": ["schema", "claims", "invariants", "mapping", "residual"],
       "properties": {
         "schema": {
-          "const": "firetree.correctness-case/v0"
+          "const": "firetree.correctness-case/v1"
         },
         "claims": {
           "type": "array",

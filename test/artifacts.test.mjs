@@ -53,13 +53,13 @@ test('writeTextAtomic replaces an existing file atomically', async () => {
 test('.firetree artifacts write and verify a sidecar hash', async () => {
   await withTempDir(async (root) => {
     const result = await writeFiretreeJson(root, firetreeRelativePath('oid', 'billing.json'), {
-      schema: 'firetree.oid/v0',
+      schema: 'firetree.oid/v1',
       subsystem: 'billing',
     });
     assert.equal(result.path, '.firetree/oid/billing.json');
     const read = await readFiretreeJson(root, result.path, { verifyHash: true });
     assert.equal(read.sha256, result.sha256);
-    assert.deepEqual(read.value, { schema: 'firetree.oid/v0', subsystem: 'billing' });
+    assert.deepEqual(read.value, { schema: 'firetree.oid/v1', subsystem: 'billing' });
 
     await writeFile(join(root, result.path), '{"tampered":true}\n', 'utf8');
     await assert.rejects(

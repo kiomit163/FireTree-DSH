@@ -1,5 +1,5 @@
 {
-  "schema": "firetree.receipt/v0",
+  "schema": "firetree.receipt/v1",
   "change": {
     "base": "5555555555555555555555555555555555555555",
     "head": "6666666666666666666666666666666666666666",
@@ -50,13 +50,19 @@
   ],
   "review": {
     "rounds": 2,
-    "new_findings": [3, 0],
+    "new_findings": [
+      3,
+      0
+    ],
     "dissent": 2,
-    "verdict": "ready"
+    "verdict": "ready",
+    "mode": "full",
+    "assessment_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "package_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
   },
   "correctness_case": {
     "path": ".firetree/changes/billing-idempotency/correctness-case.json",
-    "sha256": "7626b8c7212e05f68ef70a11f2b6bcf88bdf9c1476a10135ea96d02763f3e491",
+    "sha256": "4ebc1bac66dc3d29a74423f6a0499680869043ee1184cb5b34daabbb348ba265",
     "claims": 2,
     "mapped_claims": 2,
     "unaccepted_residuals": 0
@@ -79,11 +85,22 @@
       "services/billing/idempotency.mjs",
       "contracts/billing/openapi.yaml"
     ],
-    "subsystems": ["billing", "checkout"],
-    "interfaces": ["billing.api"],
-    "owners": ["@team-billing", "@team-checkout"],
+    "subsystems": [
+      "billing",
+      "checkout"
+    ],
+    "interfaces": [
+      "billing.api"
+    ],
+    "owners": [
+      "@team-billing",
+      "@team-checkout"
+    ],
     "traversed": true,
-    "confidence": "high"
+    "confidence": "high",
+    "unknown": [],
+    "unresolved_consumers": [],
+    "reasons": []
   },
   "signoff": {
     "by": "human",

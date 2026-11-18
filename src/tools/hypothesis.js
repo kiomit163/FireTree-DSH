@@ -78,7 +78,7 @@ const OUTPUT_SCHEMA = {
   required: ['ok', 'schema', 'action', 'change', 'exists', 'total', 'verified', 'falsified', 'untested', 'coverage', 'hypotheses', 'next_actions', 'artifact'],
   properties: {
     ok: { type: 'boolean', const: true },
-    schema: { type: 'string', const: 'firetree.hypothesis/v0' },
+    schema: { type: 'string', const: 'firetree.hypothesis/v1' },
     action: { type: 'string', enum: ['add', 'verify', 'list'] },
     change: { type: 'string' },
     exists: { type: 'boolean' },
@@ -220,7 +220,7 @@ async function readLedger(root, change) {
   const path = ledgerPath(change);
   const record = await readFiretreeJson(root, path, { verifyHash: true, missing: 'null' });
   if (record === null) {
-    return { exists: false, sha256: '', value: { schema: 'firetree.hypotheses/v0', change, hypotheses: [], updated_at: null } };
+    return { exists: false, sha256: '', value: { schema: 'firetree.hypotheses/v1', change, hypotheses: [], updated_at: null } };
   }
   try {
     assertJsonSchemaValue(record.value, HYPOTHESES_SCHEMA);
@@ -251,7 +251,7 @@ function summarize(exists, ledger, change, artifact) {
     .map((hypothesis) => `Verify or explicitly accept risk for ${hypothesis.id}.`);
   return {
     ok: true,
-    schema: 'firetree.hypothesis/v0',
+    schema: 'firetree.hypothesis/v1',
     action: 'list',
     change,
     exists,

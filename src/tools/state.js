@@ -12,7 +12,7 @@ const OUTPUT_SCHEMA = Object.freeze({
   required: ['ok', 'schema', 'generated_at', 'mode', 'counts', 'entries', 'next_actions'],
   properties: {
     ok: { type: 'boolean', const: true },
-    schema: { type: 'string', const: 'firetree.state/v0' },
+    schema: { type: 'string', const: 'firetree.state/v1' },
     generated_at: { type: 'string' },
     mode: { type: 'string', enum: ['empty', 'change', 'subsystem'] },
     counts: {
@@ -140,33 +140,32 @@ async function changeEntries(root, change) {
     synthesisRounds.sort((left, right) => left.round - right.round);
   }
 
+  const tier = assessment?.tier;
+  const sampledL0 = tier === 'L0' && assessment?.sampling?.selected === true;
+  const needsHypotheses = tier !== 'L0';
+  const needsReview = tier !== 'L0' || sampledL0;
+
   const entries = [
     entry('assessment', id, assessment === null ? 'missing' : 'present', `${base}/assessment.json`, assessment?.created_at),
   ];
   const nextActions = [];
-  if (hypotheses !== null || !autonomous) entries.push(entry('hypotheses', id, hypotheses === null ? 'missing' : 'present', `${base}/hypotheses.json`));
-  if (review !== null || !autonomous) entries.push(entry('review', id, review === null ? 'missing' : 'present', `${base}/verdict.json`));
+  if (needsHypotheses && (hypotheses !== null || !autonomous)) {
+    entries.push(entry('hypotheses', id, hypotheses === null ? 'missing' : 'present', `${base}/hypotheses.json`));
+  }
+  if (needsReview && (review !== null || !autonomous)) {
+    entries.push(entry('review', id, review === null ? 'missing' : 'present', `${base}/verdict.json`));
+  }
   if (receipt !== null || !autonomous) entries.push(entry('receipt', id, receipt === null ? 'missing' : 'present', receiptPath));
   if (assessment === null) nextActions.push(`Run firetree_assess for ${id}.`);
-  if (!autonomous && hypotheses === null) nextActions.push(`Record hypotheses for ${id} before receipt.`);
-  if (!autonomous && review === null) nextActions.push(`Open a review for ${id}.`);
+  if (needsHypotheses && !autonomous && hypotheses === null) nextActions.push(`Record hypotheses for ${id} before receipt.`);
+  if (needsReview && !autonomous && review === null) nextActions.push(`Open a review for ${id}.`);
   if (!autonomous && receipt === null) nextActions.push(`Build the delivery receipt for ${id}.`);
 
-  if (assessment?.tier === 'L2' || synthesisPlan !== null) {
-    if (synthesisPlan !== null || !autonomous) {
-      entries.push(entry('synthesis_plan', id, synthesisPlan === null ? 'missing' : 'present', synthesisPlanPath, synthesisPlan?.created_at));
-    }
-    if (synthesisPlan === null) {
-      if (!autonomous) nextActions.push(`Plan independent-seat synthesis for ${id}.`);
-    } else if (synthesisRounds.length === 0) {
-      if (!autonomous) {
-        entries.push(entry('synthesis_round', `${id}:round-1`, 'missing', `${base}/synthesis/round-1.json`));
-        nextActions.push(`Record synthesis round 1 for ${id}.`);
-      }
-    } else {
-      for (const round of synthesisRounds) {
-        entries.push(entry('synthesis_round', `${id}:round-${round.round}`, 'present', round.path, round.createdAt));
-      }
+  // Synthesis is advisory in v0.1: show it when it exists, never count it as pending.
+  if (synthesisPlan !== null) {
+    entries.push(entry('synthesis_plan', id, 'present', synthesisPlanPath, synthesisPlan.created_at));
+    for (const round of synthesisRounds) {
+      entries.push(entry('synthesis_round', `${id}:round-${round.round}`, 'present', round.path, round.createdAt));
     }
   }
 
@@ -224,7 +223,7 @@ export function createStateTool(ctx) {
 
       const value = {
         ok: true,
-        schema: 'firetree.state/v0',
+        schema: 'firetree.state/v1',
         generated_at: new Date().toISOString(),
         mode,
         counts: {

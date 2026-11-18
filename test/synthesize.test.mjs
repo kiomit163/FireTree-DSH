@@ -102,7 +102,7 @@ test('synthesis plan and two rounds record independent seats and convergence', a
       risk_tier: 'L2',
       question: 'Does the idempotency design cover concurrent and cross-region retries?',
     }, EXEC);
-    assert.equal(planned.record.schema, 'firetree.synthesis-plan/v0');
+    assert.equal(planned.record.schema, 'firetree.synthesis-plan/v1');
     assert.equal(planned.record.max_rounds, 3);
     assert.equal(planned.record.seats.length, 4);
     assert.equal(planned.record.timebox_minutes, 20);

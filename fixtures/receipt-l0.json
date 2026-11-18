@@ -1,5 +1,5 @@
 {
-  "schema": "firetree.receipt/v0",
+  "schema": "firetree.receipt/v1",
   "change": {
     "base": "1111111111111111111111111111111111111111",
     "head": "2222222222222222222222222222222222222222",
@@ -41,21 +41,42 @@
   ],
   "review": {
     "rounds": 1,
-    "new_findings": [0],
+    "new_findings": [
+      0
+    ],
     "dissent": 0,
     "verdict": "ready",
     "zero_dissent_checks": [
       "Checked README links and the three examples in the docs section."
-    ]
+    ],
+    "mode": "light",
+    "human_spot_check": {
+      "by": "human:docs-sampler",
+      "identity": "human:docs-sampler",
+      "at": "2026-11-06T08:05:00Z",
+      "source": "manual",
+      "ref": "docs spot-check 2026-11-06"
+    },
+    "assessment_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "package_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
   },
   "correctness_case": null,
   "impact": {
-    "files": ["README.md"],
-    "subsystems": ["docs"],
+    "files": [
+      "README.md"
+    ],
+    "subsystems": [
+      "docs"
+    ],
     "interfaces": [],
-    "owners": ["@team-docs"],
+    "owners": [
+      "@team-docs"
+    ],
     "traversed": true,
-    "confidence": "high"
+    "confidence": "high",
+    "unknown": [],
+    "unresolved_consumers": [],
+    "reasons": []
   },
   "signoff": null,
   "expires_at": "2026-12-06T00:00:00Z",

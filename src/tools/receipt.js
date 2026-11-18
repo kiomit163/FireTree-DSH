@@ -50,7 +50,7 @@ const OUTPUT_SCHEMA = {
   required: ['ok', 'schema', 'gaps'],
   properties: {
     ok: { type: 'boolean' },
-    schema: { type: 'string', const: 'firetree.receipt-tool/v0' },
+    schema: { type: 'string', const: 'firetree.receipt-tool/v1' },
     gaps: { type: 'array', items: { type: 'string' } },
     receipt: { type: 'object' },
     technical_evidence: { type: 'object' },
@@ -309,7 +309,7 @@ function validateArgs(args) {
     change,
     mode,
     intent: validateIntent(args.intent),
-    classification: validateClassification(args.classification),
+    classification: args.classification === undefined ? null : validateClassification(args.classification),
     evidence: args.evidence,
     review: args.review === undefined ? null : validateReview(args.review),
     signoff: validateSignoff(args.signoff),
@@ -325,7 +325,7 @@ async function rootFor(ctx, exec) {
 }
 
 function failure(gaps) {
-  return { ok: false, schema: 'firetree.receipt-tool/v0', gaps };
+  return { ok: false, schema: 'firetree.receipt-tool/v1', gaps };
 }
 
 /**
@@ -361,7 +361,7 @@ export function createReceiptTool(ctx) {
           if (!semantics.valid) return failure(semantics.gaps);
           return {
             ok: true,
-            schema: 'firetree.receipt-tool/v0',
+            schema: 'firetree.receipt-tool/v1',
             gaps: [],
             technical_evidence: record.value,
             artifact: { path: `.firetree/evidence/${parsed.change}.json`, sha256: record.sha256 ?? '' },
@@ -378,7 +378,7 @@ export function createReceiptTool(ctx) {
         if (!semantics.valid) return failure(semantics.gaps);
         return {
           ok: true,
-          schema: 'firetree.receipt-tool/v0',
+          schema: 'firetree.receipt-tool/v1',
           gaps: [],
           receipt: record.value,
           artifact: { path: `.firetree/receipts/${parsed.change}.json`, sha256: record.sha256 ?? '' },
@@ -418,7 +418,7 @@ export function createReceiptTool(ctx) {
             ? 'ci-evidence'
             : 'test-evidence';
         const technical = {
-          schema: 'firetree.technical-evidence/v0',
+          schema: 'firetree.technical-evidence/v1',
           mode: 'autonomous',
           change: {
             base: assessment.change.base,
@@ -459,7 +459,7 @@ export function createReceiptTool(ctx) {
         const artifact = await writeFiretreeJson(root, `.firetree/evidence/${parsed.change}.json`, technical);
         return {
           ok: true,
-          schema: 'firetree.receipt-tool/v0',
+          schema: 'firetree.receipt-tool/v1',
           gaps: [],
           technical_evidence: technical,
           artifact: { path: artifact.path, sha256: artifact.sha256 },
@@ -468,7 +468,8 @@ export function createReceiptTool(ctx) {
 
       let review = null;
       let reviewSignoff = null;
-      if (assessment.tier !== 'L0') {
+      const reviewRequired = assessment.tier !== 'L0' || assessment.sampling?.selected === true;
+      if (reviewRequired) {
         const reviewRecord = await readReviewVerdict(root, parsed.change);
         if (reviewRecord === null) return failure(['review verdict artifact is missing']);
         if (reviewRecord.value === null) return failure(['review verdict artifact is invalid']);
@@ -485,12 +486,9 @@ export function createReceiptTool(ctx) {
       }
 
       let synthesis = null;
-      if (assessment.tier === 'L2' || assessment.tier === 'L1') {
+      if (assessment.tier === 'L1' || assessment.tier === 'L2') {
         const synthesisArtifacts = await readSynthesisArtifacts(root, parsed.change);
         synthesis = synthesisSummary(synthesisArtifacts);
-      }
-      if (assessment.tier === 'L2' && synthesis === null) {
-        return failure(['L2 receipt requires synthesis artifacts']);
       }
       const signoff = parsed.signoff ?? reviewSignoff;
 
@@ -508,7 +506,7 @@ export function createReceiptTool(ctx) {
           : { sampling: 'none' };
 
       const receipt = {
-        schema: 'firetree.receipt/v0',
+        schema: 'firetree.receipt/v1',
         change: {
           base: assessment.change.base,
           head: assessment.change.head,
@@ -520,7 +518,7 @@ export function createReceiptTool(ctx) {
           ...sampling,
         },
         intent: parsed.intent,
-        classification: parsed.classification,
+        ...(parsed.classification === null ? {} : { classification: parsed.classification }),
         hypotheses,
         evidence: preparedEvidence.evidence,
         review,
@@ -531,6 +529,9 @@ export function createReceiptTool(ctx) {
           subsystems: assessment.impact.subsystems,
           interfaces: assessment.impact.interfaces,
           owners: assessment.impact.owners,
+          unknown: assessment.impact.unknown,
+          unresolved_consumers: assessment.impact.unresolved_consumers,
+          reasons: assessment.reasons,
           traversed: assessment.impact.traversed,
           confidence: assessment.confidence,
         },
@@ -544,7 +545,7 @@ export function createReceiptTool(ctx) {
       const artifact = await writeFiretreeJson(root, `.firetree/receipts/${parsed.change}.json`, receipt);
       return {
         ok: true,
-        schema: 'firetree.receipt-tool/v0',
+        schema: 'firetree.receipt-tool/v1',
         gaps: [],
         receipt,
         artifact: { path: artifact.path, sha256: artifact.sha256 },

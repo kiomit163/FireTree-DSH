@@ -1,5 +1,5 @@
 {
-  "schema": "firetree.receipt/v0",
+  "schema": "firetree.receipt/v1",
   "change": {
     "base": "3333333333333333333333333333333333333333",
     "head": "4444444444444444444444444444444444444444",
@@ -36,13 +36,19 @@
   ],
   "review": {
     "rounds": 2,
-    "new_findings": [2, 0],
+    "new_findings": [
+      2,
+      0
+    ],
     "dissent": 1,
-    "verdict": "ready"
+    "verdict": "ready",
+    "mode": "standard",
+    "assessment_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "package_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
   },
   "correctness_case": {
     "path": ".firetree/changes/billing-retry/correctness-case.json",
-    "sha256": "0aca6fe8bd436175dc39b1da5744bfa92916625d09b83d5fda8a95f0ead1f34a",
+    "sha256": "9dceb050d23f31a1d6169936bb3a00623ff87404674eb376a41d2e6c5b84ae17",
     "claims": 1,
     "mapped_claims": 1,
     "unaccepted_residuals": 0
@@ -52,11 +58,18 @@
       "services/billing/charge.mjs",
       "services/billing/retry.mjs"
     ],
-    "subsystems": ["billing"],
+    "subsystems": [
+      "billing"
+    ],
     "interfaces": [],
-    "owners": ["@team-billing"],
+    "owners": [
+      "@team-billing"
+    ],
     "traversed": true,
-    "confidence": "high"
+    "confidence": "high",
+    "unknown": [],
+    "unresolved_consumers": [],
+    "reasons": []
   },
   "signoff": {
     "by": "human",

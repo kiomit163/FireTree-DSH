@@ -42,7 +42,8 @@ test('L0 docs assessment records impact, sampling, and a hashed artifact', async
     assert.equal(output.auto_tier, 'L0');
     assert.equal(output.confidence, 'high');
     assert.equal(output.signoff_required, 'none');
-    assert.deepEqual(output.required_artifacts, ['test_evidence', 'receipt', 'light_review']);
+    assert.deepEqual(output.required_artifacts.slice(0, 2), ['test_evidence', 'receipt']);
+    assert.equal(output.required_artifacts.includes('light_review'), output.sampling.selected);
     assert.equal(output.sampling.rate, 0.1);
     assert.equal(output.sampling.tier, 'L0');
     const fraction = Number.parseInt(sha256Text(`change-docs\ndocs/README.md`).slice(0, 8), 16) / 0x100000000;
@@ -51,7 +52,7 @@ test('L0 docs assessment records impact, sampling, and a hashed artifact', async
 
     const record = await readFiretreeJson(workspace.root, output.artifact.path, { verifyHash: true });
     assert.equal(record.sha256, output.artifact.sha256);
-    assert.equal(record.value.schema, 'firetree.assessment/v0');
+    assert.equal(record.value.schema, 'firetree.assessment/v1');
     const { ok, artifact, ...artifactValue } = output;
     assert.deepEqual(record.value, artifactValue);
   } finally {

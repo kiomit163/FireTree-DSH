@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://firetree.local/schemas/policy.schema.json",
-  "title": "FireTree policy v0",
+  "title": "FireTree policy v1",
   "description": "Repository policy: tier rules, sampling, time-boxed exceptions, and tighten-only inheritance. Child layers may tighten policy; relaxation is only through an exception with an architect approval and an expiry.",
   "type": "object",
   "additionalProperties": false,
@@ -18,7 +18,7 @@
   ],
   "properties": {
     "schema": {
-      "const": "firetree.policy/v0"
+      "const": "firetree.policy/v1"
     },
     "version": {
       "type": "string",

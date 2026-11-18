@@ -59,12 +59,17 @@ export async function readReviewVerdict(root, change) {
  * @param {object} review - Review verdict value.
  * @returns {object} Receipt review object.
  */
-export function reviewToReceipt(review) {  return {
+export function reviewToReceipt(review) {
+  return {
+    mode: review.mode,
+    assessment_sha256: review.assessment_sha256,
+    package_sha256: review.package_sha256,
     rounds: review.rounds,
     new_findings: [...review.new_findings],
     dissent: review.dissent,
     verdict: review.decision,
     ...(review.zero_dissent_checks === undefined ? {} : { zero_dissent_checks: [...review.zero_dissent_checks] }),
+    ...(review.human_spot_check === undefined ? {} : { human_spot_check: { ...review.human_spot_check } }),
   };
 }
 
@@ -156,10 +161,16 @@ async function reviewGaps(root, change, receipt) {
   if (review === null) return ['review verdict artifact is missing'];
   if (review.value === null) return ['review verdict artifact is invalid'];
   if (review.value.tier !== receipt.tier) gaps.push('review tier does not match receipt tier');
+  if (review.value.mode !== receipt.review.mode) gaps.push('review mode does not match receipt');
+  if (review.value.assessment_sha256 !== receipt.review.assessment_sha256) gaps.push('review assessment hash does not match receipt');
+  if (review.value.package_sha256 !== receipt.review.package_sha256) gaps.push('review package hash does not match receipt');
   if (review.value.decision !== receipt.review.verdict) gaps.push('receipt review verdict does not match review artifact');
   if (review.value.rounds !== receipt.review.rounds) gaps.push('receipt review rounds do not match review artifact');
   if (!sameArray(review.value.new_findings, receipt.review.new_findings)) gaps.push('receipt new findings do not match review artifact');
   if (review.value.dissent !== receipt.review.dissent) gaps.push('receipt dissent does not match review artifact');
+  if (JSON.stringify(review.value.human_spot_check ?? null) !== JSON.stringify(receipt.review.human_spot_check ?? null)) {
+    gaps.push('receipt human spot-check does not match review artifact');
+  }
   const steps = new Set(review.value.steps.map((step) => step.id));
   for (const step of requiredReviewSteps(receipt.tier)) {
     if (!steps.has(step)) gaps.push(`review artifact is missing ${step} step`);
@@ -187,6 +198,18 @@ async function reviewGaps(root, change, receipt) {
       if (receipt.signoff[key] !== review.value.signoff[key]) gaps.push(`receipt signoff ${key} does not match review artifact`);
     }
   }
+
+  let packageRecord;
+  try {
+    packageRecord = await readFiretreeJson(root, `.firetree/changes/${change}/package.json`, { verifyHash: true, missing: 'null' });
+  } catch {
+    return [...gaps, 'review package is unreadable or has a bad hash'];
+  }
+  if (packageRecord === null) {
+    gaps.push('review package is missing');
+  } else if (packageRecord.sha256 !== review.value.package_sha256) {
+    gaps.push('review package hash does not match verdict');
+  }
   return gaps;
 }
 
@@ -198,7 +221,6 @@ async function synthesisGaps(root, change, receipt) {
   } catch {
     return ['synthesis artifacts are unreadable or have a bad hash'];
   }
-  if (receipt.tier === 'L2' && synthesis === null) return ['L2 receipt requires synthesis artifacts'];
   if (synthesis === null) return gaps;
   if (synthesis.plan === null) return ['synthesis plan is invalid'];
   if (receipt.synthesis === undefined) return ['receipt does not reference synthesis artifacts'];
@@ -236,8 +258,19 @@ export async function checkReceiptSemantics(receipt, options) {
     if (gap !== null) gaps.push(gap);
   }
 
-  if (receipt.review.verdict !== 'ready') gaps.push('review verdict is not ready');
-  if (receipt.review.new_findings.at(-1) !== 0) gaps.push('review did not converge to zero new findings');
+  const reviewRequired = receipt.tier !== 'L0' || receipt.policy.sampling === 'sampled';
+  if (reviewRequired && receipt.review === null) {
+    gaps.push('review is required for this tier/sampling decision');
+  } else if (receipt.review !== null) {
+    if (receipt.tier === 'L0' && receipt.review.mode !== 'light' && receipt.policy.sampling === 'sampled') {
+      gaps.push('sampled L0 requires a light human spot-check review');
+    }
+    if (receipt.tier === 'L0' && receipt.review.human_spot_check === undefined) {
+      gaps.push('sampled L0 requires a human spot-check record');
+    }
+    if (receipt.review.verdict !== 'ready') gaps.push('review verdict is not ready');
+    if (receipt.review.new_findings.at(-1) !== 0) gaps.push('review did not converge to zero new findings');
+  }
   if (receipt.tier === 'L2' && receipt.signoff?.by !== 'human') gaps.push('L2 receipt requires human sign-off');
 
   const untested = receipt.hypotheses.total - receipt.hypotheses.verified;
@@ -260,6 +293,9 @@ export async function checkReceiptSemantics(receipt, options) {
     gaps.push('assessment artifact is missing');
   } else if (assessmentRecord !== undefined) {
     const assessment = assessmentRecord.value;
+    if (receipt.review !== null && receipt.review.assessment_sha256 !== assessmentRecord.sha256) {
+      gaps.push('receipt review assessment hash does not match assessment artifact');
+    }
     if (assessment.tier !== receipt.tier) gaps.push('receipt tier does not match assessment tier');
     if (assessment.change.base !== receipt.change.base) gaps.push('receipt base does not match assessment base');
     if (assessment.change.head !== receipt.change.head) gaps.push('receipt head does not match assessment head');
@@ -267,10 +303,15 @@ export async function checkReceiptSemantics(receipt, options) {
     if (filesHash !== receipt.change.files_sha256) gaps.push('receipt change hash does not match assessment files');
     if (assessment.policy.version !== receipt.policy.version) gaps.push('receipt policy version does not match assessment');
     if (assessment.confidence !== receipt.impact.confidence) gaps.push('receipt impact confidence does not match assessment');
-    for (const key of ['files', 'subsystems', 'interfaces', 'owners']) {
+    for (const key of ['files', 'subsystems', 'interfaces', 'owners', 'unknown', 'unresolved_consumers']) {
       if (!sameArray(assessment.impact[key], receipt.impact[key])) gaps.push(`receipt impact ${key} does not match assessment`);
     }
+    if (!sameArray(assessment.reasons, receipt.impact.reasons)) gaps.push('receipt impact reasons do not match assessment');
     if (assessment.impact.traversed !== receipt.impact.traversed) gaps.push('receipt impact traversal does not match assessment');
+    if (receipt.tier === 'L2' && receipt.impact.unknown.length === 0
+      && (receipt.impact.subsystems.length === 0 || receipt.impact.owners.length === 0)) {
+      gaps.push('L2 receipt with no unknown paths requires subsystems and owners');
+    }
   }
 
   let ledgerRecord;
@@ -295,7 +336,7 @@ export async function checkReceiptSemantics(receipt, options) {
     if (receipt.hypotheses.verified !== verified) gaps.push('receipt verified hypothesis count does not match ledger');
   }
 
-  if (receipt.tier !== 'L0') {
+  if (reviewRequired && receipt.review !== null) {
     gaps.push(...await reviewGaps(options.root, options.change, receipt));
   }
   if (receipt.tier === 'L2' || receipt.synthesis !== undefined) {

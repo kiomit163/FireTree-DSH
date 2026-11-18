@@ -115,8 +115,9 @@ test('change state projects synthesis plan and rounds for L2', async () => {
     }, EXEC);
 
     const before = await createStateTool(ctx).execute({ change: 'chg-state-l2' }, EXEC);
-    assert.equal(before.entries.find((entry) => entry.kind === 'synthesis_plan').status, 'missing');
-    assert.ok(before.next_actions.some((action) => action.includes('synthesis')));
+    // v0.1: synthesis is advisory, not a pending prerequisite.
+    assert.equal(before.entries.some((entry) => entry.kind === 'synthesis_plan'), false);
+    assert.ok(!before.next_actions.some((action) => action.includes('synthesis')));
 
     const synthesize = createSynthesizeTool(ctx);
     await synthesize.execute({ action: 'plan', change: 'chg-state-l2', question: 'q' }, EXEC);

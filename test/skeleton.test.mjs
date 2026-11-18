@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { join } from 'node:path';
 import { test } from 'node:test';
 
 import { apply, inject, PROMPT_SECTION } from '../index.js';
@@ -80,7 +81,7 @@ test('registers six placeholders whose bodies load from SKILL.md', () => {
     assert.equal(skill.source, 'bundled');
     assert.deepEqual(skill.invocation, { modelInvocable: true, userInvocable: true });
     assert.equal(skill.resourceBase.kind, 'directory');
-    assert.ok(skill.resourceBase.path.endsWith(`skills\\${skill.name}`));
+    assert.ok(skill.resourceBase.path.endsWith(join('skills', skill.name)));
   }
 
   assert.equal(SKILLS.length, 6);

@@ -46,7 +46,7 @@ test('classify set writes a hashed dossier and show reads it back', async () => 
     assert.equal(result.ok, true);
     assert.equal(result.action, 'set');
     assert.equal(result.subsystem, 'billing');
-    assert.equal(result.dossier.schema, 'firetree.oid/v0');
+    assert.equal(result.dossier.schema, 'firetree.oid/v1');
     assert.equal(result.allowed.decomposition_autonomy, true);
     assert.equal(result.allowed.requires_human_signoff, false);
     assert.deepEqual(validateJsonSchema(result, tool.output.schema), []);

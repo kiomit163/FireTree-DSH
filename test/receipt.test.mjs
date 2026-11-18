@@ -118,7 +118,7 @@ test('build assembles an L1 receipt from external evidence and check accepts it'
 
     assert.equal(built.ok, true);
     assert.deepEqual(built.gaps, []);
-    assert.equal(built.receipt.schema, 'firetree.receipt/v0');
+    assert.equal(built.receipt.schema, 'firetree.receipt/v1');
     assert.equal(built.receipt.tier, 'L1');
     assert.equal(built.receipt.evidence[0].producer, 'ci:github-actions');
     assert.equal(built.receipt.evidence[0].sha256, sha256Text('<testsuite tests="1" failures="0"/>\n'));

@@ -1,5 +1,5 @@
 {
-  "schema": "firetree.correctness-case/v0",
+  "schema": "firetree.correctness-case/v1",
   "claims": [
     {
       "id": "c1",

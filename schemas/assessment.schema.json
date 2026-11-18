@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://firetree.local/schemas/assessment.schema.json",
-  "title": "FireTree assessment v0",
+  "title": "FireTree assessment v1",
   "description": "The change-entry artifact: automatic and final tier, impact set, required artifacts, sampling decision, sign-off requirement, and policy version.",
   "type": "object",
   "additionalProperties": false,
@@ -20,7 +20,7 @@
     "created_at"
   ],
   "properties": {
-    "schema": { "const": "firetree.assessment/v0" },
+    "schema": { "const": "firetree.assessment/v1" },
     "change": {
       "type": "object",
       "additionalProperties": false,
@@ -40,6 +40,17 @@
     "tier": { "type": "string", "enum": ["L0", "L1", "L2"] },
     "auto_tier": { "type": "string", "enum": ["L0", "L1", "L2"] },
     "declared_tier": { "type": "string", "enum": ["L0", "L1", "L2"] },
+    "revision": { "type": "integer", "minimum": 1 },
+    "prev_assessment": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tree_sha", "diff_sha256"],
+      "properties": {
+        "tree_sha": { "type": "string", "pattern": "^[a-f0-9]{7,64}$" },
+        "diff_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
     "reasons": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 }

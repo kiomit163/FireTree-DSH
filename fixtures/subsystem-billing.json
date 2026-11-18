@@ -1,5 +1,5 @@
 {
-  "schema": "firetree.subsystem/v0",
+  "schema": "firetree.subsystem/v1",
   "id": "billing",
   "name": "Billing",
   "paths": ["services/billing/**", "contracts/billing/**"],

@@ -1,5 +1,5 @@
 {
-  "schema": "firetree.policy/v0",
+  "schema": "firetree.policy/v1",
   "version": "047f256c882c910d5eca747c0d515198c5edf06dd06b9efe1d30f12c2b34d52e",
   "scope": "org",
   "extends": null,

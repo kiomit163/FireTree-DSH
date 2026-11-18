@@ -18,7 +18,7 @@ test('tool schema projection removes Host-unsupported keywords', () => {
 test('tool schema projection gives const nodes a type', () => {
   const projected = toToolSchema(assessment);
   assert.equal(projected.properties.schema.type, 'string');
-  assert.equal(projected.properties.schema.const, 'firetree.assessment/v0');
+  assert.equal(projected.properties.schema.const, 'firetree.assessment/v1');
   assert.equal(projected.required.includes('tier'), true);
   assert.equal(projected.additionalProperties, false);
 });

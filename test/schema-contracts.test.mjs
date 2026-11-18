@@ -89,7 +89,7 @@ test('subsystem and interface fixtures validate their registries', () => {
   assertInvalid(noConsumers, interfaceSchema, /at least 1 items/);
 });
 
-test('L0, L1, and L2 receipts validate the same v0 contract', () => {
+test('L0, L1, and L2 receipts validate the same v1 contract', () => {
   assertValid(receiptL0, receiptSchema);
   assertValid(receiptL1, receiptSchema);
   assertValid(receiptL2, receiptSchema);
@@ -171,7 +171,7 @@ test('L1 and L2 correctness cases pass schema plus claim-coverage checks', () =>
   assert.equal(l2.valid, true);
 });
 
-test('empty mapping is rejected by the v0 correctness-case contract', () => {
+test('empty mapping is rejected by the v1 correctness-case contract', () => {
   const schemaErrors = errorsFor(caseEmptyMapping, correctnessCaseSchema, receiptSchema);
   assert.ok(schemaErrors.some((error) => error.keyword === 'minItems'));
 

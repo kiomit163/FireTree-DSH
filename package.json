@@ -1,10 +1,13 @@
 {
   "name": "@local/firetree-dsh",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Auditable delivery protocol for DSH: risk tiers, external evidence receipts, human sign-off, and correctness cases.",
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
   "exports": {
     ".": "./index.js",
     "./package.json": "./package.json",
@@ -26,7 +29,10 @@
   },
   "scripts": {
     "test": "node --test",
-    "check:docs": "node scripts/check-docs.mjs"
+    "check:docs": "node scripts/check-docs.mjs",
+    "lint:schemas": "node scripts/lint-schemas.mjs",
+    "check:syntax": "node scripts/check-syntax.mjs",
+    "check": "npm test && npm run check:docs && npm run lint:schemas && npm run check:syntax"
   },
   "dsh": {
     "bundle": {
