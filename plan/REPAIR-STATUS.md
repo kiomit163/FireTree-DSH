@@ -67,7 +67,7 @@
 - **accepted risk**：hypotheses ledger 增加 `accepted_risks`；`firetree_hypothesis` 新增 `accept`（human + approval_ref + expiry）；receipt 统计 active accepted risk 并复验；新增 `test/accepted-risk.test.mjs`。
 - **intent/classification**：governed receipt 的 `intent` 改为可选（policy 要求时再填）；`classification` 继续保持 optional/advisory。
 - **coverage/interface**：新增 `coverage.js`（Codecov/Istanbul/LCOV 结构校验）；governed receipt 与技术证据都校验 coverage；新增 `interface.js`，assess 校验 interface 文件 SHA-256（不匹配 `INTERFACE_HASH_MISMATCH`）；impact 现在沿 `depends_on` 递归拉入依赖消费者。contract test 执行仍未做。
-- **事件与状态**：新增 `src/lib/events.js` 哈希链 `.firetree/events.jsonl`；assess/classify/hypothesis/synthesize/review/receipt 写入事件；`firetree_state` 的 expiring/blocked 由 receipt/technical evidence 的 `expires_at` 计算；新增 `scripts/metrics.mjs` 与 `scripts/spc.mjs`（L2 比例 p-chart）。
+- **事件与状态**：新增 `src/lib/events.js` 哈希链 `.firetree/events.jsonl`；assess/classify/hypothesis/synthesize/review/receipt 写入事件；`firetree_state` 的 expiring/blocked 由 receipt/technical evidence 的 `expires_at` 计算；tier-matrix 已覆盖 expiring=1；新增 `scripts/metrics.mjs` 与 `scripts/spc.mjs`（L2 比例 p-chart）。
 
 ### WP4 policy chain（本轮追加）
 
@@ -114,14 +114,14 @@
 | `node scripts/check-syntax.mjs` | `checked=88 failed=0` |
 | `node scripts/check-docs.mjs` | `docs=40 links=89 errors=0` |
 | live 安装 | `install_bundle` → `application: applied`；`firetree_state`/assess/receipt 实际调用通过 |
-| 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core）、`f9374cb`（WP2 A3/WP3/WP5）、`33a28ab`（WP4 policy + live install）、`4731150`（L0 收窄/optional intent）、`20473b1`（全工具事件 + docs v1）、`a79a135`（coverage/interface/migration）、`6f4a8dc`（triggers/exceptions）、`0e3deaf`（approval CLI）、`af7cfd1`（bootstrap/SPC）、`bedede2`（depends_on） |
+| 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core）、`f9374cb`（WP2 A3/WP3/WP5）、`33a28ab`（WP4 policy + live install）、`4731150`（L0 收窄/optional intent）、`20473b1`（全工具事件 + docs v1）、`a79a135`（coverage/interface/migration）、`6f4a8dc`（triggers/exceptions）、`0e3deaf`（approval CLI）、`af7cfd1`（bootstrap/SPC）、`bedede2`（depends_on）、本轮末尾（state expiry 测试） |
 
 ## 仍未完成（下一步）
 
 1. **WP2 收尾**：GitHub `actions/attest-build-provenance` keyless 真验签适配（当前 A3 用 Ed25519 离线签名，是可用但非 keyless 的路径）；CI 模板端到端跑一次。
 2. **WP3 收尾**：SARIF/SBOM/coverage 的 policy 阈值；interface contract test/depends_on；`intent` 按 policy 必填开关。
 3. **WP4 收尾**：policy 模板/playbook；bootstrap 报告到 registry 的人工确认流程。
-4. **WP5 收尾**：周报模板；state 过期夹具测试；schedule/re-eval（DSH `schedule` 由用户配置，插件不自建调度器）。
+4. **WP5 收尾**：周报模板；schedule/re-eval（DSH `schedule` 由用户配置，插件不自建调度器）。
 5. **WP6 收尾**：`ctx.effect` 清理、Config schema、LICENSE/NOTICE、README/详情页、升级/回滚 smoke。
 6. **WP8/WP9**：本仓 + 1 外部代码仓试点、shadow/warn/enforce、安全/性能/回滚。
 

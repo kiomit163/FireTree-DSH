@@ -69,7 +69,9 @@ test('L0 unsampled receipt builds and checks without a review artifact', async (
     }, EXEC);
 
     const receipt = createReceiptTool(ctx);
-    const built = await receipt.execute(buildArgs('chg-l0-unsampled'), EXEC);
+    const built = await receipt.execute(buildArgs('chg-l0-unsampled', {
+      expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    }), EXEC);
     assert.equal(built.ok, true, built.gaps?.join('; '));
     assert.equal(built.receipt.review, null);
     assert.equal(built.receipt.tier, 'L0');
@@ -80,7 +82,7 @@ test('L0 unsampled receipt builds and checks without a review artifact', async (
 
     const state = await createStateTool(ctx).execute({ change: 'chg-l0-unsampled' }, EXEC);
     assert.equal(state.counts.pending, 0);
-    assert.equal(state.counts.expiring, 0);
+    assert.equal(state.counts.expiring, 1);
     assert.equal(state.counts.blocked, 0);
   } finally {
     await workspace.cleanup();
