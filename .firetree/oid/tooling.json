@@ -1,0 +1,31 @@
+{
+  "schema": "firetree.oid/v1",
+  "subsystem": "tooling",
+  "kind": "large",
+  "layers_known": [
+    "scripts",
+    "test-support",
+    "ci"
+  ],
+  "layers_unknown": [],
+  "coupling_evidence": [
+    "fixtures shared by tests and scripts"
+  ],
+  "reducibility_test": {
+    "command": "node --test",
+    "result": "reducible"
+  },
+  "method": "decompose",
+  "owner_of_unknowns": [
+    "human:kiomit163"
+  ],
+  "learning_plan": [
+    "run node --test and syntax checks"
+  ],
+  "allowed": {
+    "decomposition_autonomy": true,
+    "requires_human_signoff": false,
+    "constraints": []
+  },
+  "updated_at": "2026-11-20T14:06:52.051Z"
+}

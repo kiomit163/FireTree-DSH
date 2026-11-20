@@ -1,0 +1,29 @@
+{
+  "schema": "firetree.subsystem/v1",
+  "id": "tooling",
+  "name": "Tooling",
+  "paths": [
+    "scripts/**",
+    "test/**",
+    "test-support/**",
+    "fixtures/**",
+    ".github/**"
+  ],
+  "owners": [
+    "@kiomit163"
+  ],
+  "interfaces": [],
+  "tests": [
+    "node:test"
+  ],
+  "depends_on": [
+    "core"
+  ],
+  "dossier": {
+    "path": ".firetree/oid/tooling.json",
+    "sha256": "a76c333cd10540a1bdfc001a130c6c158018ce5e17190cfaf36205b1c09026df",
+    "kind": "large",
+    "method": "decompose",
+    "updated_at": "2026-11-20T14:07:13.093Z"
+  }
+}

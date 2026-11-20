@@ -1,0 +1,27 @@
+{
+  "schema": "firetree.subsystem/v1",
+  "id": "docs",
+  "name": "Docs",
+  "paths": [
+    "docs/**",
+    "skills/**",
+    "locale/**",
+    "README.md",
+    "*.md"
+  ],
+  "owners": [
+    "@kiomit163"
+  ],
+  "interfaces": [],
+  "tests": [
+    "docs-links"
+  ],
+  "depends_on": [],
+  "dossier": {
+    "path": ".firetree/oid/docs.json",
+    "sha256": "a4f6ca83b21df928379b6e9b8a0958632f2b4284723c1e39ef09b08e3de58a95",
+    "kind": "simple",
+    "method": "decompose",
+    "updated_at": "2026-11-20T14:07:13.093Z"
+  }
+}

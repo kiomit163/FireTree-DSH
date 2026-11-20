@@ -1,0 +1,30 @@
+{
+  "schema": "firetree.oid/v1",
+  "subsystem": "docs",
+  "kind": "simple",
+  "layers_known": [
+    "user docs",
+    "repair evidence"
+  ],
+  "layers_unknown": [],
+  "coupling_evidence": [
+    "links into source decisions"
+  ],
+  "reducibility_test": {
+    "command": "node scripts/check-docs.mjs",
+    "result": "reducible"
+  },
+  "method": "decompose",
+  "owner_of_unknowns": [
+    "human:kiomit163"
+  ],
+  "learning_plan": [
+    "check docs links and claims"
+  ],
+  "allowed": {
+    "decomposition_autonomy": true,
+    "requires_human_signoff": false,
+    "constraints": []
+  },
+  "updated_at": "2026-11-20T14:06:52.062Z"
+}

@@ -1,0 +1,26 @@
+{
+  "schema": "firetree.subsystem/v1",
+  "id": "core",
+  "name": "Core",
+  "paths": [
+    "src/**",
+    "bin/**",
+    "schemas/**",
+    "index.js"
+  ],
+  "owners": [
+    "@kiomit163"
+  ],
+  "interfaces": [],
+  "tests": [
+    "node:test"
+  ],
+  "depends_on": [],
+  "dossier": {
+    "path": ".firetree/oid/core.json",
+    "sha256": "4f9b81566fab5543af6a2e25f5fd312abe0bd2b45a6e786aa0b55960606b8d27",
+    "kind": "large",
+    "method": "decompose",
+    "updated_at": "2026-11-20T14:07:13.093Z"
+  }
+}

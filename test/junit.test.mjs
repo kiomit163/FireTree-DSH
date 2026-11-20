@@ -9,6 +9,12 @@ test('valid JUnit with zero failures passes strict checks', () => {
   assert.deepEqual(result.totals, { tests: 2, failures: 0, errors: 0, skipped: 1 });
 });
 
+test('Node-style testsuites with direct testcases are accepted', () => {
+  const result = validateJunitXml('<?xml version="1.0"?><testsuites><testcase name="a"/><testcase name="b"/></testsuites>');
+  assert.equal(result.valid, true);
+  assert.deepEqual(result.totals, { tests: 2, failures: 0, errors: 0, skipped: 0 });
+});
+
 test('JUnit failures, zero tests, and malformed roots are rejected', () => {
   assert.equal(validateJunitXml('<testsuite tests="1" failures="1"/>').valid, false);
   assert.equal(validateJunitXml('<testsuites><testsuite tests="0" failures="0"/></testsuites>').valid, false);

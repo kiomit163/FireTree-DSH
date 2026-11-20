@@ -4,3 +4,8 @@ coverage/
 .DS_Store
 Thumbs.db
 .tmp/
+evidence/
+.firetree/changes/
+.firetree/evidence/
+.firetree/receipts/
+.firetree/events.jsonl

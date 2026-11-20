@@ -1,0 +1,71 @@
+name: pr-a2
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  a2:
+    name: FireTree A2 gate
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Test with JUnit evidence
+        run: |
+          mkdir -p evidence
+          set +e
+          node --test --test-reporter=junit --test-reporter-destination=evidence/ci-junit.xml
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "::error::node --test failed with exit $status"
+            exit "$status"
+          fi
+
+      - name: Fetch OIDC claims
+        run: node scripts/github-oidc.mjs --out claims.json --audience firetree
+
+      - name: Assess PR diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.sha }}
+          PR: ${{ github.event.pull_request.number }}
+        run: node bin/firetree-assess.mjs --base "$BASE" --head "$HEAD" --change "pr-$PR"
+
+      - name: Build autonomous technical evidence
+        env:
+          PR: ${{ github.event.pull_request.number }}
+        run: node bin/firetree-ci.mjs --change "pr-$PR" --evidence evidence/ci-junit.xml --intent-spec "PR #$PR"
+
+      - name: Verify A2
+        env:
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          node bin/firetree-check.mjs \
+            --mode autonomous \
+            --change "pr-$PR" \
+            --claims claims.json \
+            --repository "${{ github.repository }}" \
+            --audience firetree \
+            --require A2

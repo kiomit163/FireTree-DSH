@@ -86,6 +86,14 @@ export function validateJunitXml(text) {
   if (root === undefined) return { valid: false, gaps: ['JUnit XML has no testsuites/testsuite root'], totals };
   const collected = { suites: [], testcases: [], failures: [], errors: [], skipped: [] };
   if (parsed?.testsuites !== undefined) {
+    // Node's JUnit reporter emits testcase elements directly under testsuites
+    // without a wrapper testsuite. Accept that shape as long as testcases exist.
+    for (const testcase of asArray(parsed.testsuites.testcase)) {
+      collected.testcases.push(testcase);
+      for (const failure of asArray(testcase.failure)) collected.failures.push(failure);
+      for (const error of asArray(testcase.error)) collected.errors.push(error);
+      for (const skipped of asArray(testcase.skipped)) collected.skipped.push(skipped);
+    }
     for (const child of asArray(parsed.testsuites.testsuite)) {
       collected.suites.push(child);
       collectSuites(child, collected);
@@ -97,7 +105,7 @@ export function validateJunitXml(text) {
     collectSuites(parsed.testsuite, collected);
   }
 
-  if (collected.suites.length === 0) gaps.push('JUnit XML has no testsuite elements');
+  if (collected.suites.length === 0 && collected.testcases.length === 0) gaps.push('JUnit XML has no testsuite or testcase elements');
   if (collected.testcases.length === 0) gaps.push('JUnit XML has no testcase elements');
   if (collected.testcases.length > MAX_TESTCASES) gaps.push(`JUnit XML exceeds ${MAX_TESTCASES} testcases`);
   totals.tests = collected.testcases.length;
