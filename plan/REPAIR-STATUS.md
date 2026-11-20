@@ -61,6 +61,8 @@
 
 - **A3**：新增 `approval.js`、`signature.js`；`firetree-check` 支持 `--approval`、`--signature`、`--public-key`；A3 = claims + CI 证据 + 人类审批 + Ed25519 签名 bundle。`--require A3` 现在真验签，不再占位。
 - **approval CLI**：新增 `bin/firetree-approval.mjs`，把 GitHub PR review JSON 归一化为 `firetree.approval/v1`；新增 `test/approval.test.mjs`。
+- **OIDC A2 smoke**：新增 `scripts/github-oidc.mjs`（取 GitHub Actions OIDC token 并校验 claims）和 `scripts/ci-a2-smoke.mjs`（在隔离 fixture 上调用真实 `firetree-check --require A2`），以及 `.github/workflows/oidc-a2.yml`。GitHub 运行 [44747400263](https://github.com/kiomit163/FireTree-DSH/actions/runs/44747400263) 成功。
+  - 注意：这是 A2 **plumbing smoke**，不是对每个 PR 的实际变更做 gate；真实 PR gate 还需要仓库内 `.firetree` policy/registry 和按 diff 生成评估/证据。
 - **JUnit**：按 D6 引入 `fast-xml-parser` 5.11.2，替换正则校验；拒绝 DOCTYPE/ENTITY、限制大小/testcase 数、从 `<testcase>` 计数，防止 `tests="999999"` 伪造。
 - **证据格式**：governed receipt 与技术证据都校验 JUnit/SARIF/SBOM 内容；L1/L2 evidence 不再是“只哈希不看内容”。
 - **正确性论证**：`validateCorrectnessCase` 支持 `evidenceRefs`；mapping/invariant 的 evidence_ref 必须命中回执 evidence；tier-matrix/ receipt 测试使用真实 refs。
@@ -109,9 +111,9 @@
 
 | 项 | 结果 |
 |---|---|
-| `node --test` | **184/184 通过**（新增 A3/approval、JUnit/coverage、accepted risk、policy chain、triggers/exceptions、L0 反例、interface hash/depends_on、事件/状态测试） |
+| `node --test` | **185/185 通过**（新增 A3/approval、OIDC audience arrays、JUnit/coverage、accepted risk、policy chain、triggers/exceptions、L0 反例、interface hash/depends_on、事件/状态测试） |
 | `node scripts/lint-schemas.mjs` | `schemas=10 errors=0` |
-| `node scripts/check-syntax.mjs` | `checked=88 failed=0` |
+| `node scripts/check-syntax.mjs` | `checked=90 failed=0` |
 | `node scripts/check-docs.mjs` | `docs=40 links=89 errors=0` |
 | live 安装 | `install_bundle` → `application: applied`；`firetree_state`/assess/receipt 实际调用通过 |
 | 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core）、`f9374cb`（WP2 A3/WP3/WP5）、`33a28ab`（WP4 policy + live install）、`4731150`（L0 收窄/optional intent）、`20473b1`（全工具事件 + docs v1）、`a79a135`（coverage/interface/migration）、`6f4a8dc`（triggers/exceptions）、`0e3deaf`（approval CLI）、`af7cfd1`（bootstrap/SPC）、`bedede2`（depends_on）、`0837e07`（state expiry 测试） |
@@ -125,12 +127,13 @@
 5. **WP6 收尾**：`ctx.effect` 清理、Config schema、LICENSE/NOTICE、README/详情页、升级/回滚 smoke。
 6. **WP8/WP9**：本仓 + 1 外部代码仓试点、shadow/warn/enforce、安全/性能/回滚。
 
-## 已知限制
+## 已知限制（2026-11-20 更新）
 
-- `firetree-check` 的 A2 仍依赖调用方提供 `claims.json`；CI workflow 模板中的 `--claims` 步骤尚未在真实 GitHub Actions 上跑过。
-- A3 仅占位，未实现签名验证；不得对外声称 A3。
-- `receipt` 的 `intent` 仍是必填（D9/P-30 的“policy 要求才必填”尚未完成）。
-- `firetree_receipt` 工具内的 `assurance` 仍是输入字段；目前只有 CI `firetree-check` 做派生校验。
-- JUnit 仍走旧 `src/lib/junit.js` 正则校验；WP3 才换标准解析器。
-- `.firetree` 工件仍是 v1 断代；v0→v1 迁移脚本未写。
-- 当前 profile 仍未安装插件；安装 smoke 属于 WP6。
+- **A2 是 smoke，不是 PR gate**：`oidc-a2.yml` 在隔离 fixture 上验证 OIDC claims → technical evidence → `firetree-check --require A2`；尚未对每个 PR 的真实 diff 生成 `.firetree` 评估/证据。
+- **A3 keyless 未实现**：当前 A3 需要 Ed25519 签名 + approval；没有 Fulcio/Rekor/GitHub attestation 证书链验证，不得对外声称 keyless A3。
+- **`firetree_receipt` 的 assurance 仍是调用方输入**：`firetree-check` 会派生并校验，但 receipt 工具本身尚未移除该输入。
+- **contract test/阈值未做**：interface hash/depends_on 已校验，但不执行 `contract_test`；SARIF/SBOM/coverage 没有 policy 阈值。
+- **GitHub Actions 日志下载需要 admin**：public 仓库可以读取 run/job 元数据，但 `logs` API 仍返回 403；失败详情目前通过 annotation/`::error::` 暴露。
+- **LICENSE 未定**：`package.json` 仍是 `UNLICENSED`；公开可见不等于允许再分发/商用。
+- **WP8 未开始**：没有外部团队试点、shadow/warn/enforce 数据。
+- **当前 profile 已安装插件**（2026-11-18 live smoke 通过）；安装不是团队试点。
