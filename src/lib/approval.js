@@ -34,8 +34,8 @@ export function parseApproval(value) {
   if (typeof approval.reviewer !== 'string' || approval.reviewer.length === 0) {
     throw new ApprovalError('INVALID_APPROVAL', 'approval.reviewer is required');
   }
-  if (!['github-review', 'dsh-approval'].includes(approval.source)) {
-    throw new ApprovalError('INVALID_APPROVAL', 'approval.source must be github-review or dsh-approval');
+  if (!['github-review', 'github-environment', 'dsh-approval'].includes(approval.source)) {
+    throw new ApprovalError('INVALID_APPROVAL', 'approval.source must be github-review, github-environment, or dsh-approval');
   }
   if (approval.decision !== 'approved') {
     throw new ApprovalError('INVALID_APPROVAL', 'approval.decision must be approved');
@@ -87,6 +87,42 @@ export function approvalFromGithubReview(review, options) {
     decision: 'approved',
     submitted_at: review.submitted_at,
     ref: String(review.html_url ?? `github-review:${review.id ?? 'unknown'}`),
+  };
+}
+
+/**
+ * Normalize a GitHub environment approval from the run approvals API.
+ *
+ * @param {unknown} value - `GET /actions/runs/{id}/approvals` response.
+ * @param {{environment: string, head: string, change?: string}} options - Expected environment and change.
+ * @returns {object} Approval record.
+ */
+export function approvalFromEnvironment(value, options) {
+  if (!Array.isArray(value)) throw new ApprovalError('INVALID_APPROVAL', 'environment approvals must be an array');
+  const match = value.find((item) => {
+    const approved = item?.state === 'approved' || item?.state === undefined;
+    const inEnvironment = Array.isArray(item?.environments)
+      && item.environments.some((entry) => entry?.name === options.environment);
+    return approved && inEnvironment && typeof item?.user?.login === 'string';
+  });
+  if (match === undefined) {
+    throw new ApprovalError('APPROVAL_NOT_FOUND', `no approved environment review found for ${options.environment}`);
+  }
+  const createdAt = match.created_at ?? match.createdAt;
+  if (typeof createdAt !== 'string' || Number.isNaN(Date.parse(createdAt))) {
+    throw new ApprovalError('INVALID_APPROVAL', 'environment approval has no created_at');
+  }
+  return {
+    schema: 'firetree.approval/v1',
+    change: {
+      ...(options.change === undefined ? {} : { id: options.change }),
+      head: options.head.toLowerCase(),
+    },
+    reviewer: `github:${match.user.login}`,
+    source: 'github-environment',
+    decision: 'approved',
+    submitted_at: createdAt,
+    ref: `environment:${options.environment}`,
   };
 }
 

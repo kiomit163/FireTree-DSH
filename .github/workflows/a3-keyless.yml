@@ -1,0 +1,79 @@
+name: a3-keyless
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+  actions: read
+
+jobs:
+  a3:
+    name: Keyless A3 gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: firetree-a3
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Test with JUnit evidence
+        run: |
+          node --test --test-reporter=junit --test-reporter-destination="$RUNNER_TEMP/junit.xml"
+
+      - name: Fetch OIDC claims
+        run: node scripts/github-oidc.mjs --out claims.json --audience firetree
+
+      - name: Build A3 smoke workspace
+        run: |
+          node scripts/ci-a3-smoke.mjs \
+            --workspace "$RUNNER_TEMP/a3" \
+            --claims claims.json \
+            --junit "$RUNNER_TEMP/junit.xml"
+
+      - uses: actions/attest-build-provenance@v1
+        id: attest
+        with:
+          subject-path: ${{ runner.temp }}/a3/bundle-manifest.json
+
+      - name: Fetch environment approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/github-environment-approval.mjs \
+            --repo "${{ github.repository }}" \
+            --run-id "${{ github.run_id }}" \
+            --environment firetree-a3 \
+            --head "${{ github.sha }}" \
+            --change ci-a3 \
+            --out "$RUNNER_TEMP/a3/approval.json"
+
+      - name: Verify keyless A3
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node bin/firetree-check.mjs \
+            --root "$RUNNER_TEMP/a3" \
+            --mode autonomous \
+            --change ci-a3 \
+            --claims "$GITHUB_WORKSPACE/claims.json" \
+            --bundle "$RUNNER_TEMP/a3" \
+            --attestation "${{ steps.attest.outputs.bundle-path }}" \
+            --approval "$RUNNER_TEMP/a3/approval.json" \
+            --signer-workflow "${{ github.workflow_ref }}" \
+            --repository "${{ github.repository }}" \
+            --audience firetree \
+            --require A3

@@ -11,7 +11,7 @@
 | L0 未采样不需要 review；采样需要人类 spot-check | implemented | `test/tier-matrix.test.mjs` |
 | 证据由 CI/确定性工具产生，插件只读 | partial | 哈希/格式/claims 已校验；producer 仍是字符串，OIDC 只证明 CI 运行 |
 | A2 需要 OIDC claims | implemented | `test/identity.test.mjs`、CLI A2 测试 |
-| A3 需要人类审批 + 签名 bundle | partial | Ed25519 A3 已验证；GitHub review→approval CLI 已完成；新增 keyless attestation verifier（gh/Fulcio/Rekor），但完整 A3 keyless gate 仍需真实 workflow + approval 验证 |
+| A3 需要人类审批 + 签名 bundle | partial | Ed25519 A3 已验证；GitHub review→approval CLI、keyless attestation verifier、Environment `firetree-a3` A3 workflow 已落地；仍需配置 Required reviewers 并真实跑一次 approval → A3 |
 | 变更集来自 git diff，不可自述 | implemented | `test/git-assess.test.mjs` |
 | 重评估不能覆盖已评审 change | implemented | `test/git-assess.test.mjs` |
 | 评审绑定 assessment/diff/package | implemented | `test/git-assess.test.mjs`、receipt 复验 |

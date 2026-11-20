@@ -86,7 +86,8 @@ const CODEOWNERS = [
 export async function createM1Workspace(options = {}) {
   const parent = options.parent ?? tmpdir();
   await mkdir(parent, { recursive: true });
-  const root = await mkdtemp(join(parent, 'firetree-m1-'));
+  const root = options.root ?? await mkdtemp(join(parent, 'firetree-m1-'));
+  await mkdir(root, { recursive: true });
   const policy = JSON.parse(await readFile(new URL('../fixtures/policy-org.json', import.meta.url), 'utf8'));
 
   const files = {
