@@ -1,4 +1,5 @@
 /** Deterministic impact analysis and automatic risk tier. */
+// CI PR A2 smoke: this comment is a deliberate L1 change for the PR gate test.
 
 import { resolveCodeowners } from './codeowners.js';
 import { matchesGlob, normalizeRepoPath } from './glob.js';
