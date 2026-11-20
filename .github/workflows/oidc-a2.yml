@@ -1,0 +1,36 @@
+name: oidc-a2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  a2-smoke:
+    name: OIDC A2 smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Fetch OIDC claims
+        run: node scripts/github-oidc.mjs --out claims.json --audience firetree
+
+      - name: Run A2 gate
+        run: node scripts/ci-a2-smoke.mjs --claims claims.json --audience firetree
