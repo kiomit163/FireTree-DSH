@@ -81,16 +81,23 @@ async function main() {
     if (!built.ok) throw new Error(`fixture technical evidence failed: ${built.gaps.join('; ')}`);
 
     const check = join(process.cwd(), 'bin', 'firetree-check.mjs');
-    const stdout = execFileSync(process.execPath, [
-      check,
-      '--root', workspace.root,
-      '--mode', 'autonomous',
-      '--change', 'ci-a2',
-      '--claims', claimsPath,
-      '--repository', claims.repository,
-      '--audience', args.audience,
-      '--require', 'A2',
-    ], { encoding: 'utf8' });
+    let stdout;
+    try {
+      stdout = execFileSync(process.execPath, [
+        check,
+        '--root', workspace.root,
+        '--mode', 'autonomous',
+        '--change', 'ci-a2',
+        '--claims', claimsPath,
+        '--repository', claims.repository,
+        '--audience', args.audience,
+        '--require', 'A2',
+      ], { encoding: 'utf8' });
+    } catch (error) {
+      const out = typeof error.stdout === 'string' ? error.stdout : error.stdout?.toString('utf8') ?? '';
+      const err = typeof error.stderr === 'string' ? error.stderr : error.stderr?.toString('utf8') ?? '';
+      throw new Error(`firetree-check failed: ${error.message}\nstdout: ${out}\nstderr: ${err}`);
+    }
     console.log(stdout.trim());
   } finally {
     await workspace.cleanup();
@@ -98,6 +105,8 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(message);
+  console.error(`::error::${message.replaceAll('\n', '%0A')}`);
   process.exitCode = 1;
 });
