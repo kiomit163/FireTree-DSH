@@ -56,7 +56,11 @@ jobs:
       - name: Build autonomous technical evidence
         env:
           PR: ${{ github.event.pull_request.number }}
-        run: node bin/firetree-ci.mjs --change "pr-$PR" --evidence evidence/ci-junit.xml --intent-spec "PR #$PR"
+        run: |
+          node bin/firetree-ci.mjs \
+            --change "pr-$PR" \
+            --evidence evidence/ci-junit.xml \
+            --intent-spec "PR #$PR"
 
       - name: Verify A2
         env:
