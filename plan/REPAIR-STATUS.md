@@ -61,6 +61,12 @@
 
 - **A3**：新增 `approval.js`、`signature.js`；`firetree-check` 支持 `--approval`、`--signature`、`--public-key`；A3 = claims + CI 证据 + 人类审批 + Ed25519 签名 bundle。`--require A3` 现在真验签，不再占位。
 - **approval CLI**：新增 `bin/firetree-approval.mjs`，把 GitHub PR review JSON 归一化为 `firetree.approval/v1`；新增 `test/approval.test.mjs`。
+- **Keyless A3 verifier**：新增 `src/lib/attestation.js` + `bin/firetree-attest.mjs`：
+  - 用 `gh attestation verify --bundle --format json` 验证 GitHub artifact attestation（Fulcio/Rekor 证书链由 GitHub CLI 执行）；
+  - 校验 attestation subject 的 SHA-256 与待验证 artifact 一致；
+  - `firetree-check` 支持 `--attestation`/`--attested-artifact`/`--signer-workflow`/`--source-digest`；
+  - `deriveAssurance` 接受 `attested` 作为 A3 的 signed/attested 证明。
+  - 新增 `.github/workflows/keyless-attest.yml`（真实生成 + 验证 attestation）；A3 仍要求人类 approval，workflow 目前只验证 keyless plumbing。
 - **OIDC A2 smoke**：新增 `scripts/github-oidc.mjs`（取 GitHub Actions OIDC token 并校验 claims）和 `scripts/ci-a2-smoke.mjs`（在隔离 fixture 上调用真实 `firetree-check --require A2`），以及 `.github/workflows/oidc-a2.yml`。GitHub 运行 [44747400263](https://github.com/kiomit163/FireTree-DSH/actions/runs/44747400263) 成功。
   - 注意：这是 A2 **plumbing smoke**，不是对每个 PR 的实际变更做 gate；真实 PR gate 还需要仓库内 `.firetree` policy/registry 和按 diff 生成评估/证据。
 - **JUnit**：按 D6 引入 `fast-xml-parser` 5.11.2，替换正则校验；拒绝 DOCTYPE/ENTITY、限制大小/testcase 数、从 `<testcase>` 计数，防止 `tests="999999"` 伪造。
@@ -111,16 +117,16 @@
 
 | 项 | 结果 |
 |---|---|
-| `node --test` | **185/185 通过**（新增 A3/approval、OIDC audience arrays、JUnit/coverage、accepted risk、policy chain、triggers/exceptions、L0 反例、interface hash/depends_on、事件/状态测试） |
+| `node --test` | **189/189 通过**（新增 A3/approval、keyless attestation、OIDC audience arrays、JUnit/coverage、accepted risk、policy chain、triggers/exceptions、L0 反例、interface hash/depends_on、事件/状态测试） |
 | `node scripts/lint-schemas.mjs` | `schemas=10 errors=0` |
-| `node scripts/check-syntax.mjs` | `checked=90 failed=0` |
+| `node scripts/check-syntax.mjs` | `checked=94 failed=0` |
 | `node scripts/check-docs.mjs` | `docs=40 links=89 errors=0` |
 | live 安装 | `install_bundle` → `application: applied`；`firetree_state`/assess/receipt 实际调用通过 |
 | 分支 | `repair/v0.1`：`e30963b`（WP0/WP1）、`2277136`（WP2 core）、`f9374cb`（WP2 A3/WP3/WP5）、`33a28ab`（WP4 policy + live install）、`4731150`（L0 收窄/optional intent）、`20473b1`（全工具事件 + docs v1）、`a79a135`（coverage/interface/migration）、`6f4a8dc`（triggers/exceptions）、`0e3deaf`（approval CLI）、`af7cfd1`（bootstrap/SPC）、`bedede2`（depends_on）、`0837e07`（state expiry 测试） |
 
 ## 仍未完成（下一步）
 
-1. **WP2 收尾**：GitHub `actions/attest-build-provenance` keyless 真验签适配（当前 A3 用 Ed25519 离线签名，是可用但非 keyless 的路径）；CI 模板端到端跑一次。
+1. **WP2 收尾**：keyless verifier 已落地；还需在真实 GitHub Actions 上跑 `keyless-attest`，并把 PR approval 接入完整 A3 gate。Ed25519 路径仍保留为离线 fallback。
 2. **WP3 收尾**：SARIF/SBOM/coverage 的 policy 阈值；interface contract test/depends_on；`intent` 按 policy 必填开关。
 3. **WP4 收尾**：policy 模板/playbook；bootstrap 报告到 registry 的人工确认流程。
 4. **WP5 收尾**：周报模板；schedule/re-eval（DSH `schedule` 由用户配置，插件不自建调度器）。
