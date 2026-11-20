@@ -103,7 +103,9 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(message);
+  console.error(`::error::${message.replaceAll('\n', '%0A')}`);
   console.error(usage());
   process.exitCode = 1;
 });
