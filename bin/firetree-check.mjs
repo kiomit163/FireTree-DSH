@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 
 import { parseApproval, verifyApproval } from '../src/lib/approval.js';
 import { atLeast, deriveAssurance } from '../src/lib/assurance.js';
+import { verifyGithubAttestation } from '../src/lib/attestation.js';
 import { verifyBundleManifest } from '../src/lib/bundle.js';
 import { IdentityError, parseOidcClaims, verifyClaims } from '../src/lib/identity.js';
 import { parseSignature, verifySignature } from '../src/lib/signature.js';
@@ -22,6 +23,11 @@ function usage() {
     '  --approval <file>         Normalized human approval JSON (A3)',
     '  --signature <file>        Detached Ed25519 signature over the bundle digest (A3)',
     '  --public-key <pem>        Ed25519 public key for --signature',
+    '  --attestation <file>      GitHub attestation bundle (gh --bundle) for keyless A3',
+    '  --attested-artifact <f>   Artifact covered by attestation (default: <bundle>/bundle-manifest.json)',
+    '  --signer-workflow <ref>   Expected GitHub workflow identity for attestation',
+    '  --source-digest <sha>     Expected source digest for attestation',
+    '  --gh <path>               GitHub CLI path (default: gh)',
     '  --reviewer <id>           Expected approval reviewer (optional)',
     '  --require <A1|A2|A3>      Minimum derived assurance (default: receipt value)',
     '  --repository <owner/repo> Expected repository for claims',
@@ -34,7 +40,8 @@ function usage() {
 
 const VALUE_ARGS = new Set([
   '--change', '--mode', '--root', '--claims', '--bundle', '--approval', '--signature',
-  '--public-key', '--reviewer', '--require', '--repository', '--issuer', '--audience',
+  '--public-key', '--attestation', '--attested-artifact', '--signer-workflow', '--source-digest',
+  '--gh', '--reviewer', '--require', '--repository', '--issuer', '--audience',
 ]);
 
 function parseArgs(argv) {
@@ -55,6 +62,9 @@ function parseArgs(argv) {
   }
   if ((args.signature === undefined) !== (args['public-key'] === undefined)) {
     throw new Error('--signature and --public-key must be used together');
+  }
+  if (args.attestation !== undefined && args.bundle === undefined) {
+    throw new Error('--attestation requires --bundle so the attested manifest is part of the bundle');
   }
   return args;
 }
@@ -83,6 +93,7 @@ async function main() {
   let claimsValid = false;
   let approvalVerified = false;
   let signed = false;
+  let attested = false;
 
   if (result.ok) {
     const record = args.mode === 'governed' ? result.receipt : result.technical_evidence;
@@ -147,12 +158,32 @@ async function main() {
       }
     }
 
+    if (args.attestation !== undefined) {
+      const bundleRoot = resolve(root, args.bundle);
+      const artifact = resolve(root, args['attested-artifact'] ?? join(bundleRoot, 'bundle-manifest.json'));
+      try {
+        const check = await verifyGithubAttestation({
+          artifact,
+          bundle: resolve(root, args.attestation),
+          repository: args.repository ?? claims?.repository ?? '',
+          ...(args['signer-workflow'] === undefined ? {} : { signerWorkflow: args['signer-workflow'] }),
+          ...(args['source-digest'] === undefined ? {} : { sourceDigest: args['source-digest'] }),
+          ...(args.gh === undefined ? {} : { ghPath: args.gh }),
+        });
+        attested = check.valid;
+        if (!check.valid && check.reason !== null) gaps.push(`attestation: ${check.reason}`);
+      } catch (error) {
+        gaps.push(`attestation is invalid: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
     derived = deriveAssurance({
       claimsValid,
       claims,
       evidence: record?.evidence ?? [],
       approval: approvalVerified ? { verified: true } : null,
       signed,
+      attested,
     });
 
     const claimed = record?.assurance;

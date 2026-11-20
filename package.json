@@ -28,6 +28,7 @@
   "bin": {
     "firetree-approval": "./bin/firetree-approval.mjs",
     "firetree-assess": "./bin/firetree-assess.mjs",
+    "firetree-attest": "./bin/firetree-attest.mjs",
     "firetree-check": "./bin/firetree-check.mjs",
     "firetree-ci": "./bin/firetree-ci.mjs"
   },

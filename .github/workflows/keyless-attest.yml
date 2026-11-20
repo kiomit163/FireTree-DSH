@@ -1,0 +1,39 @@
+name: keyless-attest
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  attest:
+    name: Keyless attestation smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create attestation subject
+        run: |
+          mkdir -p artifacts
+          printf 'FireTree keyless attestation smoke\n' > artifacts/firetree-ci.txt
+
+      - uses: actions/attest-build-provenance@v1
+        id: attest
+        with:
+          subject-path: artifacts/firetree-ci.txt
+
+      - name: Verify keyless attestation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node bin/firetree-attest.mjs \
+            --artifact artifacts/firetree-ci.txt \
+            --bundle "${{ steps.attest.outputs.bundle-path }}" \
+            --repo "${{ github.repository }}" \
+            --signer-workflow "${{ github.workflow_ref }}"

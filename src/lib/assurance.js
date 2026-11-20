@@ -10,7 +10,7 @@ export const ASSURANCE_LEVELS = Object.freeze(['A0', 'A1', 'A2', 'A3']);
  * - A2: CI OIDC claims + CI-produced evidence.
  * - A3: A2 + verified human approval + a signed/attested bundle.
  *
- * @param {{claimsValid?: boolean, claims?: object|null, evidence?: object[], approval?: {verified?: boolean}|null, signed?: boolean}} input - Facts.
+ * @param {{claimsValid?: boolean, claims?: object|null, evidence?: object[], approval?: {verified?: boolean}|null, signed?: boolean, attested?: boolean}} input - Facts.
  * @returns {{level: 'A0'|'A1'|'A2'|'A3', reasons: string[]}} Derived level.
  */
 export function deriveAssurance(input = {}) {
@@ -30,10 +30,11 @@ export function deriveAssurance(input = {}) {
       reasons.push('CI claims present but evidence is not marked as CI-produced; capped at A1');
     }
   }
-  if (level === 'A2' && input.approval?.verified === true && input.signed === true) {
+  const provenance = input.signed === true || input.attested === true;
+  if (level === 'A2' && input.approval?.verified === true && provenance) {
     level = 'A3';
     reasons.push('verified human approval and signed/attested bundle present');
-  } else if (level === 'A2' && (input.approval?.verified !== true || input.signed !== true)) {
+  } else if (level === 'A2' && (input.approval?.verified !== true || !provenance)) {
     reasons.push('A3 requires verified human approval and a signed/attested bundle');
   }
   return { level, reasons };

@@ -5,6 +5,7 @@ coverage/
 Thumbs.db
 .tmp/
 evidence/
+artifacts/
 .firetree/changes/
 .firetree/evidence/
 .firetree/receipts/
