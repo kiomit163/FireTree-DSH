@@ -58,6 +58,12 @@ test('OIDC claims reject wrong issuer, audience, repository, sha, and event', ()
   assert.ok(result.failures.some((failure) => /event_name/.test(failure)));
 });
 
+test('OIDC claims accept audience arrays and reject empty audiences', () => {
+  assert.deepEqual(parseOidcClaims(claims({ aud: ['firetree', 'other'] })).aud, ['firetree', 'other']);
+  assert.throws(() => parseOidcClaims(claims({ aud: [] })), (error) => error instanceof IdentityError);
+  assert.throws(() => parseOidcClaims(claims({ aud: [''] })), (error) => error instanceof IdentityError);
+});
+
 test('OIDC claims reject malformed input', () => {
   assert.throws(() => parseOidcClaims({}), (error) => error instanceof IdentityError);
   assert.throws(() => parseOidcClaims(claims({ sha: 'short' })), (error) => error instanceof IdentityError);

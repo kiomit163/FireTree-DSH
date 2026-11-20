@@ -34,12 +34,14 @@ export function parseOidcClaims(value) {
     throw new IdentityError('INVALID_CLAIMS', 'claims must be a JSON object');
   }
   const claims = value;
-  const required = ['iss', 'aud', 'repository', 'workflow_ref', 'ref', 'sha', 'event_name', 'run_id'];
+  const required = ['iss', 'repository', 'workflow_ref', 'ref', 'sha', 'event_name', 'run_id'];
   for (const key of required) {
     if (typeof claims[key] !== 'string' || claims[key].length === 0) {
       throw new IdentityError('INVALID_CLAIMS', `claims.${key} must be a non-empty string`);
     }
   }
+  const aud = asArray(claims.aud).filter((item) => typeof item === 'string' && item.length > 0);
+  if (aud.length === 0) throw new IdentityError('INVALID_CLAIMS', 'claims.aud must be a non-empty string or string array');
   if (!/^[a-f0-9]{7,64}$/.test(claims.sha)) throw new IdentityError('INVALID_CLAIMS', 'claims.sha must be a commit SHA');
   if (!/^\d+$/.test(claims.run_id)) throw new IdentityError('INVALID_CLAIMS', 'claims.run_id must be numeric');
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(claims.repository)) {
@@ -47,7 +49,7 @@ export function parseOidcClaims(value) {
   }
   return {
     iss: claims.iss,
-    aud: asArray(claims.aud).filter((item) => typeof item === 'string' && item.length > 0),
+    aud,
     repository: claims.repository,
     workflow_ref: claims.workflow_ref,
     ref: claims.ref,
