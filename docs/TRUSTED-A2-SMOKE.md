@@ -12,3 +12,5 @@ Triggered after the trusted OIDC fetch fix.
 Retrigger after current-base workflow fix.
 
 Retrigger after OIDC trusted-base binding.
+
+Retrigger after diff/approval hardening.
