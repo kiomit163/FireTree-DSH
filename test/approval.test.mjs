@@ -37,6 +37,15 @@ test('GitHub environment review normalizes to an approval bound to head', () => 
   );
 });
 
+test('environment approval without a top-level timestamp uses observation time', () => {
+  const approval = parseApproval(approvalFromEnvironment([{
+    state: 'approved',
+    user: { login: 'alice' },
+    environments: [{ name: 'firetree-a3' }],
+  }], { environment: 'firetree-a3', head: HEAD }));
+  assert.ok(Number.isFinite(Date.parse(approval.submitted_at)));
+});
+
 test('approval parsing rejects non-approved reviews and mismatched commits', () => {
   assert.throws(() => parseApproval({ schema: 'firetree.approval/v1' }));
   assert.throws(() => approvalFromGithubReview({

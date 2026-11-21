@@ -108,9 +108,12 @@ export function approvalFromEnvironment(value, options) {
   if (match === undefined) {
     throw new ApprovalError('APPROVAL_NOT_FOUND', `no approved environment review found for ${options.environment}`);
   }
-  const createdAt = match.created_at ?? match.createdAt;
+  // GitHub's run approvals API does not expose the approval timestamp. Record
+  // the time this verifier observed the approved environment, not a fabricated
+  // earlier time.
+  const createdAt = match.created_at ?? match.createdAt ?? new Date().toISOString();
   if (typeof createdAt !== 'string' || Number.isNaN(Date.parse(createdAt))) {
-    throw new ApprovalError('INVALID_APPROVAL', 'environment approval has no created_at');
+    throw new ApprovalError('INVALID_APPROVAL', 'environment approval has no usable timestamp');
   }
   return {
     schema: 'firetree.approval/v1',
