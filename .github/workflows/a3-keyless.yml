@@ -59,7 +59,7 @@ jobs:
             --environment firetree-a3 \
             --head "${{ github.sha }}" \
             --change ci-a3 \
-            --out "$RUNNER_TEMP/a3/approval.json"
+            --out "$RUNNER_TEMP/approval.json"
 
       - name: Verify keyless A3
         env:
@@ -72,7 +72,7 @@ jobs:
             --claims "$GITHUB_WORKSPACE/claims.json" \
             --bundle "$RUNNER_TEMP/a3" \
             --attestation "${{ steps.attest.outputs.bundle-path }}" \
-            --approval "$RUNNER_TEMP/a3/approval.json" \
+            --approval "$RUNNER_TEMP/approval.json" \
             --signer-workflow "${{ github.workflow_ref }}" \
             --repository "${{ github.repository }}" \
             --audience firetree \
