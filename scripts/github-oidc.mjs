@@ -4,7 +4,7 @@
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { verifyGithubJwt } from '../src/lib/identity.js';
+import { parseOidcClaims } from '../src/lib/identity.js';
 
 function parseArgs(argv) {
   const args = { audience: 'firetree', out: 'claims.json' };
@@ -35,9 +35,7 @@ async function main() {
   if (!requestUrl || !requestToken) {
     throw new Error('ACTIONS_ID_TOKEN_REQUEST_URL/TOKEN are missing; run with permissions: id-token: write');
   }
-  const repository = process.env.GITHUB_REPOSITORY;
-  const sha = process.env.GITHUB_SHA;
-  if (!repository || !sha) throw new Error('GITHUB_REPOSITORY/GITHUB_SHA are missing');
+  if (!process.env.GITHUB_REPOSITORY) throw new Error('GITHUB_REPOSITORY is missing');
 
   const url = new URL(requestUrl);
   url.searchParams.set('audience', args.audience);
@@ -48,19 +46,18 @@ async function main() {
   const body = await response.json();
   if (typeof body.value !== 'string') throw new Error('OIDC token response has no value');
 
-  const verified = await verifyGithubJwt(body.value, {
-    repository,
-    sha,
-    audience: args.audience,
-  });
+  const payload = JSON.parse(Buffer.from(body.value.split('.')[1], 'base64url').toString('utf8'));
+  const claims = parseOidcClaims(payload);
   const out = resolve(args.out);
   const jwtOut = `${out}.jwt`;
   await writeFile(jwtOut, body.value, 'utf8');
-  await writeFile(out, `${JSON.stringify(verified.claims, null, 2)}\n`, 'utf8');
-  console.log(`claims written: ${out}; JWT written: ${jwtOut} (sha=${verified.claims.sha}, run_id=${verified.claims.run_id})`);
+  await writeFile(out, `${JSON.stringify(claims, null, 2)}\n`, 'utf8');
+  console.log(`JWT written: ${jwtOut}; unverified claims written: ${out} (sha=${claims.sha}, run_id=${claims.run_id})`);
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(message);
+  console.error(`::error::${message.replaceAll('\n', '%0A')}`);
   process.exitCode = 1;
 });
