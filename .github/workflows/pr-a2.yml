@@ -1,23 +1,24 @@
 name: pr-a2
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened]
 
-permissions:
-  contents: read
-  id-token: write
+permissions: {}
 
 jobs:
-  a2:
-    name: FireTree A2 gate
-    if: github.event.pull_request.head.repo.full_name == github.repository
+  build:
+    name: Build PR evidence
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout PR merge as untrusted input
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
         with:
@@ -34,42 +35,68 @@ jobs:
       - name: Test with JUnit evidence
         run: |
           mkdir -p evidence
-          set +e
           node --test --test-reporter=junit --test-reporter-destination=evidence/ci-junit.xml
-          status=$?
-          set -e
-          if [ "$status" -ne 0 ]; then
-            echo "::error::node --test failed with exit $status"
-            exit "$status"
-          fi
 
-      - name: Fetch OIDC claims
+      - name: Upload untrusted test evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-junit-${{ github.event.pull_request.number }}
+          path: evidence/ci-junit.xml
+          if-no-files-found: error
+          retention-days: 30
+
+  verify:
+    name: Trusted A2 verifier
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+      actions: read
+    steps:
+      - name: Checkout trusted base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+
+      - name: Fetch PR head as data
+        run: |
+          git fetch --no-tags origin \
+            "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/pull/head"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install trusted verifier
+        run: pnpm install --frozen-lockfile
+
+      - name: Download untrusted evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-junit-${{ github.event.pull_request.number }}
+          path: evidence
+
+      - name: Fetch OIDC JWT
         run: node scripts/github-oidc.mjs --out claims.json --audience firetree
 
-      - name: Prepare trusted base registry
+      - name: Assess PR diff with trusted policy
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/firetree-base"
-          git archive "$BASE" .firetree | tar -x -C "$RUNNER_TEMP/firetree-base"
-          if git cat-file -e "$BASE:CODEOWNERS" 2>/dev/null; then
-            git show "$BASE:CODEOWNERS" > "$RUNNER_TEMP/firetree-base/CODEOWNERS"
-          fi
-          if git cat-file -e "$BASE:OWNERS" 2>/dev/null; then
-            git show "$BASE:OWNERS" > "$RUNNER_TEMP/firetree-base/OWNERS"
-          fi
-
-      - name: Assess PR diff
-        env:
-          BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD: ${{ github.sha }}
+          HEAD: refs/remotes/pull/head
           PR: ${{ github.event.pull_request.number }}
         run: |
           node bin/firetree-assess.mjs \
             --base "$BASE" \
             --head "$HEAD" \
-            --change "pr-$PR" \
-            --registry-root "$RUNNER_TEMP/firetree-base"
+            --change "pr-$PR"
 
       - name: Build autonomous technical evidence
         env:
@@ -77,7 +104,6 @@ jobs:
         run: |
           node bin/firetree-ci.mjs \
             --change "pr-$PR" \
-            --registry-root "$RUNNER_TEMP/firetree-base" \
             --evidence evidence/ci-junit.xml \
             --intent-spec "PR #$PR"
 
@@ -89,6 +115,36 @@ jobs:
             --mode autonomous \
             --change "pr-$PR" \
             --jwt claims.json.jwt \
+            --claims-sha "${{ github.event.pull_request.base.sha }}" \
+            --workflow-ref "${{ github.workflow_ref }}" \
             --repository "${{ github.repository }}" \
             --audience firetree \
             --require A2
+
+  report:
+    name: Publish PR check
+    needs: [build, verify]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - name: Publish check on PR head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RESULT: ${{ needs.verify.result }}
+        run: |
+          if [ "$RESULT" = "success" ]; then
+            conclusion=success
+          else
+            conclusion=failure
+          fi
+          gh api --method POST "repos/${{ github.repository }}/check-runs" \
+            -f name=firetree-a2 \
+            -f head_sha="$HEAD_SHA" \
+            -f status=completed \
+            -f conclusion="$conclusion" \
+            -f "output[title]=FireTree A2" \
+            -f "output[summary]=verifier result: $RESULT"

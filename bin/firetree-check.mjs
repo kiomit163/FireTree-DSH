@@ -20,6 +20,8 @@ function usage() {
     '  --root <dir>              Repository root (default: cwd)',
     '  --jwt <file>              Raw GitHub Actions OIDC JWT (enables A2; signature verified)',
     '  --jwks <file>             Local JWKS JSON for offline/tests (default: GitHub JWKS)',
+    '  --claims-sha <sha>        SHA the OIDC token must bind to (default: change head)',
+    '  --workflow-ref <ref>      Expected OIDC workflow_ref (optional)',
     '  --claims <file>           Legacy claims JSON (not trusted for A2)',
     '  --bundle <dir>            Evidence bundle directory with bundle-manifest.json',
     '  --approval <file>         Normalized human approval JSON (A3)',
@@ -41,7 +43,7 @@ function usage() {
 }
 
 const VALUE_ARGS = new Set([
-  '--change', '--mode', '--root', '--jwt', '--jwks', '--claims', '--bundle', '--approval', '--signature',
+  '--change', '--mode', '--root', '--jwt', '--jwks', '--claims-sha', '--workflow-ref', '--claims', '--bundle', '--approval', '--signature',
   '--public-key', '--attestation', '--attested-artifact', '--signer-workflow', '--source-digest',
   '--gh', '--reviewer', '--require', '--repository', '--issuer', '--audience',
 ]);
@@ -107,11 +109,13 @@ async function main() {
         const jwks = args.jwks === undefined
           ? undefined
           : await readJson(resolve(root, args.jwks));
+        const claimsSha = args['claims-sha'] ?? (typeof head === 'string' ? head : undefined);
         const verified = await verifyGithubJwt(rawJwt, {
           ...(args.issuer === undefined ? {} : { issuer: args.issuer }),
           audience: args.audience ?? 'firetree',
           ...(args.repository === undefined ? {} : { repository: args.repository }),
-          ...(typeof head === 'string' ? { sha: head } : {}),
+          ...(claimsSha === undefined ? {} : { sha: claimsSha }),
+          ...(args['workflow-ref'] === undefined ? {} : { workflowRef: args['workflow-ref'] }),
           ...(jwks === undefined ? {} : { jwks }),
         });
         claims = verified.claims;
