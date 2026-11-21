@@ -58,13 +58,14 @@ jobs:
       - name: Checkout trusted base
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ github.event.pull_request.base.ref }}
           fetch-depth: 0
 
       - name: Fetch PR head as data
         run: |
           git fetch --no-tags origin \
             "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/pull/head"
+          echo "BASE_SHA=$(git merge-base "origin/${{ github.event.pull_request.base.ref }}" refs/remotes/pull/head)" >> "$GITHUB_ENV"
 
       - uses: pnpm/action-setup@v4
         with:
@@ -89,12 +90,11 @@ jobs:
 
       - name: Assess PR diff with trusted policy
         env:
-          BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: refs/remotes/pull/head
           PR: ${{ github.event.pull_request.number }}
         run: |
           node bin/firetree-assess.mjs \
-            --base "$BASE" \
+            --base "$BASE_SHA" \
             --head "$HEAD" \
             --change "pr-$PR"
 
