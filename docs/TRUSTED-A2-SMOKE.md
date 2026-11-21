@@ -10,3 +10,5 @@ and `report` publishes `firetree-a2` on the PR head.
 Triggered after the trusted OIDC fetch fix.
 
 Retrigger after current-base workflow fix.
+
+Retrigger after OIDC trusted-base binding.
