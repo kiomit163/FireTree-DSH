@@ -159,6 +159,7 @@ async function main() {
         const approval = parseApproval(await readJson(resolve(root, args.approval)));
         const approvalCheck = verifyApproval(approval, {
           head: typeof head === 'string' ? head : '',
+          change: args.change,
           ...(args.reviewer === undefined ? {} : { reviewer: args.reviewer }),
         });
         approvalVerified = approvalCheck.valid;

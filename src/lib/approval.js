@@ -100,7 +100,7 @@ export function approvalFromGithubReview(review, options) {
 export function approvalFromEnvironment(value, options) {
   if (!Array.isArray(value)) throw new ApprovalError('INVALID_APPROVAL', 'environment approvals must be an array');
   const match = value.find((item) => {
-    const approved = item?.state === 'approved' || item?.state === undefined;
+    const approved = item?.state === 'approved';
     const inEnvironment = Array.isArray(item?.environments)
       && item.environments.some((entry) => entry?.name === options.environment);
     return approved && inEnvironment && typeof item?.user?.login === 'string';
@@ -140,6 +140,9 @@ export function verifyApproval(approval, policy) {
   const failures = [];
   if (typeof policy.head !== 'string' || approval.change.head !== policy.head.toLowerCase()) {
     failures.push('approval head does not match change head');
+  }
+  if (policy.change !== undefined && approval.change.id !== policy.change) {
+    failures.push(`approval change id must be ${policy.change}`);
   }
   if (policy.reviewer !== undefined && approval.reviewer !== policy.reviewer) {
     failures.push(`approval reviewer must be ${policy.reviewer}`);

@@ -8,6 +8,7 @@ import { validateCorrectnessCase } from './correctness.js';
 import { validateCoverageText } from './coverage.js';
 import { validateSarif, validateSbom } from './extra-evidence.js';
 import { validateJunitXml } from './junit.js';
+import { canonicalJson } from './json.js';
 import { validateJsonSchema } from './schema.js';
 
 const RECEIPT_SCHEMA = JSON.parse(readFileSync(new URL('../../schemas/receipt.schema.json', import.meta.url), 'utf8'));
@@ -324,8 +325,16 @@ export async function checkReceiptSemantics(receipt, options) {
     if (assessment.tier !== receipt.tier) gaps.push('receipt tier does not match assessment tier');
     if (assessment.change.base !== receipt.change.base) gaps.push('receipt base does not match assessment base');
     if (assessment.change.head !== receipt.change.head) gaps.push('receipt head does not match assessment head');
-    const filesHash = sha256Text(assessment.change.files.join('\n'));
+    const filesHash = sha256Text(canonicalJson(assessment.change.files));
     if (filesHash !== receipt.change.files_sha256) gaps.push('receipt change hash does not match assessment files');
+    if (assessment.git !== undefined) {
+      if (receipt.change.diff_sha256 !== assessment.git.diff_sha256) {
+        gaps.push('receipt diff hash does not match assessment');
+      }
+      if (receipt.change.tree_sha !== assessment.git.tree_sha) {
+        gaps.push('receipt tree hash does not match assessment');
+      }
+    }
     if (assessment.policy.version !== receipt.policy.version) gaps.push('receipt policy version does not match assessment');
     if (assessment.confidence !== receipt.impact.confidence) gaps.push('receipt impact confidence does not match assessment');
     for (const key of ['files', 'subsystems', 'interfaces', 'owners', 'unknown', 'unresolved_consumers']) {

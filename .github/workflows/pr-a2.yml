@@ -122,6 +122,15 @@ jobs:
             --audience firetree \
             --require A2
 
+      - name: Upload retained FireTree artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firetree-a2-${{ github.event.pull_request.number }}
+          path: .firetree/
+          if-no-files-found: warn
+          retention-days: 90
+
   report:
     name: Publish PR check
     needs: [build, verify]

@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import { readFiretreeJson, resolveWithin, sha256File, sha256Text } from './artifacts.js';
+import { canonicalJson } from './json.js';
 import { validateCoverageText } from './coverage.js';
 import { validateSarif, validateSbom } from './extra-evidence.js';
 import { validateJunitXml } from './junit.js';
@@ -106,7 +107,11 @@ export async function checkTechnicalEvidenceSemantics(evidence, options) {
     if (evidence.assessment.confidence !== assessment.confidence) gaps.push('technical evidence confidence does not match assessment');
     if (assessment.change.base !== evidence.change.base) gaps.push('technical evidence base does not match assessment');
     if (assessment.change.head !== evidence.change.head) gaps.push('technical evidence head does not match assessment');
-    if (sha256Text(assessment.change.files.join('\n')) !== evidence.change.files_sha256) gaps.push('technical evidence files hash does not match assessment');
+    if (sha256Text(canonicalJson(assessment.change.files)) !== evidence.change.files_sha256) gaps.push('technical evidence files hash does not match assessment');
+    if (assessment.git !== undefined) {
+      if (evidence.change.diff_sha256 !== assessment.git.diff_sha256) gaps.push('technical evidence diff hash does not match assessment');
+      if (evidence.change.tree_sha !== assessment.git.tree_sha) gaps.push('technical evidence tree hash does not match assessment');
+    }
     for (const key of ['files', 'subsystems', 'interfaces', 'owners']) {
       if (!sameArray(assessment.impact[key], evidence.impact[key])) gaps.push(`technical evidence impact ${key} does not match assessment`);
     }

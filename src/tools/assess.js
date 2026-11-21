@@ -18,6 +18,7 @@ import { GitError, verifyGitChange } from '../lib/git.js';
 import { normalizeRepoPath } from '../lib/glob.js';
 import { analyzeImpact, ImpactError } from '../lib/impact.js';
 import { verifyInterfaceHashes } from '../lib/interface.js';
+import { canonicalJson } from '../lib/json.js';
 import { loadOwners } from '../lib/owners.js';
 import { evaluatePolicy } from '../lib/policy.js';
 import { loadRegistry } from '../lib/registry.js';
@@ -136,7 +137,7 @@ function validateArgs(args) {
 
 function sampling(policy, tier, change, files) {
   const rate = policy.tiers[tier].sample_rate;
-  const hash = sha256Text(`${change}\n${files.join('\n')}`);
+  const hash = sha256Text(`${change}\n${canonicalJson(files)}`);
   const fraction = Number.parseInt(hash.slice(0, 8), 16) / 0x100000000;
   return {
     tier,
@@ -263,7 +264,7 @@ export function createAssessTool(ctx) {
           && old.change?.head === head
           && old.policy?.version === registry.policy.version
           && Array.isArray(old.change?.files)
-          && sha256Text(old.change.files.join('\n')) === sha256Text(files.join('\n'));
+          && canonicalJson(old.change.files) === canonicalJson(files);
         if (sameChange) {
           const sameOutput = {
             ok: true,

@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { ArtifactError, assertSafeId, readFiretreeJson, readJsonFile, resolveWithin, sha256File, sha256Text, writeFiretreeJson } from '../lib/artifacts.js';
 import { validateCorrectnessCase } from '../lib/correctness.js';
 import { appendEvent } from '../lib/events.js';
+import { canonicalJson } from '../lib/json.js';
 import {
   checkReceiptSemantics,
   readReviewVerdict,
@@ -434,7 +435,10 @@ export function createReceiptTool(ctx) {
           change: {
             base: assessment.change.base,
             head: assessment.change.head,
-            files_sha256: sha256Text(assessment.change.files.join('\n')),
+            files_sha256: sha256Text(canonicalJson(assessment.change.files)),
+            ...(assessment.git === undefined
+              ? {}
+              : { tree_sha: assessment.git.tree_sha, diff_sha256: assessment.git.diff_sha256 }),
           },
           tier: assessment.tier,
           intent: parsed.intent,
@@ -521,7 +525,10 @@ export function createReceiptTool(ctx) {
         change: {
           base: assessment.change.base,
           head: assessment.change.head,
-          files_sha256: sha256Text(assessment.change.files.join('\n')),
+          files_sha256: sha256Text(canonicalJson(assessment.change.files)),
+          ...(assessment.git === undefined
+            ? {}
+            : { tree_sha: assessment.git.tree_sha, diff_sha256: assessment.git.diff_sha256 }),
         },
         tier: assessment.tier,
         policy: {

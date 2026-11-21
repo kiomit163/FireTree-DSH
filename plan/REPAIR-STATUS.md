@@ -123,7 +123,9 @@
 - **git 绑定**：git 仓库内不带 `verify_git` 的 assess 直接失败；非 git fixture 才允许无 git 评估。
 - **A3 语义**：`firetree-check` 的 autonomous 模式最多 A2；`a3-keyless` 改名为 `keyless-a2`，不再声称 A3。真正的 governed A3 仍未实现。
 - **证据 fail-open**：远程 URL evidence 在 governed/technical/hypothesis 路径一律拒绝；JUnit 读取 `<testsuites>` 根计数；LCOV >100% 拒绝。
-- 测试：**195/195 通过**；syntax 97；docs 41。
+- **diff/tree 绑定**：receipt/technical evidence 记录 `tree_sha`/`diff_sha256`；check 与 assessment 比对；`files_sha256` 改为 canonical JSON。
+- **approval**：环境审批不再把 `state === undefined` 当 approved；approval 必须绑定 change id。
+- 测试：**196/196 通过**；syntax 97；docs 41。
 - 这仍是 P0 修复的**第一段**：trusted build/verify 拆分、approval 绑定、retention、governed A3 未完成。
 
 ## 验证

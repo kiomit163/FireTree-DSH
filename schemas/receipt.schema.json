@@ -31,6 +31,8 @@
       "properties": {
         "base": { "$ref": "#/$defs/commit" },
         "head": { "$ref": "#/$defs/commit" },
+        "tree_sha": { "$ref": "#/$defs/commit" },
+        "diff_sha256": { "$ref": "#/$defs/sha256" },
         "files_sha256": { "$ref": "#/$defs/sha256" }
       }
     },

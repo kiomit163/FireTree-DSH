@@ -149,7 +149,7 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
     const approvalPath = join(workspace.root, 'approval.json');
     await writeFile(approvalPath, `${JSON.stringify({
       schema: 'firetree.approval/v1',
-      change: { head: assessment.change.head },
+      change: { id: 'chg-cli-a2', head: assessment.change.head },
       reviewer: 'github:alice',
       source: 'github-review',
       decision: 'approved',

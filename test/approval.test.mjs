@@ -30,9 +30,16 @@ test('GitHub environment review normalizes to an approval bound to head', () => 
   }], { environment: 'firetree-a3', head: HEAD, change: 'chg-1' }));
   assert.equal(approval.source, 'github-environment');
   assert.equal(approval.reviewer, 'github:alice');
-  assert.deepEqual(verifyApproval(approval, { head: HEAD }).failures, []);
+  assert.deepEqual(verifyApproval(approval, { head: HEAD, change: 'chg-1' }).failures, []);
+  assert.ok(verifyApproval(approval, { head: HEAD, change: 'other' }).failures.length > 0);
   assert.throws(
     () => approvalFromEnvironment([], { environment: 'firetree-a3', head: HEAD }),
+    (error) => error.code === 'APPROVAL_NOT_FOUND',
+  );
+  assert.throws(
+    () => approvalFromEnvironment([{
+      user: { login: 'alice' }, environments: [{ name: 'firetree-a3' }],
+    }], { environment: 'firetree-a3', head: HEAD }),
     (error) => error.code === 'APPROVAL_NOT_FOUND',
   );
 });

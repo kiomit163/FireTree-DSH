@@ -3,7 +3,8 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
-import { sha256Text } from '../src/lib/artifacts.js';
+import { readFiretreeJson, sha256Text, writeFiretreeJson } from '../src/lib/artifacts.js';
+import { checkReceiptSemantics } from '../src/lib/receipt.js';
 import { validateJsonSchema } from '../src/lib/schema.js';
 import { createAssessTool } from '../src/tools/assess.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
@@ -129,6 +130,30 @@ test('build assembles an L1 receipt from external evidence and check accepts it'
     assert.equal(checked.ok, true);
     assert.equal(checked.artifact.path, built.artifact.path);
     assert.equal(checked.artifact.sha256, built.artifact.sha256);
+  } finally {
+    await workspace.cleanup();
+  }
+});
+
+test('receipt rejects a missing diff/tree binding when the assessment has git identity', async () => {
+  const workspace = await createM1Workspace();
+  try {
+    const ctx = await prepareL1(workspace);
+    const receiptTool = createReceiptTool(ctx);
+    const built = await receiptTool.execute(l1BuildArgs(), EXEC);
+    assert.equal(built.ok, true, built.gaps?.join('; '));
+
+    const assessmentPath = '.firetree/changes/chg-l1/assessment.json';
+    const assessment = await readFiretreeJson(workspace.root, assessmentPath, { verifyHash: true });
+    await writeFiretreeJson(workspace.root, assessmentPath, {
+      ...assessment.value,
+      git: { tree_sha: 'c'.repeat(40), diff_sha256: 'd'.repeat(64) },
+    });
+    const receipt = await readFiretreeJson(workspace.root, '.firetree/receipts/chg-l1.json', { verifyHash: true });
+    const checked = await checkReceiptSemantics(receipt.value, { root: workspace.root, change: 'chg-l1' });
+    assert.equal(checked.valid, false);
+    assert.ok(checked.gaps.some((gap) => /diff hash/.test(gap)));
+    assert.ok(checked.gaps.some((gap) => /tree hash/.test(gap)));
   } finally {
     await workspace.cleanup();
   }
