@@ -14,3 +14,5 @@ Retrigger after current-base workflow fix.
 Retrigger after OIDC trusted-base binding.
 
 Retrigger after diff/approval hardening.
+
+Retrigger after hidden artifact retention.
