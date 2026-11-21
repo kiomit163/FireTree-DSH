@@ -19,7 +19,7 @@ export class IdentityError extends Error {
 }
 
 const DEFAULT_ISSUER = 'https://token.actions.githubusercontent.com';
-const DEFAULT_EVENTS = ['pull_request', 'push', 'workflow_dispatch'];
+const DEFAULT_EVENTS = ['pull_request', 'pull_request_target', 'push', 'workflow_dispatch'];
 const remoteJwks = new Map();
 
 function asArray(value) {

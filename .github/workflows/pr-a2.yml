@@ -66,6 +66,7 @@ jobs:
           git fetch --no-tags origin \
             "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/pull/head"
           echo "BASE_SHA=$(git merge-base "origin/${{ github.event.pull_request.base.ref }}" refs/remotes/pull/head)" >> "$GITHUB_ENV"
+          echo "TRUSTED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - uses: pnpm/action-setup@v4
         with:
@@ -115,7 +116,7 @@ jobs:
             --mode autonomous \
             --change "pr-$PR" \
             --jwt claims.json.jwt \
-            --claims-sha "${{ github.event.pull_request.base.sha }}" \
+            --claims-sha "$TRUSTED_SHA" \
             --workflow-ref "${{ github.workflow_ref }}" \
             --repository "${{ github.repository }}" \
             --audience firetree \
