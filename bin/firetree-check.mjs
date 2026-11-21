@@ -202,12 +202,15 @@ async function main() {
     gaps,
     ...(derived === null ? {} : { assurance: derived.level, assurance_reasons: derived.reasons }),
   };
+  if (!output.ok) console.error(`::error::${gaps.join('; ').replaceAll('\n', '%0A')}`);
   console.log(JSON.stringify(output));
   process.exitCode = output.ok ? 0 : 1;
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(message);
+  console.error(`::error::${message.replaceAll('\n', '%0A')}`);
   console.error(usage());
   process.exitCode = 2;
 });
