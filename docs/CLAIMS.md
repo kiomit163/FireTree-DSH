@@ -10,7 +10,7 @@
 | 未知路径强制 L2，且回执可表达 | implemented | `test/tier-matrix.test.mjs`（unknown-only L2） |
 | L0 未采样不需要 review；采样需要人类 spot-check | implemented | `test/tier-matrix.test.mjs` |
 | 证据由 CI/确定性工具产生，插件只读 | partial | 哈希/格式/claims 已校验；producer 仍是字符串，OIDC 只证明 CI 运行 |
-| A2 需要验签的 OIDC JWT | partial | `jose` JWKS 验签、`--jwt` 已实现；`--claims` JSON 只降级 A1；workflow 尚未重新跑真实 PR |
+| A2 需要验签的 OIDC JWT | implemented | `jose` JWKS 验签、`--jwt`、`--claims-sha`；PR #2 trusted build/verify 已真实通过（run 44915432273） |
 | A3 需要人类审批 + 签名 bundle | partial | Ed25519 A3 已验证；autonomous A3 已被代码拒绝；`keyless-a2` 只验证 attestation/A2。真正的 governed A3 + 独立 approval + 留存仍未完成 |
 | 变更集来自 git diff，不可自述 | implemented | `test/git-assess.test.mjs` |
 | 重评估不能覆盖已评审 change | implemented | `test/git-assess.test.mjs` |

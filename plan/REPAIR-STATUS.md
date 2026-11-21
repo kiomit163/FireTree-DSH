@@ -118,6 +118,7 @@
 ### 2026-11-22 生产就绪修复（进行中）
 
 - **A2 身份**：`firetree-check` 新增 `--jwt` + `--jwks`；`jose` 对原始 GitHub OIDC JWT 做 JWKS 验签、`exp/aud/issuer/repository/sha` 校验；旧 `--claims` JSON 明确降为不可信（A1）。
+- **Trusted PR gate**：`pr-a2` 已拆为 build（PR 代码、无 id-token）→ verify（base 代码、JWT、base policy）→ report；PR #2 run 44915432273 全绿，`firetree-a2` check 已发布到 PR head `76e4922`。这是 PR gate 第一次以“验证器不执行 PR 代码”的方式通过。
 - **可信策略**：`firetree-assess`/`firetree-ci` 新增 `--registry-root`；PR gate 从 base SHA 归档 `.firetree` + CODEOWNERS，避免 PR 改写 policy/registry 直接降级。
 - **git 绑定**：git 仓库内不带 `verify_git` 的 assess 直接失败；非 git fixture 才允许无 git 评估。
 - **A3 语义**：`firetree-check` 的 autonomous 模式最多 A2；`a3-keyless` 改名为 `keyless-a2`，不再声称 A3。真正的 governed A3 仍未实现。
