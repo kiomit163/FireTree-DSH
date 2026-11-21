@@ -119,6 +119,7 @@
 
 - **A2 身份**：`firetree-check` 新增 `--jwt` + `--jwks`；`jose` 对原始 GitHub OIDC JWT 做 JWKS 验签、`exp/aud/issuer/repository/sha` 校验；旧 `--claims` JSON 明确降为不可信（A1）。
 - **Trusted PR gate**：`pr-a2` 已拆为 build（PR 代码、无 id-token）→ verify（base 代码、JWT、base policy）→ report；PR #2 run 44915432273 全绿，`firetree-a2` check 已发布到 PR head `76e4922`。这是 PR gate 第一次以“验证器不执行 PR 代码”的方式通过。
+- **留存**：verify job 上传 `.firetree/**`，包含隐藏文件，retention 90 天；PR #2 run 44915949478 产出 artifact `firetree-a2-2`（2027-02-19 到期）。
 - **可信策略**：`firetree-assess`/`firetree-ci` 新增 `--registry-root`；PR gate 从 base SHA 归档 `.firetree` + CODEOWNERS，避免 PR 改写 policy/registry 直接降级。
 - **git 绑定**：git 仓库内不带 `verify_git` 的 assess 直接失败；非 git fixture 才允许无 git 评估。
 - **A3 语义**：`firetree-check` 的 autonomous 模式最多 A2；`a3-keyless` 改名为 `keyless-a2`，不再声称 A3。真正的 governed A3 仍未实现。
@@ -126,6 +127,7 @@
 - **diff/tree 绑定**：receipt/technical evidence 记录 `tree_sha`/`diff_sha256`；check 与 assessment 比对；`files_sha256` 改为 canonical JSON。
 - **approval**：环境审批不再把 `state === undefined` 当 approved；approval 必须绑定 change id。
 - 测试：**196/196 通过**；syntax 97；docs 41。
+- PR #2 的 `firetree-a2` 已发布到 PR head；但 main 的 **branch protection 仍未配置 required check**，这一步需要仓库管理员完成。
 - 这仍是 P0 修复的**第一段**：trusted build/verify 拆分、approval 绑定、retention、governed A3 未完成。
 
 ## 验证
