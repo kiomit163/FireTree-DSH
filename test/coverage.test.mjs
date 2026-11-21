@@ -19,4 +19,5 @@ test('coverage rejects missing or out-of-range percentages', () => {
   assert.equal(validateCoverageText('{"something":true}').valid, false);
   assert.equal(validateCoverageJson({ totals: { coverage: 140 } }).valid, false);
   assert.equal(validateCoverageText('not coverage').valid, false);
+  assert.equal(validateCoverageText('LF:1\nLH:5\n').valid, false);
 });

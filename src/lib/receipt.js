@@ -27,7 +27,9 @@ function schemaGaps(value) {
 }
 
 async function localEvidenceGap(root, evidence) {
-  if (/^https?:\/\//i.test(evidence.run_ref)) return null;
+  if (/^https?:\/\//i.test(evidence.run_ref)) {
+    return `remote evidence is not accepted: ${evidence.run_ref}; use a bundle/local artifact`;
+  }
   let file;
   try {
     file = resolveWithin(root, evidence.run_ref);

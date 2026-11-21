@@ -1,6 +1,7 @@
 /** firetree_assess: the change entry point. */
 
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import {
   ArtifactError,
@@ -30,7 +31,7 @@ const REQUIRED_ARTIFACTS = Object.freeze({
   L1: ['test_evidence', 'hypotheses', 'three_step_review', 'impact_traversal', 'receipt'],
   L2: ['test_evidence', 'hypotheses', 'synthesis', 'seven_step_review', 'correctness_case', 'human_signoff', 'impact_traversal', 'receipt'],
 });
-const ALLOWED_ARGS = new Set(['base', 'head', 'files', 'declared_tier', 'policy_path', 'change', 'verify_git']);
+const ALLOWED_ARGS = new Set(['base', 'head', 'files', 'declared_tier', 'policy_path', 'registry_root', 'change', 'verify_git']);
 
 /** Assessment input/rule failure. */
 export class AssessError extends Error {
@@ -78,6 +79,7 @@ const PARAMETERS = {
     },
     declared_tier: { type: 'string', enum: ['L0', 'L1', 'L2'] },
     policy_path: { type: 'string', description: 'Optional repo-relative policy path.' },
+    registry_root: { type: 'string', description: 'Optional trusted root containing .firetree policy/registry (default: repository root).' },
     change: { type: 'string', description: 'Optional safe change id.' },
     verify_git: { type: 'boolean', description: 'Require files to match `git diff base..head` and bind the tree/diff hashes.' },
   },
@@ -126,6 +128,7 @@ function validateArgs(args) {
     files: uniquePaths,
     declared_tier: args.declared_tier,
     policy_path: args.policy_path,
+    registry_root: args.registry_root,
     change,
     verify_git: args.verify_git === true,
   };
@@ -168,6 +171,13 @@ export function createAssessTool(ctx) {
       const parsed = validateArgs(args);
       const root = await rootFor(ctx, exec);
       const policyPath = parsed.policy_path ?? '.firetree/policy.json';
+      const registryRoot = parsed.registry_root === undefined ? root : resolve(root, parsed.registry_root);
+      if (parsed.verify_git !== true && pathExists(resolve(root, '.git'))) {
+        throw new AssessError(
+          'GIT_VERIFICATION_REQUIRED',
+          'git repositories must pass verify_git=true; unverified assessment is only allowed for non-git fixtures',
+        );
+      }
 
       let base = parsed.base;
       let head = parsed.head;
@@ -187,7 +197,7 @@ export function createAssessTool(ctx) {
 
       let registry;
       try {
-        registry = await loadRegistry(root, { policyPath });
+        registry = await loadRegistry(registryRoot, { policyPath });
       } catch (error) {
         if (error && typeof error === 'object' && error.code === 'POLICY_MISSING') {
           throw new AssessError('POLICY_MISSING', `policy not found at ${policyPath}`);
@@ -196,8 +206,8 @@ export function createAssessTool(ctx) {
       }
       const interfaceHashes = await verifyInterfaceHashes(root, registry.interfaces);
       if (!interfaceHashes.valid) throw new AssessError('INTERFACE_HASH_MISMATCH', interfaceHashes.gaps.join('; '));
-      const codeowners = await loadCodeowners(root);
-      const owners = codeowners ?? await loadOwners(root);
+      const codeowners = await loadCodeowners(registryRoot);
+      const owners = codeowners ?? await loadOwners(registryRoot);
 
       let analysis;
       try {
@@ -251,6 +261,7 @@ export function createAssessTool(ctx) {
         const old = existing.value;
         const sameChange = old.change?.base === base
           && old.change?.head === head
+          && old.policy?.version === registry.policy.version
           && Array.isArray(old.change?.files)
           && sha256Text(old.change.files.join('\n')) === sha256Text(files.join('\n'));
         if (sameChange) {

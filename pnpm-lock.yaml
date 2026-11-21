@@ -11,6 +11,9 @@ importers:
       fast-xml-parser:
         specifier: 5.11.2
         version: 5.11.2
+      jose:
+        specifier: ^6.2.18
+        version: 6.2.18
 
 packages:
 
@@ -29,6 +32,9 @@ packages:
 
   is-unsafe@2.0.3:
     resolution: {integrity: sha512-ZBllczCCO267vgdFb6Tq3pv+LhHaCiGMdr+ZsuL+OopruAg7S+3ZDs1vD0RPC0uSrkjzbraxaGjtX1YBxjPeFQ==}
+
+  jose@6.2.18:
+    resolution: {integrity: sha512-doV4thUwgkrycJH4yLeqwTGIIZphHl+pk7CPReuMIhYhncmgzdko85MaCG4YQFTxqMFr1/oEH32tZuKKovcDEg==}
 
   path-expression-matcher@1.6.2:
     resolution: {integrity: sha512-enSlaiat05iasnzmgNxRj8reFdj3puY2QpNgP1aPIaVfT6nn9ICuPoFlKHk8EN22HcwewshO+mN2DGbkCEOtqQ==}
@@ -62,6 +68,8 @@ snapshots:
       xml-naming: 0.3.0
 
   is-unsafe@2.0.3: {}
+
+  jose@6.2.18: {}
 
   path-expression-matcher@1.6.2: {}
 

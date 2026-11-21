@@ -85,9 +85,20 @@ export function validateJunitXml(text) {
   const root = parsed?.testsuites ?? parsed?.testsuite;
   if (root === undefined) return { valid: false, gaps: ['JUnit XML has no testsuites/testsuite root'], totals };
   const collected = { suites: [], testcases: [], failures: [], errors: [], skipped: [] };
+  let rootDeclaredTests;
   if (parsed?.testsuites !== undefined) {
     // Node's JUnit reporter emits testcase elements directly under testsuites
     // without a wrapper testsuite. Accept that shape as long as testcases exist.
+    if (typeof parsed.testsuites === 'object' && parsed.testsuites !== null) {
+      const root = parsed.testsuites;
+      rootDeclaredTests = integer(attribute(root, 'tests'), 'testsuites tests', gaps, undefined);
+      const rootFailures = integer(attribute(root, 'failures'), 'testsuites failures', gaps, 0);
+      const rootErrors = integer(attribute(root, 'errors'), 'testsuites errors', gaps, 0);
+      const rootSkipped = integer(attribute(root, 'skipped'), 'testsuites skipped', gaps, 0);
+      totals.failures += rootFailures;
+      totals.errors += rootErrors;
+      totals.skipped += rootSkipped;
+    }
     for (const testcase of asArray(parsed.testsuites.testcase)) {
       collected.testcases.push(testcase);
       for (const failure of asArray(testcase.failure)) collected.failures.push(failure);
@@ -105,6 +116,9 @@ export function validateJunitXml(text) {
     collectSuites(parsed.testsuite, collected);
   }
 
+  if (rootDeclaredTests !== undefined && rootDeclaredTests > collected.testcases.length) {
+    gaps.push(`testsuites declares ${rootDeclaredTests} tests but only ${collected.testcases.length} testcase elements exist`);
+  }
   if (collected.suites.length === 0 && collected.testcases.length === 0) gaps.push('JUnit XML has no testsuite or testcase elements');
   if (collected.testcases.length === 0) gaps.push('JUnit XML has no testcase elements');
   if (collected.testcases.length > MAX_TESTCASES) gaps.push(`JUnit XML exceeds ${MAX_TESTCASES} testcases`);

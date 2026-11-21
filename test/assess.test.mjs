@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
@@ -157,6 +157,20 @@ test('policy L2 triggers can tune soft dependency changes; exceptions can waive 
     await writeFile(policyPath, `${JSON.stringify(policy, null, 2)}\n`, 'utf8');
     const hard = await tool.execute(assessArgs({ files: ['tools/legacy/x.py'], change: 'change-hard' }), EXEC);
     assert.equal(hard.auto_tier, 'L2');
+  } finally {
+    await workspace.cleanup();
+  }
+});
+
+test('git repositories reject unverified assessment', async () => {
+  const workspace = await createM1Workspace();
+  try {
+    await mkdir(join(workspace.root, '.git'), { recursive: true });
+    const tool = createAssessTool(contextFor(workspace.root));
+    await assert.rejects(
+      tool.execute(assessArgs({ files: ['services/billing/charge.mjs'], change: 'unverified' }), EXEC),
+      (error) => error.code === 'GIT_VERIFICATION_REQUIRED',
+    );
   } finally {
     await workspace.cleanup();
   }

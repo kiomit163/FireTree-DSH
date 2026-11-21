@@ -33,4 +33,4 @@ jobs:
         run: node scripts/github-oidc.mjs --out claims.json --audience firetree
 
       - name: Run A2 gate
-        run: node scripts/ci-a2-smoke.mjs --claims claims.json --audience firetree
+        run: node scripts/ci-a2-smoke.mjs --claims claims.json --jwt claims.json.jwt --audience firetree

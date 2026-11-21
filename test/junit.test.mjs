@@ -16,6 +16,7 @@ test('Node-style testsuites with direct testcases are accepted', () => {
 });
 
 test('JUnit failures, zero tests, and malformed roots are rejected', () => {
+  assert.equal(validateJunitXml('<testsuites tests="1" failures="1"><testcase name="a"/></testsuites>').valid, false);
   assert.equal(validateJunitXml('<testsuite tests="1" failures="1"/>').valid, false);
   assert.equal(validateJunitXml('<testsuites><testsuite tests="0" failures="0"/></testsuites>').valid, false);
   assert.equal(validateJunitXml('not xml').valid, false);

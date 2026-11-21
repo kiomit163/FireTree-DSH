@@ -7,6 +7,8 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { test } from 'node:test';
 
+import { exportJWK, generateKeyPair, SignJWT } from 'jose';
+
 import { buildBundleManifest } from '../src/lib/bundle.js';
 import { createAssessTool } from '../src/tools/assess.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
@@ -80,8 +82,14 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
     }, exec);
     assert.equal(built.ok, true, built.gaps?.join('; '));
 
-    const claimsPath = join(workspace.root, 'claims.json');
-    await writeFile(claimsPath, `${JSON.stringify({
+    const { publicKey, privateKey } = await generateKeyPair('RS256');
+    const jwk = await exportJWK(publicKey);
+    jwk.kid = 'test-key';
+    jwk.alg = 'RS256';
+    const jwksPath = join(workspace.root, 'jwks.json');
+    await writeFile(jwksPath, `${JSON.stringify({ keys: [jwk] }, null, 2)}\n`, 'utf8');
+    const jwtPath = join(workspace.root, 'oidc.jwt');
+    const jwt = await new SignJWT({
       iss: 'https://token.actions.githubusercontent.com',
       aud: 'firetree',
       repository: 'owner/repo',
@@ -92,13 +100,21 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
       run_id: '12345',
       run_attempt: '1',
       actor: 'alice',
-    }, null, 2)}\n`, 'utf8');
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'test-key' })
+      .setIssuer('https://token.actions.githubusercontent.com')
+      .setAudience('firetree')
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(privateKey);
+    await writeFile(jwtPath, jwt, 'utf8');
 
     const a2 = await cli([
       '--mode', 'governed',
       '--change', 'chg-cli-a2',
       '--root', workspace.root,
-      '--claims', claimsPath,
+      '--jwt', jwtPath,
+      '--jwks', jwksPath,
       '--repository', 'owner/repo',
       '--require', 'A2',
     ]);
@@ -111,14 +127,15 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
       '--mode', 'governed',
       '--change', 'chg-cli-a2',
       '--root', workspace.root,
-      '--claims', claimsPath,
+      '--jwt', jwtPath,
+      '--jwks', jwksPath,
       '--repository', 'owner/repo',
       '--require', 'A3',
     ]);
     assert.equal(a3Missing.code, 1);
     assert.ok(JSON.parse(a3Missing.stdout).gaps.some((gap) => /required assurance A3/.test(gap)));
 
-    const { publicKey, privateKey } = generateKeyPairSync('ed25519');
+    const { publicKey: edPublicKey, privateKey: edPrivateKey } = generateKeyPairSync('ed25519');
     const bundle = await buildBundleManifest(join(workspace.root, '.firetree'));
     await writeFile(join(workspace.root, '.firetree', 'bundle-manifest.json'), `${JSON.stringify(bundle, null, 2)}\n`, 'utf8');
     const signaturePath = join(workspace.root, 'signature.json');
@@ -126,9 +143,9 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
       schema: 'firetree.signature/v1',
       algorithm: 'ed25519',
       digest: bundle.digest,
-      signature: sign(null, Buffer.from(bundle.digest, 'utf8'), privateKey).toString('base64'),
+      signature: sign(null, Buffer.from(bundle.digest, 'utf8'), edPrivateKey).toString('base64'),
     }, null, 2)}\n`, 'utf8');
-    await writeFile(join(workspace.root, 'public.pem'), publicKey.export({ type: 'spki', format: 'pem' }), 'utf8');
+    await writeFile(join(workspace.root, 'public.pem'), edPublicKey.export({ type: 'spki', format: 'pem' }), 'utf8');
     const approvalPath = join(workspace.root, 'approval.json');
     await writeFile(approvalPath, `${JSON.stringify({
       schema: 'firetree.approval/v1',
@@ -144,7 +161,8 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
       '--mode', 'governed',
       '--change', 'chg-cli-a2',
       '--root', workspace.root,
-      '--claims', claimsPath,
+      '--jwt', jwtPath,
+      '--jwks', jwksPath,
       '--repository', 'owner/repo',
       '--bundle', join(workspace.root, '.firetree'),
       '--approval', approvalPath,

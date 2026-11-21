@@ -69,28 +69,28 @@ async function loadEntries(root, relativeDirectory, schema, label) {
  * @param {string} root - Repository root.
  * @returns {Promise<object[]>} Validated subsystem entries.
  */
-export async function loadSubsystems(root) {
-  return loadEntries(root, '.firetree/subsystems', SUBSYSTEM_SCHEMA, 'subsystem');
+export async function loadSubsystems(root, relativeDirectory = '.firetree/subsystems') {
+  return loadEntries(root, relativeDirectory, SUBSYSTEM_SCHEMA, 'subsystem');
 }
 
 /**
  * @param {string} root - Repository root.
  * @returns {Promise<object[]>} Validated interface entries.
  */
-export async function loadInterfaces(root) {
-  return loadEntries(root, '.firetree/interfaces', INTERFACE_SCHEMA, 'interface');
+export async function loadInterfaces(root, relativeDirectory = '.firetree/interfaces') {
+  return loadEntries(root, relativeDirectory, INTERFACE_SCHEMA, 'interface');
 }
 
 /**
  * @param {string} root - Repository root.
- * @param {{policyPath?: string}} [options] - Policy path override.
+ * @param {{policyPath?: string, subsystemsPath?: string, interfacesPath?: string}} [options] - Path overrides.
  * @returns {Promise<{policy: object, subsystems: object[], interfaces: object[]}>} Loaded registry.
  */
 export async function loadRegistry(root, options = {}) {
   const [policy, subsystems, interfaces] = await Promise.all([
     loadPolicy(root, options.policyPath),
-    loadSubsystems(root),
-    loadInterfaces(root),
+    loadSubsystems(root, options.subsystemsPath),
+    loadInterfaces(root, options.interfacesPath),
   ]);
   return { policy, subsystems, interfaces };
 }

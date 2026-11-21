@@ -39,7 +39,9 @@ async function evidenceFormatGaps(file, item) {
 }
 
 async function evidenceGap(root, item) {
-  if (/^https?:\/\//i.test(item.run_ref)) return null;
+  if (/^https?:\/\//i.test(item.run_ref)) {
+    return `remote evidence is not accepted: ${item.run_ref}; use a bundle/local artifact`;
+  }
   let file;
   try {
     file = resolveWithin(root, item.run_ref);

@@ -1,5 +1,7 @@
 /** OIDC workload-identity claims used to derive assurance. */
 
+import { createLocalJWKSet, createRemoteJWKSet, jwtVerify } from 'jose';
+
 import { sha256Text } from './artifacts.js';
 import { canonicalJson } from './json.js';
 
@@ -18,6 +20,7 @@ export class IdentityError extends Error {
 
 const DEFAULT_ISSUER = 'https://token.actions.githubusercontent.com';
 const DEFAULT_EVENTS = ['pull_request', 'push', 'workflow_dispatch'];
+const remoteJwks = new Map();
 
 function asArray(value) {
   return Array.isArray(value) ? value : [value];
@@ -94,6 +97,59 @@ export function verifyClaims(claims, policy = {}) {
     valid: failures.length === 0,
     failures,
     claimsSha256: sha256Text(canonicalJson(claims)),
+  };
+}
+
+function jwksFor(issuer) {
+  if (!remoteJwks.has(issuer)) {
+    const base = issuer.replace(/\/+$/, '');
+    remoteJwks.set(issuer, createRemoteJWKSet(new URL(`${base}/.well-known/jwks`)));
+  }
+  return remoteJwks.get(issuer);
+}
+
+/**
+ * Verify a raw GitHub OIDC JWT signature and bind its claims to a policy.
+ *
+ * @param {string} jwt - Raw compact JWT.
+ * @param {{issuer?: string, audience: string, repository?: string, workflowRef?: string, sha?: string, jwks?: Function|object, events?: string[]}} options - Verification policy.
+ * @returns {Promise<{claims: object, claimsSha256: string, protectedHeader: object}>} Verified claims.
+ */
+export async function verifyGithubJwt(jwt, options) {
+  if (typeof jwt !== 'string' || jwt.length === 0) throw new IdentityError('JWT_INVALID', 'JWT must be a non-empty string');
+  if (typeof options?.audience !== 'string' || options.audience.length === 0) {
+    throw new IdentityError('JWT_POLICY_INVALID', 'audience is required for JWT verification');
+  }
+  const issuer = options.issuer ?? DEFAULT_ISSUER;
+  const keySource = options.jwks === undefined
+    ? jwksFor(issuer)
+    : (typeof options.jwks === 'function' ? options.jwks : createLocalJWKSet(options.jwks));
+  let verified;
+  try {
+    verified = await jwtVerify(jwt, keySource, {
+      issuer,
+      audience: options.audience,
+      clockTolerance: 5,
+    });
+  } catch (error) {
+    throw new IdentityError('JWT_SIGNATURE_INVALID', `JWT signature/claims verification failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  const payload = verified.payload;
+  if (typeof payload.exp !== 'number') throw new IdentityError('JWT_INVALID', 'JWT must carry exp');
+  const claims = parseOidcClaims(payload);
+  const verification = verifyClaims(claims, {
+    issuer,
+    audience: options.audience,
+    ...(options.repository === undefined ? {} : { repository: options.repository }),
+    ...(options.workflowRef === undefined ? {} : { workflowRef: options.workflowRef }),
+    ...(options.sha === undefined ? {} : { sha: options.sha }),
+    ...(options.events === undefined ? {} : { events: options.events }),
+  });
+  if (!verification.valid) throw new IdentityError('JWT_POLICY_INVALID', verification.failures.join('; '));
+  return {
+    claims,
+    claimsSha256: verification.claimsSha256,
+    protectedHeader: verified.protectedHeader,
   };
 }
 

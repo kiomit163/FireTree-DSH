@@ -12,6 +12,7 @@ function usage() {
     '',
     'Options:',
     '  --root <dir>              Repository root (default: cwd)',
+    '  --registry-root <dir>     Trusted root containing .firetree policy/registry',
     '  --intent-spec <text>      Intent description (default: change id)',
     '  --producer <id>           Evidence producer (default: ci:github-actions)',
     '  --expires-at <date-time>  Evidence expiry (default: now + 30 days)',
@@ -23,7 +24,7 @@ function usage() {
 
 function parseArgs(argv) {
   const args = { root: process.cwd(), producer: 'ci:github-actions', assurance: 'A2' };
-  const values = new Set(['--root', '--change', '--evidence', '--intent-spec', '--producer', '--expires-at', '--assurance']);
+  const values = new Set(['--root', '--registry-root', '--change', '--evidence', '--intent-spec', '--producer', '--expires-at', '--assurance']);
   for (let index = 0; index < argv.length; index += 1) {
     const key = argv[index];
     if (key === '--help' || key === '-h') return { help: true };
@@ -56,7 +57,8 @@ async function main() {
   if (typeof subsystemId !== 'string' || subsystemId.length === 0) {
     throw new Error('cannot classify technical evidence: assessment has no subsystem');
   }
-  const subsystem = await readFiretreeJson(root, `.firetree/subsystems/${subsystemId}.json`, { verifyHash: false });
+  const registryRoot = args['registry-root'] === undefined ? root : resolve(root, args['registry-root']);
+  const subsystem = await readFiretreeJson(registryRoot, `.firetree/subsystems/${subsystemId}.json`, { verifyHash: false });
   if (subsystem === null) throw new Error(`subsystem registry entry is missing: ${subsystemId}`);
   const dossier = subsystem.value.dossier;
 

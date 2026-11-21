@@ -17,6 +17,7 @@ function usage() {
     '  --files <a,b>             Explicit file list (required with --no-verify-git)',
     '  --declared-tier <L0|L1|L2>',
     '  --policy <path>           Repo-relative policy path',
+    '  --registry-root <dir>     Trusted root containing .firetree policy/registry',
     '',
     'Exit codes: 0 = assessed, 1 = assessment failed, 2 = usage/runtime error.',
   ].join('\n');
@@ -24,7 +25,7 @@ function usage() {
 
 function parseArgs(argv) {
   const args = { root: process.cwd(), verifyGit: true };
-  const values = new Set(['--root', '--base', '--head', '--change', '--files', '--declared-tier', '--policy']);
+  const values = new Set(['--root', '--base', '--head', '--change', '--files', '--declared-tier', '--policy', '--registry-root']);
   for (let index = 0; index < argv.length; index += 1) {
     const key = argv[index];
     if (key === '--help' || key === '-h') return { help: true };
@@ -75,6 +76,7 @@ async function main() {
     verify_git: args.verifyGit !== false,
     ...(args['declared-tier'] === undefined ? {} : { declared_tier: args['declared-tier'] }),
     ...(args.policy === undefined ? {} : { policy_path: args.policy }),
+    ...(args['registry-root'] === undefined ? {} : { registry_root: args['registry-root'] }),
   }, { agent: { id: 'cli' }, signal: new AbortController().signal });
 
   console.log(JSON.stringify({

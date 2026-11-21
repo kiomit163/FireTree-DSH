@@ -54,5 +54,8 @@ export function validateCoverageText(text) {
   const hit = [...trimmed.matchAll(linesHit)].reduce((sum, match) => sum + Number(match[1]), 0);
   if (found === 0) return { valid: false, gaps: ['coverage file is neither JSON nor LCOV with LF/LH records'], coverage: null, format: null };
   const coverage = (hit / found) * 100;
+  if (!Number.isFinite(coverage) || coverage < 0 || coverage > 100) {
+    return { valid: false, gaps: ['LCOV coverage must be between 0 and 100'], coverage: null, format: null };
+  }
   return { valid: true, gaps: [], coverage, format: 'lcov' };
 }

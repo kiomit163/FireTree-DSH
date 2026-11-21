@@ -217,7 +217,9 @@ async function prepareEvidence(root, items) {
         gaps.push(error.message);
       }
     }
-    if (typeof item.run_ref === 'string' && !/^https?:\/\//i.test(item.run_ref)) {
+    if (typeof item.run_ref === 'string' && /^https?:\/\//i.test(item.run_ref)) {
+      gaps.push(`remote evidence is not accepted: ${item.run_ref}`);
+    } else if (typeof item.run_ref === 'string') {
       let file;
       try {
         file = resolveWithin(root, item.run_ref);

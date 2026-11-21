@@ -178,7 +178,9 @@ function validateEvidenceShape(value) {
 
 async function validateEvidence(root, evidence) {
   const shape = validateEvidenceShape(evidence);
-  if (/^https?:\/\//i.test(shape.run_ref)) return shape;
+  if (/^https?:\/\//i.test(shape.run_ref)) {
+    throw new HypothesisError('EVIDENCE_REMOTE_REJECTED', 'remote evidence is not accepted; use a local artifact');
+  }
   let file;
   try {
     file = resolveWithin(root, shape.run_ref);

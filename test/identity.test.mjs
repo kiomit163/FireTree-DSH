@@ -4,9 +4,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
+import { exportJWK, generateKeyPair, SignJWT } from 'jose';
+
 import { atLeast, deriveAssurance } from '../src/lib/assurance.js';
 import { buildBundleManifest, verifyBundleManifest } from '../src/lib/bundle.js';
-import { IdentityError, parseOidcClaims, producerFromClaims, verifyClaims } from '../src/lib/identity.js';
+import { IdentityError, parseOidcClaims, producerFromClaims, verifyClaims, verifyGithubJwt } from '../src/lib/identity.js';
 
 const SHA = 'a'.repeat(40);
 
@@ -68,6 +70,36 @@ test('OIDC claims reject malformed input', () => {
   assert.throws(() => parseOidcClaims({}), (error) => error instanceof IdentityError);
   assert.throws(() => parseOidcClaims(claims({ sha: 'short' })), (error) => error instanceof IdentityError);
   assert.throws(() => parseOidcClaims(claims({ repository: 'not-a-repo' })), (error) => error instanceof IdentityError);
+});
+
+test('raw GitHub OIDC JWT is signature-verified and expiry-bound', async () => {
+  const { publicKey, privateKey } = await generateKeyPair('RS256');
+  const jwk = await exportJWK(publicKey);
+  jwk.kid = 'test-key';
+  jwk.alg = 'RS256';
+  const jwks = { keys: [jwk] };
+  const makeJwt = (expiration = '5m', payload = {}) => new SignJWT({ ...claims(), ...payload })
+    .setProtectedHeader({ alg: 'RS256', kid: 'test-key' })
+    .setIssuer('https://token.actions.githubusercontent.com')
+    .setAudience('firetree')
+    .setIssuedAt()
+    .setExpirationTime(expiration)
+    .sign(privateKey);
+
+  const verified = await verifyGithubJwt(await makeJwt(), {
+    audience: 'firetree', jwks, repository: 'owner/repo', sha: SHA,
+  });
+  assert.equal(verified.claims.repository, 'owner/repo');
+  assert.match(verified.claimsSha256, /^[a-f0-9]{64}$/);
+
+  await assert.rejects(
+    verifyGithubJwt(await makeJwt('-1m'), { audience: 'firetree', jwks, repository: 'owner/repo', sha: SHA }),
+    (error) => error instanceof IdentityError,
+  );
+  await assert.rejects(
+    verifyGithubJwt(await makeJwt('5m', { repository: 'other/repo' }), { audience: 'firetree', jwks, repository: 'owner/repo' }),
+    (error) => error instanceof IdentityError,
+  );
 });
 
 test('assurance is derived rather than declared', () => {

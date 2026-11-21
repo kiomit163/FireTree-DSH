@@ -8,7 +8,7 @@ import { parseApproval, verifyApproval } from '../src/lib/approval.js';
 import { atLeast, deriveAssurance } from '../src/lib/assurance.js';
 import { verifyGithubAttestation } from '../src/lib/attestation.js';
 import { verifyBundleManifest } from '../src/lib/bundle.js';
-import { IdentityError, parseOidcClaims, verifyClaims } from '../src/lib/identity.js';
+import { IdentityError, parseOidcClaims, verifyClaims, verifyGithubJwt } from '../src/lib/identity.js';
 import { parseSignature, verifySignature } from '../src/lib/signature.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
 
@@ -18,7 +18,9 @@ function usage() {
     '',
     'Options:',
     '  --root <dir>              Repository root (default: cwd)',
-    '  --claims <file>           GitHub Actions OIDC claims JSON (enables A2)',
+    '  --jwt <file>              Raw GitHub Actions OIDC JWT (enables A2; signature verified)',
+    '  --jwks <file>             Local JWKS JSON for offline/tests (default: GitHub JWKS)',
+    '  --claims <file>           Legacy claims JSON (not trusted for A2)',
     '  --bundle <dir>            Evidence bundle directory with bundle-manifest.json',
     '  --approval <file>         Normalized human approval JSON (A3)',
     '  --signature <file>        Detached Ed25519 signature over the bundle digest (A3)',
@@ -39,7 +41,7 @@ function usage() {
 }
 
 const VALUE_ARGS = new Set([
-  '--change', '--mode', '--root', '--claims', '--bundle', '--approval', '--signature',
+  '--change', '--mode', '--root', '--jwt', '--jwks', '--claims', '--bundle', '--approval', '--signature',
   '--public-key', '--attestation', '--attested-artifact', '--signer-workflow', '--source-digest',
   '--gh', '--reviewer', '--require', '--repository', '--issuer', '--audience',
 ]);
@@ -99,7 +101,26 @@ async function main() {
     const record = args.mode === 'governed' ? result.receipt : result.technical_evidence;
     const head = record?.change?.head;
 
-    if (args.claims !== undefined) {
+    if (args.jwt !== undefined) {
+      try {
+        const rawJwt = (await readFile(resolve(root, args.jwt), 'utf8')).trim();
+        const jwks = args.jwks === undefined
+          ? undefined
+          : await readJson(resolve(root, args.jwks));
+        const verified = await verifyGithubJwt(rawJwt, {
+          ...(args.issuer === undefined ? {} : { issuer: args.issuer }),
+          audience: args.audience ?? 'firetree',
+          ...(args.repository === undefined ? {} : { repository: args.repository }),
+          ...(typeof head === 'string' ? { sha: head } : {}),
+          ...(jwks === undefined ? {} : { jwks }),
+        });
+        claims = verified.claims;
+        claimsValid = true;
+      } catch (error) {
+        const message = error instanceof IdentityError || error instanceof Error ? error.message : String(error);
+        gaps.push(`JWT is invalid: ${message}`);
+      }
+    } else if (args.claims !== undefined) {
       try {
         claims = parseOidcClaims(await readJson(resolve(root, args.claims)));
         const verification = verifyClaims(claims, {
@@ -108,8 +129,9 @@ async function main() {
           ...(args.repository === undefined ? {} : { repository: args.repository }),
           ...(typeof head === 'string' ? { sha: head } : {}),
         });
-        claimsValid = verification.valid;
-        gaps.push(...verification.failures);
+        claimsValid = false;
+        gaps.push('claims JSON without a raw OIDC JWT is not A2 evidence');
+        if (!verification.valid) gaps.push(...verification.failures);
       } catch (error) {
         const message = error instanceof IdentityError || error instanceof Error ? error.message : String(error);
         gaps.push(`claims are invalid: ${message}`);
@@ -185,6 +207,12 @@ async function main() {
       signed,
       attested,
     });
+    if (args.mode === 'autonomous' && derived.level === 'A3') {
+      derived = {
+        level: 'A2',
+        reasons: [...derived.reasons, 'autonomous technical evidence cannot claim A3; governed receipt required'],
+      };
+    }
 
     const claimed = record?.assurance;
     if (claimed !== undefined && !atLeast(derived.level, claimed)) {

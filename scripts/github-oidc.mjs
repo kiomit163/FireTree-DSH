@@ -4,7 +4,7 @@
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { parseOidcClaims, verifyClaims } from '../src/lib/identity.js';
+import { verifyGithubJwt } from '../src/lib/identity.js';
 
 function parseArgs(argv) {
   const args = { audience: 'firetree', out: 'claims.json' };
@@ -22,14 +22,6 @@ function parseArgs(argv) {
     }
   }
   return args;
-}
-
-function decodePayload(jwt) {
-  const parts = jwt.split('.');
-  if (parts.length !== 3) throw new Error('OIDC token is not a JWT');
-  const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-  if (typeof payload !== 'object' || payload === null) throw new Error('OIDC payload is not an object');
-  return payload;
 }
 
 async function main() {
@@ -56,16 +48,16 @@ async function main() {
   const body = await response.json();
   if (typeof body.value !== 'string') throw new Error('OIDC token response has no value');
 
-  const claims = parseOidcClaims(decodePayload(body.value));
-  const verification = verifyClaims(claims, {
+  const verified = await verifyGithubJwt(body.value, {
     repository,
     sha,
     audience: args.audience,
   });
-  if (!verification.valid) throw new Error(`OIDC claims are invalid: ${verification.failures.join('; ')}`);
   const out = resolve(args.out);
-  await writeFile(out, `${JSON.stringify(claims, null, 2)}\n`, 'utf8');
-  console.log(`claims written: ${out} (sha=${claims.sha}, run_id=${claims.run_id})`);
+  const jwtOut = `${out}.jwt`;
+  await writeFile(jwtOut, body.value, 'utf8');
+  await writeFile(out, `${JSON.stringify(verified.claims, null, 2)}\n`, 'utf8');
+  console.log(`claims written: ${out}; JWT written: ${jwtOut} (sha=${verified.claims.sha}, run_id=${verified.claims.run_id})`);
 }
 
 main().catch((error) => {

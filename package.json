@@ -49,6 +49,7 @@
     }
   },
   "dependencies": {
-    "fast-xml-parser": "5.11.2"
+    "fast-xml-parser": "5.11.2",
+    "jose": "^6.2.18"
   }
 }

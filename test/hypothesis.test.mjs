@@ -120,6 +120,26 @@ test('verify requires external evidence and updates coverage', async () => {
   }
 });
 
+test('verify rejects remote evidence instead of trusting a URL digest', async () => {
+  const workspace = await workspaceWithEvidence();
+  try {
+    const tool = createHypothesisTool(contextFor(workspace.root));
+    await tool.execute(addArgs(), EXEC);
+    await assert.rejects(
+      tool.execute({
+        action: 'verify', change: 'chg-hyp', id: 'h1', result: 'verified',
+        evidence_ref: {
+          producer: 'ci:github-actions', run_ref: 'https://ci.example/run/junit.xml',
+          sha256: EVIDENCE_HASH, produced_at: '2026-11-18T00:00:00Z',
+        },
+      }, EXEC),
+      (error) => error.code === 'EVIDENCE_REMOTE_REJECTED',
+    );
+  } finally {
+    await workspace.cleanup();
+  }
+});
+
 test('add rejects missing detection; verify rejects agent, missing evidence, and hash mismatch', async () => {
   const workspace = await workspaceWithEvidence();
   try {

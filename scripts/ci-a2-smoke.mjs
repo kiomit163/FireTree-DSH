@@ -16,7 +16,7 @@ function parseArgs(argv) {
   const args = { audience: 'firetree' };
   for (let index = 0; index < argv.length; index += 1) {
     const key = argv[index];
-    if (key === '--claims' || key === '--audience') {
+    if (key === '--claims' || key === '--jwt' || key === '--audience') {
       const value = argv[index + 1];
       if (value === undefined || value.startsWith('--')) throw new Error(`${key} requires a value`);
       args[key.slice(2)] = value;
@@ -28,13 +28,14 @@ function parseArgs(argv) {
     }
   }
   if (typeof args.claims !== 'string' || args.claims.length === 0) throw new Error('--claims is required');
+  if (typeof args.jwt !== 'string' || args.jwt.length === 0) throw new Error('--jwt is required');
   return args;
 }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
-    console.log('Usage: node scripts/ci-a2-smoke.mjs --claims claims.json [--audience firetree]');
+    console.log('Usage: node scripts/ci-a2-smoke.mjs --claims claims.json --jwt oidc.jwt [--audience firetree]');
     return;
   }
   const claimsPath = resolve(args.claims);
@@ -88,7 +89,7 @@ async function main() {
         '--root', workspace.root,
         '--mode', 'autonomous',
         '--change', 'ci-a2',
-        '--claims', claimsPath,
+        '--jwt', resolve(args.jwt),
         '--repository', claims.repository,
         '--audience', args.audience,
         '--require', 'A2',

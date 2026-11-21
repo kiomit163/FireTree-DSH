@@ -1,4 +1,4 @@
-name: a3-keyless
+name: keyless-a2
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   a3:
-    name: Keyless A3 gate
+    name: Keyless attestation smoke (A2)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: firetree-a3
@@ -61,7 +61,7 @@ jobs:
             --change ci-a3 \
             --out "$RUNNER_TEMP/approval.json"
 
-      - name: Verify keyless A3
+      - name: Verify keyless attestation (A2)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -69,11 +69,11 @@ jobs:
             --root "$RUNNER_TEMP/a3" \
             --mode autonomous \
             --change ci-a3 \
-            --claims "$GITHUB_WORKSPACE/claims.json" \
+            --jwt "$GITHUB_WORKSPACE/claims.json.jwt" \
             --bundle "$RUNNER_TEMP/a3" \
             --attestation "${{ steps.attest.outputs.bundle-path }}" \
             --approval "$RUNNER_TEMP/approval.json" \
             --signer-workflow "${{ github.workflow_ref }}" \
             --repository "${{ github.repository }}" \
             --audience firetree \
-            --require A3
+            --require A2
