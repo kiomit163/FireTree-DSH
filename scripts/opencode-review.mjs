@@ -129,6 +129,7 @@ async function main() {
   } catch {
     throw new Error('OpenCode response is not JSON');
   }
+  if (body?.model !== args.model) throw new Error('OpenCode response model does not match --model');
   const content = body?.choices?.[0]?.message?.content;
   if (typeof content !== 'string') throw new Error('OpenCode response has no assistant content');
   const parsed = parseModelJson(content);
@@ -137,7 +138,7 @@ async function main() {
     provider: PROVIDER,
     model: args.model,
     diff_sha256: args['diff-sha256'],
-    context_sha256: hash(`${system}\n${prompt}`),
+    context_sha256: hash(`${system}\n${prompt}\n${PROVIDER}:${args.model}\n${args['diff-sha256']}`),
     prompt_sha256: hash(prompt),
     transcript_sha256: hash(content),
     verdict: parsed.verdict,

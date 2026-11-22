@@ -23,7 +23,7 @@ $env:OPENCODE_GO_API_KEY = '<credential>'
 node scripts/opencode-review.mjs `
   --prompt review-prompt.txt `
   --model qwen3.8-flash `
-  --provider opencode-go `
+  --diff-sha256 <reviewed-diff-sha256> `
   --out seat-opencode.json
 ```
 
@@ -60,6 +60,15 @@ The final `firetree.ai-review/v1` artifact must:
 - have zero unresolved findings;
 - converge;
 - include both provider seat hashes.
+
+Each seat includes its own `context_sha256`, which binds the system prompt,
+user prompt, provider, model, and diff digest. Two seats from the same model
+therefore still have distinct context hashes.
+
+The current CLI is fixed to `https://opencode.ai/inference/v1`, provider
+`opencode-go`, and `OPENCODE_GO_API_KEY`; it cannot be pointed at an arbitrary
+endpoint or a different credential reference. The output path must stay inside
+`--root`.
 
 ## Security boundary
 
