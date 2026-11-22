@@ -2,7 +2,7 @@
 
 import { createHash, randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { mkdir, open, readFile, readdir, rename, rm } from 'node:fs/promises';
+import { lstat, mkdir, open, readFile, readdir, realpath, rename, rm } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 
 import { parseStrictJson, assertJsonValue } from './json.js';
@@ -148,6 +148,14 @@ export async function writeJsonAtomic(file, value) {
   return { file, sha256, bytes: Buffer.byteLength(text, 'utf8') };
 }
 
+async function ensureRealWithin(root, file, relativePath) {
+  const realRoot = await realpath(root);
+  const realFile = await realpath(file);
+  const rel = relative(realRoot, realFile);
+  if (rel.startsWith('..') || isAbsolute(rel)) {
+    throw new ArtifactError('PATH_TRAVERSAL', `artifact path escapes root through a symlink: ${relativePath}`, { path: relativePath });
+  }
+}
 /**
  * Write an artifact and its .sha256 sidecar under .firetree.
  *
@@ -158,6 +166,15 @@ export async function writeJsonAtomic(file, value) {
  */
 export async function writeFiretreeJson(root, relativePath, value) {
   const file = resolveWithin(root, relativePath);
+  await mkdir(dirname(file), { recursive: true });
+  await ensureRealWithin(root, dirname(file), relativePath);
+  try {
+    if ((await lstat(file)).isSymbolicLink()) {
+      throw new ArtifactError('PATH_TRAVERSAL', `artifact path is a symlink: ${relativePath}`, { path: relativePath });
+    }
+  } catch (error) {
+    if (!(error && typeof error === 'object' && error.code === 'ENOENT')) throw error;
+  }
   return withFileLock(`${file}.lock`, async () => {
     const result = await writeJsonAtomic(file, value);
     await writeTextAtomic(`${file}.sha256`, `${result.sha256}\n`);
@@ -177,6 +194,7 @@ export async function readFiretreeJson(root, relativePath, options = {}) {
   const file = resolveWithin(root, relativePath);
   let text;
   try {
+    await ensureRealWithin(root, file, relativePath);
     text = await readFile(file, 'utf8');
   } catch (error) {
     if (error && typeof error === 'object' && error.code === 'ENOENT' && options.missing === 'null') return null;
