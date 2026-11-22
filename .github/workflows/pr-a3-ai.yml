@@ -110,9 +110,18 @@ jobs:
             --change "pr-$PR"
           mkdir -p .firetree/ai-reviews
           git --no-pager diff --no-ext-diff --no-textconv --no-color "$DIFF_BASE" "$HEAD" > .firetree/evidence/review.diff
+          : > .firetree/evidence/review-context.txt
+          git diff --name-only "$DIFF_BASE" "$HEAD" | while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            if git cat-file -e "$HEAD:$file" 2>/dev/null; then
+              printf '\n### %s\n' "$file" >> .firetree/evidence/review-context.txt
+              git show "$HEAD:$file" | sed -n '1,400p' >> .firetree/evidence/review-context.txt
+            fi
+          done
           DIFF_SHA=$(node -e 'const fs=require("fs");const a=JSON.parse(fs.readFileSync(".firetree/changes/pr-"+process.env.PR+"/assessment.json","utf8"));process.stdout.write(a.git.diff_sha256)')
           node scripts/trusted-ai-review.mjs \
             --diff-file .firetree/evidence/review.diff \
+            --context-file .firetree/evidence/review-context.txt \
             --change "pr-$PR" \
             --head "$(git rev-parse "$HEAD")" \
             --diff-sha256 "$DIFF_SHA" \

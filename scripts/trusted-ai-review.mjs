@@ -34,7 +34,7 @@ const SEATS = [
 
 function usage() {
   return [
-    'Usage: trusted-ai-review --diff-file <file> --change <id> --head <sha> --diff-sha256 <sha256> --out <artifact.json>',
+    'Usage: trusted-ai-review --diff-file <file> [--context-file <file>] --change <id> --head <sha> --diff-sha256 <sha256> --out <artifact.json>',
     '',
     'Requires OPENCODE_GO_API_KEY and FIRE_TREE_REVIEW_SIGNING_KEY;',
     'the second seat uses the keyless Pollinations OpenAI-compatible endpoint.',
@@ -43,7 +43,7 @@ function usage() {
 
 function parseArgs(argv) {
   const args = {};
-  const values = new Set(['--diff-file', '--change', '--head', '--diff-sha256', '--out']);
+  const values = new Set(['--diff-file', '--context-file', '--change', '--head', '--diff-sha256', '--out']);
   for (let index = 0; index < argv.length; index += 1) {
     const key = argv[index];
     if (key === '--help' || key === '-h') return { help: true };
@@ -94,9 +94,12 @@ function parseJsonContent(content) {
   return { verdict: effectiveVerdict, findings };
 }
 
-function promptFor(diff) {
+function promptFor(diff, context = '') {
   return [
     'Review this exact git diff as an adversarial code reviewer.',
+    context.length === 0 ? '' : 'The changed files at the PR head are included after the diff so you have full context.',
+    ...(context.length === 0 ? [] : [context]),
+    'DIFF:',
     'Report only concrete blocker defects: security, data loss, auth bypass, incorrect behavior, or an unverifiable gate.',
     'Omit style, naming, documentation, and speculative non-blocker observations.',
     'If there is no concrete blocker, return ready with an empty findings array.',
@@ -186,12 +189,14 @@ async function main() {
   }
   const diff = await readFile(resolve(args['diff-file']), 'utf8');
   if (Buffer.byteLength(diff, 'utf8') > MAX_DIFF_BYTES) throw new Error('diff exceeds the 1 MiB review limit');
+  const context = args['context-file'] === undefined ? '' : await readFile(resolve(args['context-file']), 'utf8');
+  if (Buffer.byteLength(context, 'utf8') > MAX_DIFF_BYTES) throw new Error('review context exceeds the 1 MiB limit');
   if (process.env.FIRE_TREE_ALLOW_PUBLIC_REVIEW_PROVIDER !== 'true') {
     throw new Error('public review provider is disabled; enable it only for public repositories');
   }
   const signingKey = process.env.FIRE_TREE_REVIEW_SIGNING_KEY;
   if (typeof signingKey !== 'string' || signingKey.length === 0) throw new Error('FIRE_TREE_REVIEW_SIGNING_KEY is not configured');
-  const prompt = promptFor(diff);
+  const prompt = promptFor(diff, context);
   const seats = await Promise.race([
     Promise.all(SEATS.map((seat) => callSeat(seat, prompt))),
     new Promise((_, reject) => setTimeout(() => reject(new Error('trusted review exceeded the 5 minute budget')), 300000)),
