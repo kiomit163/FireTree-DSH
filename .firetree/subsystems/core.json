@@ -3,6 +3,7 @@
   "id": "core",
   "name": "Core",
   "paths": [
+    "trust/**",
     "src/**",
     "bin/**",
     "schemas/**",
