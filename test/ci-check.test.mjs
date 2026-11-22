@@ -9,6 +9,7 @@ import { test } from 'node:test';
 
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 
+import { readFiretreeJson } from '../src/lib/artifacts.js';
 import { buildBundleManifest } from '../src/lib/bundle.js';
 import { createAssessTool } from '../src/tools/assess.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
@@ -147,9 +148,18 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
     }, null, 2)}\n`, 'utf8');
     await writeFile(join(workspace.root, 'public.pem'), edPublicKey.export({ type: 'spki', format: 'pem' }), 'utf8');
     const approvalPath = join(workspace.root, 'approval.json');
+    const assessmentRecord = await readFiretreeJson(
+      workspace.root,
+      '.firetree/changes/chg-cli-a2/assessment.json',
+      { verifyHash: true },
+    );
     await writeFile(approvalPath, `${JSON.stringify({
       schema: 'firetree.approval/v1',
-      change: { id: 'chg-cli-a2', head: assessment.change.head },
+      change: {
+        id: 'chg-cli-a2',
+        head: assessment.change.head,
+        assessment_sha256: assessmentRecord.sha256,
+      },
       reviewer: 'github:alice',
       source: 'github-review',
       decision: 'approved',

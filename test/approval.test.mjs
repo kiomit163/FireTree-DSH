@@ -44,6 +44,27 @@ test('GitHub environment review normalizes to an approval bound to head', () => 
   );
 });
 
+test('approval can bind diff and assessment hashes', () => {
+  const diff = 'd'.repeat(64);
+  const assessment = 'e'.repeat(64);
+  const approval = parseApproval(approvalFromEnvironment([{
+    state: 'approved',
+    user: { login: 'alice' },
+    environments: [{ name: 'firetree-a3' }],
+  }], { environment: 'firetree-a3', head: HEAD, change: 'chg-1', diffSha256: diff, assessmentSha256: assessment }));
+  assert.deepEqual(verifyApproval(approval, {
+    head: HEAD, change: 'chg-1', diffSha256: diff, assessmentSha256: assessment,
+  }).failures, []);
+  assert.ok(verifyApproval(approval, { head: HEAD, diffSha256: 'f'.repeat(64) }).failures.length > 0);
+  assert.ok(verifyApproval(approval, { head: HEAD, assessmentSha256: 'f'.repeat(64) }).failures.length > 0);
+  assert.throws(
+    () => parseApproval(approvalFromEnvironment([{
+      state: 'approved', user: { login: 'alice' }, environments: [{ name: 'firetree-a3' }],
+    }], { environment: 'firetree-a3', head: HEAD, diffSha256: 'bad' })),
+    (error) => error.code === 'INVALID_APPROVAL',
+  );
+});
+
 test('environment approval without a top-level timestamp uses observation time', () => {
   const approval = parseApproval(approvalFromEnvironment([{
     state: 'approved',

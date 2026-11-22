@@ -53,12 +53,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          ASSESSMENT_SHA=$(tr -d '\n' < "$RUNNER_TEMP/a3/.firetree/changes/ci-a3/assessment.json.sha256")
           node scripts/github-environment-approval.mjs \
             --repo "${{ github.repository }}" \
             --run-id "${{ github.run_id }}" \
             --environment firetree-a3 \
             --head "${{ github.sha }}" \
             --change ci-a3 \
+            --assessment-sha256 "$ASSESSMENT_SHA" \
             --out "$RUNNER_TEMP/approval.json"
 
       - name: Verify keyless attestation (A2)

@@ -9,6 +9,7 @@ import { atLeast, deriveAssurance } from '../src/lib/assurance.js';
 import { verifyGithubAttestation } from '../src/lib/attestation.js';
 import { verifyBundleManifest } from '../src/lib/bundle.js';
 import { IdentityError, parseOidcClaims, verifyClaims, verifyGithubJwt } from '../src/lib/identity.js';
+import { readFiretreeJson } from '../src/lib/artifacts.js';
 import { parseSignature, verifySignature } from '../src/lib/signature.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
 
@@ -156,10 +157,21 @@ async function main() {
 
     if (args.approval !== undefined) {
       try {
+        const assessmentRecord = await readFiretreeJson(
+          root,
+          `.firetree/changes/${args.change}/assessment.json`,
+          { verifyHash: true, missing: 'null' },
+        );
         const approval = parseApproval(await readJson(resolve(root, args.approval)));
         const approvalCheck = verifyApproval(approval, {
           head: typeof head === 'string' ? head : '',
           change: args.change,
+          ...(assessmentRecord === null || assessmentRecord.sha256 === null
+            ? {}
+            : { assessmentSha256: assessmentRecord.sha256 }),
+          ...(typeof assessmentRecord?.value?.git?.diff_sha256 === 'string'
+            ? { diffSha256: assessmentRecord.value.git.diff_sha256 }
+            : {}),
           ...(args.reviewer === undefined ? {} : { reviewer: args.reviewer }),
         });
         approvalVerified = approvalCheck.valid;
