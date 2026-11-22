@@ -1,0 +1,54 @@
+{
+  "schema": "firetree.ai-review/v1",
+  "change": {
+    "id": "pr-15",
+    "head": "2fbe007f7f7976e03c86cca78ea39ea08b320790",
+    "diff_sha256": "3f44bf3559a0cd639e3cfe60f573270f319860fdd597534f12bfb5c64727d484"
+  },
+  "mode": "single-provider",
+  "author": {
+    "provider": "deepseek-account",
+    "model": "deepseek-flash"
+  },
+  "seats": [
+    {
+      "id": "seat-A",
+      "provider": "deepseek-account",
+      "model": "deepseek-flash",
+      "context_sha256": "a31d33ced58f3b4200d4964767e69e032c97e2eb3a779fbe562e866f6594398d",
+      "prompt_sha256": "11f95b82054d6ef5dcf490b2a2877a56859d9b47488278dc4500edb3eb6bfdbb",
+      "transcript_sha256": "72041451a5751d827a5db669dbbf1f51eecbd1fde151302415227c3ef52c1b72",
+      "verdict": "ready",
+      "findings": [
+        {
+          "id": "P2-1",
+          "severity": "non-blocker",
+          "claim": "PR tests could still be used as A2 evidence.",
+          "evidence": "build JUnit is diagnostic; verify downloads trusted-tests artifact and uses .firetree/evidence/ci-junit.xml.",
+          "status": "resolved"
+        }
+      ]
+    },
+    {
+      "id": "seat-B",
+      "provider": "deepseek-account",
+      "model": "deepseek-flash",
+      "context_sha256": "a19674c357828ae122d68740f56921b96a8a53dcf5f0074eb82f988177039db9",
+      "prompt_sha256": "2fa4829a0b1fd714813e9f95894bbc9a36b95478159fd7c98b14140c550195cf",
+      "transcript_sha256": "d2ed52dc9a722b3cda525714b7cbe58a7ed79b6c0a5779acb63c292e397b1b04",
+      "verdict": "ready",
+      "findings": [
+        {
+          "id": "P2-2",
+          "severity": "non-blocker",
+          "claim": "JUnit outside attested bundle and retention mismatch.",
+          "evidence": "trusted JUnit copied into .firetree/evidence and bundle built from .firetree; trusted artifact retention 90 days.",
+          "status": "resolved"
+        }
+      ]
+    }
+  ],
+  "unresolved": 0,
+  "converged": true,
+  "created_at": "2026-11-22T07:57:44.411Z"
+}
