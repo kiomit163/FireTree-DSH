@@ -112,6 +112,15 @@
       }
     },
     "expires_at": { "type": "string", "format": "date-time" },
+    "events": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["head", "count"],
+      "properties": {
+        "head": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "count": { "type": "integer", "minimum": 0 }
+      }
+    },
     "ai_review": {
       "type": "object",
       "additionalProperties": false,

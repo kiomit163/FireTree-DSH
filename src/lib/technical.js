@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import { evaluateAiReview } from './ai-review.js';
+import { readEvents } from './events.js';
 import { readFiretreeJson, resolveWithin, sha256File, sha256Text } from './artifacts.js';
 import { canonicalJson } from './json.js';
 import { validateCoverageText } from './coverage.js';
@@ -83,6 +84,14 @@ export async function checkTechnicalEvidenceSemantics(evidence, options) {
       const formatGaps = await evidenceFormatGaps(resolveWithin(options.root, item.run_ref), item);
       gaps.push(...formatGaps);
     }
+  }
+
+  if (evidence.events !== undefined) {
+    const eventLog = await readEvents(options.root);
+    if (!eventLog.valid) gaps.push(...eventLog.gaps.map((gap) => `event chain ${gap}`));
+    if (eventLog.events.length !== evidence.events.count) gaps.push('technical evidence event count does not match chain');
+    const head = eventLog.events.length === 0 ? null : eventLog.events.at(-1).hash;
+    if (head !== evidence.events.head) gaps.push('technical evidence event head does not match chain');
   }
 
   if (evidence.ai_review !== undefined) {

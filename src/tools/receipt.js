@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 
 import { ArtifactError, assertSafeId, readFiretreeJson, readJsonFile, resolveWithin, sha256File, sha256Text, writeFiretreeJson } from '../lib/artifacts.js';
 import { validateCorrectnessCase } from '../lib/correctness.js';
-import { appendEvent } from '../lib/events.js';
+import { appendEvent, readEvents } from '../lib/events.js';
 import { canonicalJson } from '../lib/json.js';
 import {
   checkReceiptSemantics,
@@ -433,8 +433,13 @@ export function createReceiptTool(ctx) {
           : preparedEvidence.evidence.every((item) => /^ci:/i.test(item.producer))
             ? 'ci-evidence'
             : 'test-evidence';
+        const eventLog = await readEvents(root);
         const technical = {
           schema: 'firetree.technical-evidence/v1',
+          events: {
+            head: eventLog.events.length === 0 ? null : eventLog.events.at(-1).hash,
+            count: eventLog.events.length,
+          },
           mode: 'autonomous',
           change: {
             base: assessment.change.base,
