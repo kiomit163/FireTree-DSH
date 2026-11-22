@@ -1,10 +1,30 @@
 /** Small cross-process file lock used by append-only artifacts. */
 
-import { mkdir, open, rm, stat } from 'node:fs/promises';
+import { mkdir, open, readFile, rm, stat } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
-const STALE_MS = 60_000;
+const STALE_MS = 10 * 60_000;
+
+function processAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error && typeof error === 'object' && error.code === 'EPERM';
+  }
+}
+
+async function lockOwnerIsAlive(file) {
+  try {
+    const text = await readFile(file, 'utf8');
+    const pid = Number.parseInt(text.split(/\r?\n/u)[0], 10);
+    return processAlive(pid);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Run a function while holding an exclusive advisory lock file.
@@ -33,7 +53,8 @@ export async function withFileLock(file, fn, options = {}) {
       if (!(error && typeof error === 'object' && (error.code === 'EEXIST' || error.code === 'EPERM'))) throw error;
       try {
         const info = await stat(file);
-        if (Date.now() - info.mtimeMs > STALE_MS) {
+        const ownerAlive = await lockOwnerIsAlive(file);
+        if (!ownerAlive && Date.now() - info.mtimeMs > STALE_MS) {
           await rm(file, { force: true });
           continue;
         }
