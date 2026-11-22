@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import { evaluateAiReview } from './ai-review.js';
+import { readEvents } from './events.js';
 import { readFiretreeJson, resolveWithin, sha256File, sha256Text } from './artifacts.js';
 import { canonicalJson } from './json.js';
 import { validateCoverageText } from './coverage.js';
@@ -85,6 +86,14 @@ export async function checkTechnicalEvidenceSemantics(evidence, options) {
     }
   }
 
+  if (evidence.events !== undefined) {
+    const eventLog = await readEvents(options.root);
+    if (!eventLog.valid) gaps.push(...eventLog.gaps.map((gap) => `event chain ${gap}`));
+    if (eventLog.events.length !== evidence.events.count) gaps.push('technical evidence event count does not match chain');
+    const head = eventLog.events.length === 0 ? null : eventLog.events.at(-1).hash;
+    if (head !== evidence.events.head) gaps.push('technical evidence event head does not match chain');
+  }
+
   if (evidence.ai_review !== undefined) {
     let reviewFile;
     try {
@@ -127,6 +136,30 @@ export async function checkTechnicalEvidenceSemantics(evidence, options) {
       }
     }
     if (evidence.ai_review.unresolved !== 0) gaps.push('technical evidence ai_review has unresolved findings');
+  }
+
+  let dossierRecord;
+  try {
+    dossierRecord = await readFiretreeJson(
+      options.root,
+      `.firetree/subsystems/${evidence.classification.subsystem}.json`,
+      { verifyHash: true, missing: 'null' },
+    );
+  } catch {
+    gaps.push('subsystem dossier entry is unreadable or has a bad hash');
+    dossierRecord = undefined;
+  }
+  if (dossierRecord === null) {
+    gaps.push('subsystem dossier entry is missing');
+  } else if (dossierRecord !== undefined) {
+    const dossier = dossierRecord.value.dossier;
+    if (dossier === undefined || dossier === null) {
+      gaps.push('subsystem registry entry has no dossier');
+    } else {
+      if (evidence.classification.dossier_sha256 !== dossier.sha256) gaps.push('technical evidence dossier hash does not match subsystem registry');
+      if (evidence.classification.kind !== dossier.kind) gaps.push('technical evidence classification kind does not match dossier');
+      if (evidence.classification.method !== dossier.method) gaps.push('technical evidence classification method does not match dossier');
+    }
   }
 
   let assessmentRecord;
