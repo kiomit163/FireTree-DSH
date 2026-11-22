@@ -134,8 +134,7 @@ jobs:
             --evidence .firetree/evidence/ci-junit.xml \
             --intent-spec "PR #$PR trusted A3-AI review" \
             --assurance A2 \
-            --ai-review ".firetree/ai-reviews/pr-$PR.json" \
-            --bundle .firetree
+            --ai-review ".firetree/ai-reviews/pr-$PR.json"
           node bin/firetree-check.mjs \
             --mode autonomous \
             --root . \
