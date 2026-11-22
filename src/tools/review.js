@@ -364,6 +364,7 @@ export function createReviewTool(ctx) {
         throw new ReviewError('DIFF_MISMATCH', 'review diff_sha256 does not match assessment git diff');
       }
 
+      const run = async () => {
       if (parsed.action === 'open') {
         const existing = await readFiretreeJson(root, `.firetree/changes/${parsed.change}/package.json`, { verifyHash: true, missing: 'null' });
         if (existing !== null) throw new ReviewError('REVIEW_ALREADY_OPEN', 'review package already exists');
@@ -404,10 +405,8 @@ export function createReviewTool(ctx) {
       const rounds = await readRounds(root, parsed.change);
 
       if (parsed.action === 'round') {
-        return withChangeLock(root, parsed.change, async () => {
-        const lockedRounds = await readRounds(root, parsed.change);
         const maxRounds = tier === 'L0' ? 1 : tier === 'L1' ? 2 : 3;
-        const next = (lockedRounds.at(-1)?.round ?? 0) + 1;
+        const next = (rounds.at(-1)?.round ?? 0) + 1;
         if (next > maxRounds) throw new ReviewError('ROUND_LIMIT', `${tier} allows at most ${maxRounds} rounds`);
         if (parsed.findings.length === 0 && parsed.checked.length === 0) {
           throw new ReviewError('ZERO_FINDINGS_CHECK_REQUIRED', 'a zero-finding round must record what was checked');
@@ -435,7 +434,6 @@ export function createReviewTool(ctx) {
           record: round,
           artifact: { path: artifact.path, sha256: artifact.sha256 },
         };
-        });
       }
 
       if (rounds.length === 0) throw new ReviewError('REVIEW_ROUNDS_REQUIRED', 'cannot issue a verdict without a round');
@@ -495,6 +493,8 @@ export function createReviewTool(ctx) {
         record: verdict,
         artifact: { path: artifact.path, sha256: artifact.sha256 },
       };
+      };
+      return withChangeLock(root, parsed.change, run);
     },
   };
 }
