@@ -102,6 +102,14 @@ test('L0, L1, and L2 receipts validate the same v1 contract', () => {
   assert.equal(receiptL2.correctness_case.mapped_claims, 2);
 });
 
+test('receipt schema accepts the A3-AI assurance levels', () => {
+  const aiReview = structuredClone(receiptL1);
+  aiReview.assurance = 'A3-AI';
+  assertValid(aiReview, receiptSchema);
+  aiReview.assurance = 'A3-AI-S';
+  assertValid(aiReview, receiptSchema);
+});
+
 test('receipt correctness-case summaries point at the fixture content hashes', () => {
   for (const [receipt, path] of [
     [receiptL1, 'fixtures/correctness-case-l1.json'],
