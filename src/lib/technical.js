@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
+import { evaluateAiReview } from './ai-review.js';
 import { readFiretreeJson, resolveWithin, sha256File, sha256Text } from './artifacts.js';
 import { canonicalJson } from './json.js';
 import { validateCoverageText } from './coverage.js';
@@ -92,12 +93,26 @@ export async function checkTechnicalEvidenceSemantics(evidence, options) {
       gaps.push('technical evidence ai_review path is unsafe');
     }
     if (reviewFile !== undefined) {
+      let review;
       try {
         if (await sha256File(reviewFile) !== evidence.ai_review.sha256) {
           gaps.push('technical evidence ai_review hash does not match artifact');
         }
+        review = JSON.parse(await readFile(reviewFile, 'utf8'));
       } catch {
-        gaps.push('technical evidence ai_review file is missing');
+        gaps.push('technical evidence ai_review file is missing or invalid');
+      }
+      if (review !== undefined) {
+        const expectedDiff = evidence.change.diff_sha256;
+        const result = evaluateAiReview(review, expectedDiff === undefined ? {} : { diffSha256: expectedDiff });
+        if (!result.valid) gaps.push(...result.gaps.map((gap) => `ai_review ${gap}`));
+        if (review.mode !== evidence.ai_review.mode) gaps.push('technical evidence ai_review mode does not match artifact');
+        if (review.unresolved !== evidence.ai_review.unresolved) gaps.push('technical evidence ai_review unresolved does not match artifact');
+        const actualProviders = [...new Set(review.seats.map((seat) => seat.provider))].sort();
+        const declaredProviders = [...evidence.ai_review.providers].sort();
+        if (JSON.stringify(actualProviders) !== JSON.stringify(declaredProviders)) {
+          gaps.push('technical evidence ai_review providers do not match artifact');
+        }
       }
     }
     if (evidence.ai_review.unresolved !== 0) gaps.push('technical evidence ai_review has unresolved findings');
