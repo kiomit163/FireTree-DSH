@@ -1,6 +1,7 @@
 /** firetree_receipt: assemble and check the versioned delivery receipt. */
 
 import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 
 import { ArtifactError, assertSafeId, readFiretreeJson, readJsonFile, resolveWithin, sha256File, sha256Text, writeFiretreeJson } from '../lib/artifacts.js';
 import { validateCorrectnessCase } from '../lib/correctness.js';
@@ -31,6 +32,7 @@ const ALLOWED_ARGS = new Set([
   'correctness_case',
   'expires_at',
   'assurance',
+  'ai_review',
 ]);
 
 /** Receipt input/build failure. */
@@ -132,6 +134,7 @@ const PARAMETERS = {
     correctness_case: { type: 'string' },
     expires_at: { type: 'string' },
     assurance: { type: 'string', enum: ['A1', 'A2'] },
+    ai_review: { type: 'string' },
   },
 };
 
@@ -320,6 +323,7 @@ function validateArgs(args) {
     correctness_case: args.correctness_case,
     expires_at: args.expires_at,
     assurance: args.assurance,
+    ai_review: args.ai_review,
   };
 }
 
@@ -468,6 +472,30 @@ export function createReceiptTool(ctx) {
           milestone_claim: false,
           created_at: new Date().toISOString(),
         };
+        if (parsed.ai_review !== undefined) {
+          let reviewPath;
+          let reviewValue;
+          let reviewText;
+          try {
+            reviewPath = resolveWithin(root, parsed.ai_review);
+            reviewText = await readFile(reviewPath, 'utf8');
+            reviewValue = JSON.parse(reviewText);
+          } catch {
+            return failure(['ai_review path is not readable JSON']);
+          }
+          if (reviewValue === null) return failure(['ai_review file is missing']);
+          const providers = Array.isArray(reviewValue.seats)
+            ? [...new Set(reviewValue.seats.filter((seat) => seat !== null && typeof seat === 'object').map((seat) => seat.provider).filter((item) => typeof item === 'string'))]
+            : [];
+          if (providers.length === 0) return failure(['ai_review has no provider seats']);
+          technical.ai_review = {
+            path: parsed.ai_review,
+            sha256: sha256Text(reviewText),
+            mode: reviewValue.mode,
+            providers,
+            unresolved: reviewValue.unresolved,
+          };
+        }
         assertJsonSchemaValue(technical, TECHNICAL_SCHEMA);
         const semantics = await checkTechnicalEvidenceSemantics(technical, { root, change: parsed.change });
         if (!semantics.valid) return failure(semantics.gaps);

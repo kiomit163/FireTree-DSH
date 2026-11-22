@@ -112,11 +112,32 @@
       }
     },
     "expires_at": { "type": "string", "format": "date-time" },
+    "ai_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "mode", "providers", "unresolved"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "mode": { "type": "string", "enum": ["single-provider", "multi-provider"] },
+        "providers": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "unresolved": { "type": "integer", "minimum": 0 }
+      }
+    },
     "assurance": { "type": "string", "enum": ["A1", "A2", "A3-AI-S", "A3-AI"] },
     "scope": { "type": "string", "enum": ["analysis-only", "test-evidence", "ci-evidence"] },
     "human_signoff": { "const": false },
     "completion_claim": { "const": false },
     "milestone_claim": { "const": false },
     "created_at": { "type": "string", "format": "date-time" }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "assurance": { "enum": ["A3-AI-S", "A3-AI"] } },
+        "required": ["assurance"]
+      },
+      "then": { "required": ["ai_review"] }
+    }
+  ]
 }

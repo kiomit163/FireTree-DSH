@@ -107,6 +107,7 @@ async function main() {
     }],
     expires_at: expiresAt,
     assurance: args.assurance,
+    ...(args['ai-review'] === undefined ? {} : { ai_review: args['ai-review'] }),
   }, { agent: { id: 'ci' }, signal: new AbortController().signal });
   if (!result.ok) {
     console.error(`technical evidence failed: ${result.gaps.join('; ')}`);

@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
+import { evaluateAiReview } from './ai-review.js';
 import { readFiretreeJson, resolveWithin, sha256File, sha256Text } from './artifacts.js';
 import { canonicalJson } from './json.js';
 import { validateCoverageText } from './coverage.js';
@@ -82,6 +83,50 @@ export async function checkTechnicalEvidenceSemantics(evidence, options) {
       const formatGaps = await evidenceFormatGaps(resolveWithin(options.root, item.run_ref), item);
       gaps.push(...formatGaps);
     }
+  }
+
+  if (evidence.ai_review !== undefined) {
+    let reviewFile;
+    try {
+      reviewFile = resolveWithin(options.root, evidence.ai_review.path);
+    } catch {
+      gaps.push('technical evidence ai_review path is unsafe');
+    }
+    if (reviewFile !== undefined) {
+      let review;
+      try {
+        const text = await readFile(reviewFile, 'utf8');
+        if (sha256Text(text) !== evidence.ai_review.sha256) {
+          gaps.push('technical evidence ai_review hash does not match artifact');
+        }
+        review = JSON.parse(text);
+      } catch {
+        gaps.push('technical evidence ai_review file is missing or invalid');
+      }
+      if (review !== undefined) {
+        try {
+          const expectedDiff = evidence.change.diff_sha256;
+          const result = evaluateAiReview(review, expectedDiff === undefined ? {} : { diffSha256: expectedDiff });
+          if (!result.valid) gaps.push(...result.gaps.map((gap) => `ai_review ${gap}`));
+          if (review.mode !== evidence.ai_review.mode) gaps.push('technical evidence ai_review mode does not match artifact');
+          if (review.unresolved !== evidence.ai_review.unresolved) gaps.push('technical evidence ai_review unresolved does not match artifact');
+          const actualProviders = [...new Set(review.seats.map((seat) => seat.provider))].sort();
+          const declaredProviders = [...evidence.ai_review.providers].sort();
+          if (JSON.stringify(actualProviders) !== JSON.stringify(declaredProviders)) {
+            gaps.push('technical evidence ai_review providers do not match artifact');
+          }
+          if (evidence.assurance === 'A3-AI' && (review.mode !== 'multi-provider' || actualProviders.length < 2)) {
+            gaps.push('A3-AI technical evidence requires a multi-provider review');
+          }
+          if (evidence.assurance === 'A3-AI-S' && (review.mode !== 'single-provider' || actualProviders.length !== 1)) {
+            gaps.push('A3-AI-S technical evidence requires a single-provider review');
+          }
+        } catch {
+          gaps.push('ai_review artifact is malformed');
+        }
+      }
+    }
+    if (evidence.ai_review.unresolved !== 0) gaps.push('technical evidence ai_review has unresolved findings');
   }
 
   let assessmentRecord;
