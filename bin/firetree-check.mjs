@@ -36,7 +36,7 @@ function usage() {
     '  --source-digest <sha>     Expected source digest for attestation',
     '  --gh <path>               GitHub CLI path (default: gh)',
     '  --reviewer <id>           Expected approval reviewer (optional)',
-    '  --require <A1|A2|A3>      Minimum derived assurance (default: receipt value)',
+    '  --require <A1|A2|A3-AI-S|A3-AI|A3>  Minimum derived assurance (default: receipt value)',
     '  --repository <owner/repo> Expected repository for claims',
     '  --issuer <url>            Expected OIDC issuer',
     '  --audience <value>        Expected OIDC audience',
@@ -66,6 +66,12 @@ function parseArgs(argv) {
   if (args.mode !== 'governed' && args.mode !== 'autonomous') throw new Error('--mode must be governed or autonomous');
   if (args.require !== undefined && !['A1', 'A2', 'A3-AI-S', 'A3-AI', 'A3'].includes(args.require)) {
     throw new Error('--require must be A1, A2, A3-AI-S, A3-AI, or A3');
+  }
+  if (args.jwt !== undefined && (typeof args.repository !== 'string' || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(args.repository))) {
+    throw new Error('--jwt requires --repository owner/repo');
+  }
+  if (args.jwt !== undefined && (typeof args['workflow-ref'] !== 'string' || args['workflow-ref'].length === 0)) {
+    throw new Error('--jwt requires --workflow-ref owner/repo/.github/workflows/<file>@refs/heads/<branch>');
   }
   if ((args.signature === undefined) !== (args['public-key'] === undefined)) {
     throw new Error('--signature and --public-key must be used together');
@@ -274,9 +280,6 @@ async function main() {
       };
     }
 
-    if (record?.tier === 'L2' && !aiReviewValid) {
-      gaps.push('L2 requires a valid adversarial AI review artifact');
-    }
     const claimed = record?.assurance;
     if (claimed !== undefined && !atLeast(derived.level, claimed)) {
       gaps.push(`claimed assurance ${claimed} exceeds derived assurance ${derived.level}`);

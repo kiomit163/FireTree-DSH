@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /** Build autonomous technical evidence from an existing assessment and CI evidence. */
 
-import { access } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { access, realpath } from 'node:fs/promises';
+import { isAbsolute, relative, resolve } from 'node:path';
 
-import { readFiretreeJson, sha256Text } from '../src/lib/artifacts.js';
+import { readFiretreeJson, resolveWithin, sha256Text } from '../src/lib/artifacts.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
 
 function usage() {
@@ -18,8 +18,9 @@ function usage() {
     '  --producer <id>           Evidence producer (default: ci:github-actions)',
     '  --expires-at <date-time>  Evidence expiry (default: now + 30 days)',
     '  --assurance <A1|A2>       Declared technical assurance (default: A2)',
+    '  --ai-review <path>        Adversarial AI review artifact (validated by check)',
     '',
-    'L2 changes require an adversarial AI review artifact (or a governed human receipt).',
+    'L2 changes may require an adversarial AI review when the check requires A3-AI-S/A3-AI.',
   ].join('\n');
 }
 
@@ -50,10 +51,7 @@ async function main() {
   const root = resolve(args.root);
   const assessment = await readFiretreeJson(root, `.firetree/changes/${args.change}/assessment.json`, { verifyHash: true });
   if (assessment === null) throw new Error('assessment is missing; run firetree-assess first');
-  if (assessment.value.tier === 'L2') {
-    if (typeof args['ai-review'] !== 'string') {
-      throw new Error('L2 changes require an adversarial AI review artifact (--ai-review) or a governed human receipt');
-    }
+  if (typeof args['ai-review'] === 'string') {
     try {
       await access(resolve(root, args['ai-review']));
     } catch {
@@ -65,7 +63,19 @@ async function main() {
   if (typeof subsystemId !== 'string' || subsystemId.length === 0) {
     throw new Error('cannot classify technical evidence: assessment has no subsystem');
   }
-  const registryRoot = args['registry-root'] === undefined ? root : resolve(root, args['registry-root']);
+  let registryRoot = root;
+  if (args['registry-root'] !== undefined) {
+    try {
+      const candidate = resolveWithin(root, args['registry-root']);
+      const realRoot = await realpath(root);
+      const realRegistry = await realpath(candidate);
+      const relativeRegistry = relative(realRoot, realRegistry);
+      if (relativeRegistry.startsWith('..') || isAbsolute(relativeRegistry)) throw new Error('escape');
+      registryRoot = realRegistry;
+    } catch {
+      throw new Error('--registry-root must stay inside the repository root');
+    }
+  }
   const subsystem = await readFiretreeJson(registryRoot, `.firetree/subsystems/${subsystemId}.json`, { verifyHash: false });
   if (subsystem === null) throw new Error(`subsystem registry entry is missing: ${subsystemId}`);
   const dossier = subsystem.value.dossier;

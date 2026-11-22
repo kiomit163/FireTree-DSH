@@ -16,7 +16,7 @@ function parseArgs(argv) {
   const args = { audience: 'firetree' };
   for (let index = 0; index < argv.length; index += 1) {
     const key = argv[index];
-    if (key === '--claims' || key === '--jwt' || key === '--audience') {
+    if (key === '--claims' || key === '--jwt' || key === '--audience' || key === '--workflow-ref') {
       const value = argv[index + 1];
       if (value === undefined || value.startsWith('--')) throw new Error(`${key} requires a value`);
       args[key.slice(2)] = value;
@@ -91,6 +91,7 @@ async function main() {
         '--change', 'ci-a2',
         '--jwt', resolve(args.jwt),
         '--repository', claims.repository,
+        ...(args['workflow-ref'] === undefined ? {} : ['--workflow-ref', args['workflow-ref']]),
         '--audience', args.audience,
         '--require', 'A2',
       ], { encoding: 'utf8' });

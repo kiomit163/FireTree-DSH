@@ -1,7 +1,8 @@
 /** firetree_assess: the change entry point. */
 
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { realpath } from 'node:fs/promises';
+import { isAbsolute, relative, resolve } from 'node:path';
 
 import {
   ArtifactError,
@@ -9,12 +10,13 @@ import {
   firetreePath,
   pathExists,
   readFiretreeJson,
+  resolveWithin,
   sha256Text,
   writeFiretreeJson,
 } from '../lib/artifacts.js';
 import { loadCodeowners } from '../lib/codeowners.js';
 import { appendEvent } from '../lib/events.js';
-import { GitError, verifyGitChange } from '../lib/git.js';
+import { GitError, isGitWorktree, verifyGitChange } from '../lib/git.js';
 import { normalizeRepoPath } from '../lib/glob.js';
 import { analyzeImpact, ImpactError } from '../lib/impact.js';
 import { verifyInterfaceHashes } from '../lib/interface.js';
@@ -172,8 +174,22 @@ export function createAssessTool(ctx) {
       const parsed = validateArgs(args);
       const root = await rootFor(ctx, exec);
       const policyPath = parsed.policy_path ?? '.firetree/policy.json';
-      const registryRoot = parsed.registry_root === undefined ? root : resolve(root, parsed.registry_root);
-      if (parsed.verify_git !== true && pathExists(resolve(root, '.git'))) {
+      let registryRoot = root;
+      if (parsed.registry_root !== undefined) {
+        try {
+          const candidate = resolveWithin(root, parsed.registry_root);
+          const realRoot = await realpath(root);
+          const realRegistry = await realpath(candidate);
+          const relativeRegistry = relative(realRoot, realRegistry);
+          if (relativeRegistry.startsWith('..') || isAbsolute(relativeRegistry)) {
+            throw new Error('registry root escapes through a symlink');
+          }
+          registryRoot = realRegistry;
+        } catch {
+          throw new AssessError('REGISTRY_ROOT_ESCAPE', 'registry_root must stay inside the repository root');
+        }
+      }
+      if (parsed.verify_git !== true && (pathExists(resolve(root, '.git')) || isGitWorktree(root))) {
         throw new AssessError(
           'GIT_VERIFICATION_REQUIRED',
           'git repositories must pass verify_git=true; unverified assessment is only allowed for non-git fixtures',

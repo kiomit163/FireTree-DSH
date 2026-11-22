@@ -48,6 +48,18 @@ test('CI check rejects invalid mode', async () => {
   assert.match(result.stderr, /--mode must be governed or autonomous/);
 });
 
+test('CI check rejects a JWT without an explicit repository', async () => {
+  const result = await cli(['--mode', 'autonomous', '--change', 'x', '--jwt', 'missing.jwt']);
+  assert.equal(result.code, 2);
+  assert.match(result.stderr, /--jwt requires --repository/);
+});
+
+test('CI check requires a workflow ref when a JWT is supplied', async () => {
+  const result = await cli(['--mode', 'autonomous', '--change', 'x', '--jwt', 'missing.jwt', '--repository', 'owner/repo']);
+  assert.equal(result.code, 2);
+  assert.match(result.stderr, /--jwt requires --workflow-ref/);
+});
+
 test('CI check derives A2 from OIDC claims and refuses A3 without a signature', async () => {
   const workspace = await createM1Workspace();
   try {
@@ -117,6 +129,7 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
       '--jwt', jwtPath,
       '--jwks', jwksPath,
       '--repository', 'owner/repo',
+      '--workflow-ref', 'owner/repo/.github/workflows/firetree.yml@refs/heads/main',
       '--require', 'A2',
     ]);
     assert.equal(a2.code, 0, a2.stdout + a2.stderr);
@@ -131,6 +144,7 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
       '--jwt', jwtPath,
       '--jwks', jwksPath,
       '--repository', 'owner/repo',
+      '--workflow-ref', 'owner/repo/.github/workflows/firetree.yml@refs/heads/main',
       '--require', 'A3',
     ]);
     assert.equal(a3Missing.code, 1);
@@ -174,6 +188,7 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
       '--jwt', jwtPath,
       '--jwks', jwksPath,
       '--repository', 'owner/repo',
+      '--workflow-ref', 'owner/repo/.github/workflows/firetree.yml@refs/heads/main',
       '--bundle', join(workspace.root, '.firetree'),
       '--approval', approvalPath,
       '--signature', signaturePath,
@@ -224,6 +239,7 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
       '--jwt', jwtPath,
       '--jwks', jwksPath,
       '--repository', 'owner/repo',
+      '--workflow-ref', 'owner/repo/.github/workflows/firetree.yml@refs/heads/main',
       '--bundle', join(workspace.root, '.firetree'),
       '--ai-review', '.firetree/ai-reviews/chg-cli-a2.json',
       '--signature', aiSignaturePath,
