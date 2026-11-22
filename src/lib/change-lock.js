@@ -1,4 +1,4 @@
-/** Per-change transaction lock for read-modify-write artifact operations. */
+/** Per-change transaction lock for read-modify-write artifact operations. */\n// Exported for assess, review, hypothesis, and synthesize.
 
 import { firetreePath } from './artifacts.js';
 import { withFileLock } from './lock.js';
