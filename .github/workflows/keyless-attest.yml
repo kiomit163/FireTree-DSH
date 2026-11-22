@@ -16,14 +16,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Create attestation subject
         run: |
           mkdir -p artifacts
           printf 'FireTree keyless attestation smoke\n' > artifacts/firetree-ci.txt
 
-      - uses: actions/attest-build-provenance@v1
+      - uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1
         id: attest
         with:
           subject-path: artifacts/firetree-ci.txt
@@ -37,3 +37,4 @@ jobs:
             --bundle "${{ steps.attest.outputs.bundle-path }}" \
             --repo "${{ github.repository }}" \
             --signer-workflow "${{ github.workflow_ref }}"
+

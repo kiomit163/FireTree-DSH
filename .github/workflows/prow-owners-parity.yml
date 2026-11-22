@@ -12,7 +12,7 @@ jobs:
   parity:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Fetch pinned Prow
         run: |
@@ -21,7 +21,7 @@ jobs:
           git -C "$RUNNER_TEMP/prow" fetch --depth=1 origin 86b2c49084b4bc31ed77ec8643ae3efbe9b82dc4
           git -C "$RUNNER_TEMP/prow" checkout FETCH_HEAD
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: ${{ runner.temp }}/prow/go.mod
           cache: false
@@ -41,3 +41,4 @@ jobs:
 
       - name: Compare FireTree with Prow
         run: node scripts/compare-prow-owners.mjs --root fixtures/owners-prow --official "$RUNNER_TEMP/prow-owners-official.json"
+

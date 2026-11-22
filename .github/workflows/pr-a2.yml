@@ -15,16 +15,16 @@ jobs:
       contents: read
     steps:
       - name: Checkout PR merge as untrusted input
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 11.28.5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           cache: pnpm
@@ -38,7 +38,7 @@ jobs:
           node --test --test-reporter=junit --test-reporter-destination=evidence/ci-junit.xml
 
       - name: Upload untrusted test evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pr-junit-${{ github.event.pull_request.number }}
           path: evidence/ci-junit.xml
@@ -53,7 +53,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout trusted base
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           fetch-depth: 0
@@ -63,11 +63,11 @@ jobs:
           git fetch --no-tags origin \
             "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/pull/head"
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 11.28.5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           cache: pnpm
@@ -84,7 +84,7 @@ jobs:
           node --test --test-reporter=junit --test-reporter-destination=evidence/trusted-junit.xml
 
       - name: Upload trusted test evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: trusted-junit-${{ github.event.pull_request.number }}
           path: evidence/trusted-junit.xml
@@ -103,7 +103,7 @@ jobs:
       attestations: write
     steps:
       - name: Checkout trusted base
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           fetch-depth: 0
@@ -114,17 +114,12 @@ jobs:
             "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/pull/head"
           echo "BASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           echo "DIFF_BASE=$(git merge-base HEAD refs/remotes/pull/head)" >> "$GITHUB_ENV"
-          REVIEW=".firetree/ai-reviews/pr-${{ github.event.pull_request.number }}.json"
-          if git cat-file -e "refs/remotes/pull/head:${REVIEW}" 2>/dev/null; then
-            mkdir -p .firetree/ai-reviews
-            git show "refs/remotes/pull/head:${REVIEW}" > "${REVIEW}"
-          fi
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 11.28.5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           cache: pnpm
@@ -133,7 +128,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download trusted test evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: trusted-junit-${{ github.event.pull_request.number }}
           path: evidence
@@ -155,22 +150,15 @@ jobs:
             --base "$DIFF_BASE" \
             --head "$HEAD" \
             --change "pr-$PR"
-          TIER=$(node -e 'const fs=require("fs");const p=".firetree/changes/pr-"+process.env.PR+"/assessment.json";const a=JSON.parse(fs.readFileSync(p,"utf8"));process.stdout.write(a.tier)')
-          if [ "$TIER" = "L2" ]; then echo "L2_REQUIRED=true" >> "$GITHUB_ENV"; fi
 
       - name: Build autonomous technical evidence
         env:
           PR: ${{ github.event.pull_request.number }}
         run: |
-          AI_ARGS=()
-          if [ -f ".firetree/ai-reviews/pr-$PR.json" ]; then
-            AI_ARGS=(--ai-review ".firetree/ai-reviews/pr-$PR.json")
-          fi
           node bin/firetree-ci.mjs \
             --change "pr-$PR" \
             --evidence .firetree/evidence/ci-junit.xml \
-            --intent-spec "PR #$PR" \
-            "${AI_ARGS[@]}"
+            --intent-spec "PR #$PR"
 
       - name: Build attested evidence bundle
         run: |
@@ -183,7 +171,7 @@ jobs:
 
       - name: Attest evidence bundle
         id: attest
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
         with:
           subject-path: .firetree/bundle-manifest.json
 
@@ -193,14 +181,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           WORKFLOW_REF: ${{ github.workflow_ref }}
         run: |
-          AI_ARGS=()
           REQUIRE=A2
-          if [ "${L2_REQUIRED:-false}" = "true" ]; then
-            REQUIRE=A3-AI-S
-          fi
-          if [ -f ".firetree/ai-reviews/pr-$PR.json" ]; then
-            AI_ARGS=(--ai-review ".firetree/ai-reviews/pr-$PR.json")
-          fi
           node bin/firetree-check.mjs \
             --mode autonomous \
             --change "pr-$PR" \
@@ -212,12 +193,11 @@ jobs:
             --bundle .firetree \
             --attestation "${{ steps.attest.outputs.bundle-path }}" \
             --signer-workflow "$WORKFLOW_REF" \
-            --require "$REQUIRE" \
-            "${AI_ARGS[@]}"
+            --require "$REQUIRE"
 
       - name: Upload retained FireTree artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: firetree-a2-${{ github.event.pull_request.number }}
           path: .firetree/
@@ -252,3 +232,4 @@ jobs:
             -f conclusion="$conclusion" \
             -f "output[title]=FireTree A2" \
             -f "output[summary]=verifier result: $RESULT"
+

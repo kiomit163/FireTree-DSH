@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
 import { test } from 'node:test';
 
-import { evaluateAiReview } from '../src/lib/ai-review.js';
+import { evaluateAiReview, reviewSignaturePayload } from '../src/lib/ai-review.js';
 
 const H = 'a'.repeat(64);
 const H2 = 'b'.repeat(64);
@@ -46,3 +47,15 @@ test('AI review rejects open findings, duplicate contexts, and wrong bindings', 
   assert.equal(evaluateAiReview(review(), { diffSha256: 'f'.repeat(64) }).valid, false);
   assert.equal(evaluateAiReview(review({ mode: 'multi-provider' }), {}).valid, false);
 });
+
+test('A3-AI review requires a valid server-held HMAC signature', () => {
+  const key = 'server-signing-key';
+  const signed = review();
+  signed.signature = createHmac('sha256', key).update(reviewSignaturePayload(signed)).digest('hex');
+  assert.equal(evaluateAiReview(signed, { diffSha256: H }, { requireSignature: true, signingKey: key }).valid, true);
+  assert.equal(evaluateAiReview(signed, { diffSha256: H }, { requireSignature: true, signingKey: 'wrong' }).valid, false);
+  signed.change.head = 'c'.repeat(40);
+  assert.equal(evaluateAiReview(signed, { diffSha256: H }, { requireSignature: true, signingKey: key }).valid, false);
+  assert.equal(evaluateAiReview(review(), { diffSha256: H }, { requireSignature: true, signingKey: key }).valid, false);
+});
+
