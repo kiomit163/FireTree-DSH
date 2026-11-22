@@ -164,6 +164,7 @@ jobs:
             --workflow-ref "$WORKFLOW_REF" \
             --audience firetree \
             --bundle .firetree \
+            --event-anchor .firetree/evidence/pr-$PR.event-anchor.json \
             --signature bundle-signature.json \
             --public-key trust/bundle-public.pem \
             --ai-review ".firetree/ai-reviews/pr-$PR.json" \
