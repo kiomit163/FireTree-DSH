@@ -1,0 +1,110 @@
+{
+  "schema": "firetree.ai-review/v1",
+  "change": {
+    "id": "pr-14",
+    "head": "df4cd45a966c34227424b913120753de5e2e951b",
+    "diff_sha256": "610dce708ed25bd50f92ec727045bc867bdc560be26ecf4452a27ad1ee73bc48"
+  },
+  "mode": "single-provider",
+  "author": {
+    "provider": "deepseek-account",
+    "model": "deepseek-flash"
+  },
+  "seats": [
+    {
+      "id": "seat-A",
+      "provider": "deepseek-account",
+      "model": "deepseek-flash",
+      "context_sha256": "a5341f04f20fd22c0368393d5dee559004113f821db119a8205cc4e6abd845bd",
+      "prompt_sha256": "fc817d4eec3c0af6ecfe5b563b65d6daab96ed9d6ab63bc69a1af54a568c40dc",
+      "transcript_sha256": "18e2c5a96599b9ddae037c49a95d94e2ee110b53a957b45af609ae07d179c465",
+      "verdict": "ready",
+      "findings": [
+        {
+          "id": "SEC-1",
+          "severity": "non-blocker",
+          "claim": "registry_root symlink escape.",
+          "evidence": "realpath containment added in assess.js; in-repo .trusted-base test.",
+          "status": "resolved"
+        },
+        {
+          "id": "SEC-2",
+          "severity": "non-blocker",
+          "claim": "firetree-ci registry_root injection.",
+          "evidence": "firetree-ci now uses resolveWithin + realpath.",
+          "status": "resolved"
+        },
+        {
+          "id": "SEC-3",
+          "severity": "non-blocker",
+          "claim": "OIDC workflow_ref optional.",
+          "evidence": "--jwt now requires --workflow-ref; workflows pass env WORKFLOW_REF.",
+          "status": "resolved"
+        },
+        {
+          "id": "SEC-4",
+          "severity": "non-blocker",
+          "claim": "isGitWorktree fail-open.",
+          "evidence": "assess guard now also checks .git existence.",
+          "status": "resolved"
+        },
+        {
+          "id": "SEC-5",
+          "severity": "non-blocker",
+          "claim": "L2 route implicit.",
+          "evidence": "pr-a2 reads assessment tier and requires A3-AI-S for L2.",
+          "status": "resolved"
+        },
+        {
+          "id": "SEC-6",
+          "severity": "non-blocker",
+          "claim": "workflow_ref shell interpolation.",
+          "evidence": "workflow_ref passed via env, not inline run interpolation.",
+          "status": "resolved"
+        }
+      ]
+    },
+    {
+      "id": "seat-B",
+      "provider": "deepseek-account",
+      "model": "deepseek-flash",
+      "context_sha256": "2465211ed6e543f19c9e11ee68cd6adf2abaa3c93df52aeecaf9e76a10f928e2",
+      "prompt_sha256": "c3a29e470ddc50ca32059ce82e6755766dc38f7f0423732ff5471fdcbe173ea5",
+      "transcript_sha256": "1e0930db243178e06bc85360ddb1630b76baefa0eeb57f06374a28c087e6ed8c",
+      "verdict": "ready",
+      "findings": [
+        {
+          "id": "F1",
+          "severity": "non-blocker",
+          "claim": "base tip diff scope.",
+          "evidence": "DIFF_BASE uses git merge-base HEAD pull/head; BASE_SHA only for claims.",
+          "status": "resolved"
+        },
+        {
+          "id": "F3",
+          "severity": "non-blocker",
+          "claim": "registry symlink escape.",
+          "evidence": "realpath containment; test/assess covers escape.",
+          "status": "resolved"
+        },
+        {
+          "id": "F4",
+          "severity": "non-blocker",
+          "claim": "git worktree probe fail-open.",
+          "evidence": "assess combines .git existence with probe.",
+          "status": "resolved"
+        },
+        {
+          "id": "F5",
+          "severity": "non-blocker",
+          "claim": "approval binding untested.",
+          "evidence": "test/approval-cli binds assessment; head/id consistency enforced.",
+          "status": "resolved"
+        }
+      ]
+    }
+  ],
+  "unresolved": 0,
+  "converged": true,
+  "created_at": "2026-11-22T07:52:44.693Z"
+}

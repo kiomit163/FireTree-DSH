@@ -59,15 +59,15 @@ jobs:
       - name: Checkout trusted base
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.ref }}
+          ref: ${{ github.event.pull_request.base.sha }}
           fetch-depth: 0
 
       - name: Fetch PR head as data
         run: |
           git fetch --no-tags origin \
             "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/pull/head"
-          echo "BASE_SHA=$(git merge-base "origin/${{ github.event.pull_request.base.ref }}" refs/remotes/pull/head)" >> "$GITHUB_ENV"
-          echo "TRUSTED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "BASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "DIFF_BASE=$(git merge-base HEAD refs/remotes/pull/head)" >> "$GITHUB_ENV"
           REVIEW=".firetree/ai-reviews/pr-${{ github.event.pull_request.number }}.json"
           if git cat-file -e "refs/remotes/pull/head:${REVIEW}" 2>/dev/null; then
             mkdir -p .firetree/ai-reviews
@@ -101,9 +101,11 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           node bin/firetree-assess.mjs \
-            --base "$BASE_SHA" \
+            --base "$DIFF_BASE" \
             --head "$HEAD" \
             --change "pr-$PR"
+          TIER=$(node -e 'const fs=require("fs");const p=".firetree/changes/pr-"+process.env.PR+"/assessment.json";const a=JSON.parse(fs.readFileSync(p,"utf8"));process.stdout.write(a.tier)')
+          if [ "$TIER" = "L2" ]; then echo "L2_REQUIRED=true" >> "$GITHUB_ENV"; fi
 
       - name: Build autonomous technical evidence
         env:
@@ -138,24 +140,27 @@ jobs:
         env:
           PR: ${{ github.event.pull_request.number }}
           GH_TOKEN: ${{ github.token }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
         run: |
           AI_ARGS=()
           REQUIRE=A2
+          if [ "${L2_REQUIRED:-false}" = "true" ]; then
+            REQUIRE=A3-AI-S
+          fi
           if [ -f ".firetree/ai-reviews/pr-$PR.json" ]; then
             AI_ARGS=(--ai-review ".firetree/ai-reviews/pr-$PR.json")
-            REQUIRE=A3-AI-S
           fi
           node bin/firetree-check.mjs \
             --mode autonomous \
             --change "pr-$PR" \
             --jwt claims.json.jwt \
-            --claims-sha "$TRUSTED_SHA" \
-            --workflow-ref "${{ github.workflow_ref }}" \
+            --claims-sha "$BASE_SHA" \
+            --workflow-ref "$WORKFLOW_REF" \
             --repository "${{ github.repository }}" \
             --audience firetree \
             --bundle .firetree \
             --attestation "${{ steps.attest.outputs.bundle-path }}" \
-            --signer-workflow "${{ github.workflow_ref }}" \
+            --signer-workflow "$WORKFLOW_REF" \
             --require "$REQUIRE" \
             "${AI_ARGS[@]}"
 

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
@@ -165,11 +166,28 @@ test('policy L2 triggers can tune soft dependency changes; exceptions can waive 
 test('git repositories reject unverified assessment', async () => {
   const workspace = await createM1Workspace();
   try {
-    await mkdir(join(workspace.root, '.git'), { recursive: true });
+    execFileSync('git', ['init', '-q'], { cwd: workspace.root });
     const tool = createAssessTool(contextFor(workspace.root));
     await assert.rejects(
       tool.execute(assessArgs({ files: ['services/billing/charge.mjs'], change: 'unverified' }), EXEC),
       (error) => error.code === 'GIT_VERIFICATION_REQUIRED',
+    );
+  } finally {
+    await workspace.cleanup();
+  }
+});
+
+test('registry_root cannot escape the workspace', async () => {
+  const workspace = await createM1Workspace();
+  try {
+    const tool = createAssessTool(contextFor(workspace.root));
+    await assert.rejects(
+      tool.execute(assessArgs({
+        files: ['services/billing/charge.mjs'],
+        change: 'escape-registry',
+        registry_root: '../outside',
+      }), EXEC),
+      (error) => error.code === 'REGISTRY_ROOT_ESCAPE',
     );
   } finally {
     await workspace.cleanup();

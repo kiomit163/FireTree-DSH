@@ -42,6 +42,18 @@ function assertRef(ref, label) {
 }
 
 /**
+ * @param {string} root - Directory to inspect.
+ * @returns {boolean} Whether the directory is inside a git worktree.
+ */
+export function isGitWorktree(root) {
+  try {
+    return git(root, ['rev-parse', '--is-inside-work-tree'], 'utf8').trim() === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Resolve a ref to a full commit SHA.
  *
  * @param {string} root - Repository root.

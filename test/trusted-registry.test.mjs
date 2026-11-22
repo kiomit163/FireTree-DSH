@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { cp, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
@@ -9,7 +8,7 @@ import { createM1Workspace } from '../test-support/m1-workspace.mjs';
 
 test('assess can load policy/registry from a trusted base root', async () => {
   const workspace = await createM1Workspace();
-  const trusted = await mkdtemp(join(tmpdir(), 'firetree-trusted-'));
+  const trusted = join(workspace.root, '.trusted-base');
   try {
     await cp(join(workspace.root, '.firetree'), join(trusted, '.firetree'), { recursive: true });
     await cp(join(workspace.root, 'CODEOWNERS'), join(trusted, 'CODEOWNERS'));
@@ -27,7 +26,7 @@ test('assess can load policy/registry from a trusted base root', async () => {
       head: '2222222222222222222222222222222222222222',
       files: ['services/billing/charge.mjs'],
       change: 'trusted-registry',
-      registry_root: trusted,
+      registry_root: '.trusted-base',
     }, { agent: { id: 'agent-1' }, signal: new AbortController().signal });
 
     assert.equal(result.tier, 'L1');
@@ -35,6 +34,5 @@ test('assess can load policy/registry from a trusted base root', async () => {
     assert.equal(result.impact.unknown.length, 0);
   } finally {
     await workspace.cleanup();
-    await rm(trusted, { recursive: true, force: true });
   }
 });
