@@ -47,6 +47,7 @@
         "id": { "type": "string", "minLength": 1 },
         "provider": { "type": "string", "minLength": 1 },
         "model": { "type": "string", "minLength": 1 },
+        "diff_sha256": { "$ref": "#/$defs/sha256" },
         "context_sha256": { "$ref": "#/$defs/sha256" },
         "prompt_sha256": { "$ref": "#/$defs/sha256" },
         "transcript_sha256": { "$ref": "#/$defs/sha256" },
@@ -65,7 +66,7 @@
         "id": { "type": "string", "minLength": 1 },
         "claim": { "type": "string", "minLength": 1 },
         "severity": { "type": "string", "enum": ["blocker", "non-blocker", "question"] },
-        "status": { "type": "string", "enum": ["resolved", "open", "accepted"] },
+        "status": { "type": "string", "enum": ["resolved", "open"] },
         "evidence": { "type": "string", "minLength": 1 }
       }
     }
