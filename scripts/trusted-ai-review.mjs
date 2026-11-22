@@ -121,7 +121,11 @@ function changedFiles(diff) {
 }
 
 function findingsCiteChangedFile(findings, files) {
-  return findings.filter((finding) => [...files].some((file) => finding.evidence.includes(file)));
+  return findings.filter((finding) => [...files].some((file) => {
+    const marker = `${file}:`;
+    const index = finding.evidence.indexOf(marker);
+    return index >= 0 && /^\d+/.test(finding.evidence.slice(index + marker.length));
+  }));
 }
 
 async function callSeat(seat, prompt, diff) {
