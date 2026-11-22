@@ -297,6 +297,7 @@ export async function checkReceiptSemantics(receipt, options) {
     if (receipt.review.verdict !== 'ready') gaps.push('review verdict is not ready');
     if (receipt.review.new_findings.at(-1) !== 0) gaps.push('review did not converge to zero new findings');
   }
+  if (receipt.assurance === 'A3') gaps.push('A3 human sign-off is deprecated; A3 must be derived by the verifier from external approval, not stored in a receipt');
   if (receipt.tier === 'L2' && receipt.signoff?.by !== 'human') gaps.push('L2 receipt requires human sign-off');
 
   const untested = receipt.hypotheses.total - receipt.hypotheses.verified;
