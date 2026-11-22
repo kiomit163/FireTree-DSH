@@ -137,7 +137,7 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
     assert.equal(parsed.ok, true);
     assert.equal(parsed.assurance, 'A2');
 
-    const a3Missing = await cli([
+    const invalidA3 = await cli([
       '--mode', 'governed',
       '--change', 'chg-cli-a2',
       '--root', workspace.root,
@@ -147,8 +147,8 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
       '--workflow-ref', 'owner/repo/.github/workflows/firetree.yml@refs/heads/main',
       '--require', 'A3',
     ]);
-    assert.equal(a3Missing.code, 1);
-    assert.ok(JSON.parse(a3Missing.stdout).gaps.some((gap) => /required assurance A3/.test(gap)));
+    assert.equal(invalidA3.code, 2);
+    assert.match(invalidA3.stderr, /--require/);
 
     const { publicKey: edPublicKey, privateKey: edPrivateKey } = generateKeyPairSync('ed25519');
     const bundle = await buildBundleManifest(join(workspace.root, '.firetree'));
@@ -161,42 +161,11 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
       signature: sign(null, Buffer.from(bundle.digest, 'utf8'), edPrivateKey).toString('base64'),
     }, null, 2)}\n`, 'utf8');
     await writeFile(join(workspace.root, 'public.pem'), edPublicKey.export({ type: 'spki', format: 'pem' }), 'utf8');
-    const approvalPath = join(workspace.root, 'approval.json');
     const assessmentRecord = await readFiretreeJson(
       workspace.root,
       '.firetree/changes/chg-cli-a2/assessment.json',
       { verifyHash: true },
     );
-    await writeFile(approvalPath, `${JSON.stringify({
-      schema: 'firetree.approval/v1',
-      change: {
-        id: 'chg-cli-a2',
-        head: assessment.change.head,
-        assessment_sha256: assessmentRecord.sha256,
-      },
-      reviewer: 'github:alice',
-      source: 'github-review',
-      decision: 'approved',
-      submitted_at: '2026-11-18T01:00:00Z',
-      ref: 'pull/1#review-1',
-    }, null, 2)}\n`, 'utf8');
-
-    const a3 = await cli([
-      '--mode', 'governed',
-      '--change', 'chg-cli-a2',
-      '--root', workspace.root,
-      '--jwt', jwtPath,
-      '--jwks', jwksPath,
-      '--repository', 'owner/repo',
-      '--workflow-ref', 'owner/repo/.github/workflows/firetree.yml@refs/heads/main',
-      '--bundle', join(workspace.root, '.firetree'),
-      '--approval', approvalPath,
-      '--signature', signaturePath,
-      '--public-key', join(workspace.root, 'public.pem'),
-      '--require', 'A3',
-    ]);
-    assert.equal(a3.code, 0, a3.stdout + a3.stderr);
-    assert.equal(JSON.parse(a3.stdout).assurance, 'A3');
 
     await writeFiretreeJson(workspace.root, '.firetree/ai-reviews/chg-cli-a2.json', {
       schema: 'firetree.ai-review/v1',
