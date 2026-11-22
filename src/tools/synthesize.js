@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 
 import { assertSafeId, firetreePath, listJsonFiles, readFiretreeJson, writeFiretreeJson } from '../lib/artifacts.js';
+import { withChangeLock } from '../lib/change-lock.js';
 import { appendEvent } from '../lib/events.js';
 import { assertJsonSchemaValue } from '../lib/schema.js';
 import { toToolSchema } from '../lib/tool-schema.js';
@@ -284,6 +285,7 @@ export function createSynthesizeTool(ctx) {
     async execute(args, exec) {
       const parsed = validateArgs(args);
       const root = await rootFor(ctx, exec);
+      const run = async () => {
       await readAssessment(root, parsed.change);
 
       if (parsed.action === 'plan') {
@@ -372,6 +374,8 @@ export function createSynthesizeTool(ctx) {
         record: round,
         artifact: { path: artifact.path, sha256: artifact.sha256 },
       };
+      };
+      return withChangeLock(root, parsed.change, run);
     },
   };
 }
