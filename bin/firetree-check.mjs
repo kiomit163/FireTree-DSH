@@ -4,7 +4,6 @@
 import { readFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 
-import { parseApproval, verifyApproval } from '../src/lib/approval.js';
 import { evaluateAiReview } from '../src/lib/ai-review.js';
 import { atLeast, deriveAssurance } from '../src/lib/assurance.js';
 import { verifyGithubAttestation } from '../src/lib/attestation.js';
@@ -28,16 +27,14 @@ function usage() {
     '  --review-signing-key-env <name>  Env var for required AI review HMAC key',
     '  --claims <file>           Legacy claims JSON (not trusted for A2)',
     '  --bundle <dir>            Evidence bundle directory with bundle-manifest.json',
-    '  --approval <file>         Normalized human approval JSON (A3)',
-    '  --signature <file>        Detached Ed25519 signature over the bundle digest (A3)',
+    '  --signature <file>        Detached Ed25519 signature over the bundle digest',
     '  --public-key <pem>        Ed25519 public key for --signature',
-    '  --attestation <file>      GitHub attestation bundle (gh --bundle) for keyless A3',
+    '  --attestation <file>      GitHub attestation bundle (gh --bundle)',
     '  --attested-artifact <f>   Artifact covered by attestation (default: <bundle>/bundle-manifest.json)',
     '  --signer-workflow <ref>   Expected GitHub workflow identity for attestation',
     '  --source-digest <sha>     Expected source digest for attestation',
     '  --gh <path>               GitHub CLI path (default: gh)',
-    '  --reviewer <id>           Expected approval reviewer (optional)',
-    '  --require <A1|A2|A3-AI-S|A3-AI|A3>  Minimum derived assurance (default: receipt value)',
+    '  --require <A1|A2|A3-AI-S|A3-AI>  Minimum derived assurance (default: receipt value)',
     '  --repository <owner/repo> Expected repository for claims',
     '  --issuer <url>            Expected OIDC issuer',
     '  --audience <value>        Expected OIDC audience',
@@ -47,9 +44,9 @@ function usage() {
 }
 
 const VALUE_ARGS = new Set([
-  '--change', '--mode', '--root', '--jwt', '--jwks', '--claims-sha', '--workflow-ref', '--claims', '--ai-review', '--review-signing-key-env', '--bundle', '--approval', '--signature',
+  '--change', '--mode', '--root', '--jwt', '--jwks', '--claims-sha', '--workflow-ref', '--claims', '--ai-review', '--review-signing-key-env', '--bundle', '--signature',
   '--public-key', '--attestation', '--attested-artifact', '--signer-workflow', '--source-digest',
-  '--gh', '--reviewer', '--require', '--repository', '--issuer', '--audience',
+  '--gh', '--require', '--repository', '--issuer', '--audience',
 ]);
 
 function parseArgs(argv) {
@@ -65,8 +62,8 @@ function parseArgs(argv) {
   }
   if (typeof args.change !== 'string' || args.change.length === 0) throw new Error('--change is required');
   if (args.mode !== 'governed' && args.mode !== 'autonomous') throw new Error('--mode must be governed or autonomous');
-  if (args.require !== undefined && !['A1', 'A2', 'A3-AI-S', 'A3-AI', 'A3'].includes(args.require)) {
-    throw new Error('--require must be A1, A2, A3-AI-S, A3-AI, or A3');
+  if (args.require !== undefined && !['A1', 'A2', 'A3-AI-S', 'A3-AI'].includes(args.require)) {
+    throw new Error('--require must be A1, A2, A3-AI-S, or A3-AI');
   }
   if (args.jwt !== undefined && (typeof args.repository !== 'string' || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(args.repository))) {
     throw new Error('--jwt requires --repository owner/repo');
@@ -105,7 +102,6 @@ async function main() {
   let derived = null;
   let claims = null;
   let claimsValid = false;
-  let approvalVerified = false;
   let aiReviewValid = false;
   let aiReviewMode = null;
   let signed = false;
@@ -214,26 +210,6 @@ async function main() {
       }
     }
 
-    if (args.approval !== undefined) {
-      try {
-        const approval = parseApproval(await readJson(resolve(root, args.approval)));
-        const approvalCheck = verifyApproval(approval, {
-          head: typeof head === 'string' ? head : '',
-          change: args.change,
-          ...(assessmentRecord === null || assessmentRecord.sha256 === null
-            ? {}
-            : { assessmentSha256: assessmentRecord.sha256 }),
-          ...(typeof assessmentRecord?.value?.git?.diff_sha256 === 'string'
-            ? { diffSha256: assessmentRecord.value.git.diff_sha256 }
-            : {}),
-          ...(args.reviewer === undefined ? {} : { reviewer: args.reviewer }),
-        });
-        approvalVerified = approvalCheck.valid;
-        gaps.push(...approvalCheck.failures);
-      } catch (error) {
-        gaps.push(`approval is invalid: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
 
     if (args.signature !== undefined) {
       if (bundleManifest === null) {
@@ -277,17 +253,10 @@ async function main() {
       claimsValid,
       claims,
       evidence: record?.evidence ?? [],
-      approval: approvalVerified ? { verified: true } : null,
       aiReview: aiReviewValid ? { valid: true, mode: aiReviewMode } : null,
       signed,
       attested,
     });
-    if (args.mode === 'autonomous' && derived.level === 'A3') {
-      derived = {
-        level: 'A2',
-        reasons: [...derived.reasons, 'autonomous technical evidence cannot claim A3; governed receipt required'],
-      };
-    }
 
     const claimed = record?.assurance;
     if (claimed !== undefined && !atLeast(derived.level, claimed)) {

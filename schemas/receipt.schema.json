@@ -185,8 +185,8 @@
     },
     "assurance": {
       "type": "string",
-      "enum": ["A1", "A2", "A3-AI-S", "A3-AI", "A3"],
-      "description": "A1 local-only; A2 CI OIDC-verified; A3-AI-S single-provider signed review; A3-AI multi-provider signed review; A3 A2 plus verified human approval and a signed/attested bundle. Derived by the verifier, never taken from the caller."
+      "enum": ["A1", "A2", "A3-AI-S", "A3-AI"],
+      "description": "A1 local-only; A2 CI OIDC-verified; A3-AI-S single-provider signed review; A3-AI multi-provider signed review. Derived by the verifier, never taken from the caller."
     }
   },
   "allOf": [
