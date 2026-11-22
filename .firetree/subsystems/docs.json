@@ -4,8 +4,10 @@
   "name": "Docs",
   "paths": [
     "docs/**",
+    "reference/**",
     "skills/**",
     "locale/**",
+    "icon.svg",
     "README.md",
     "*.md"
   ],

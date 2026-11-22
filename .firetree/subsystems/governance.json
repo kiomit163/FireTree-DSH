@@ -1,0 +1,30 @@
+{
+  "schema": "firetree.subsystem/v1",
+  "id": "governance",
+  "name": "Governance",
+  "paths": [
+    "package.json",
+    "pnpm-lock.yaml",
+    "CODEOWNERS",
+    ".gitignore",
+    ".gitattributes",
+    "cordis.patch.yml",
+    "plan/**",
+    ".firetree/**"
+  ],
+  "owners": [
+    "@kiomit163"
+  ],
+  "interfaces": [],
+  "tests": [],
+  "depends_on": [
+    "core"
+  ],
+  "dossier": {
+    "path": ".firetree/oid/governance.json",
+    "sha256": "31b84828cefd53e88c4ade55f7fa07d3abd833db39c3fd78a125877227b0b8d3",
+    "kind": "large",
+    "method": "decompose",
+    "updated_at": "2026-11-22T00:00:00.000Z"
+  }
+}
