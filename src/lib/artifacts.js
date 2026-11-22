@@ -2,10 +2,11 @@
 
 import { createHash, randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, readdir, rename, rm } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 
 import { parseStrictJson, assertJsonValue } from './json.js';
+import { withFileLock } from './lock.js';
 
 /** Error raised by artifact storage and path admission. */
 export class ArtifactError extends Error {
@@ -109,10 +110,24 @@ export async function sha256File(file) {
 export async function writeTextAtomic(file, text) {
   await mkdir(dirname(file), { recursive: true });
   const temporary = `${file}.${process.pid}.${randomUUID()}.tmp`;
+  let handle;
   try {
-    await writeFile(temporary, text, 'utf8');
+    handle = await open(temporary, 'w');
+    await handle.writeFile(text, 'utf8');
+    await handle.sync();
+    await handle.close();
+    handle = undefined;
     await rename(temporary, file);
+    // Directory fsync makes the rename durable on POSIX. Some platforms do not
+    // support opening a directory for fsync; that is not a write failure.
+    await open(dirname(file), 'r')
+      .then(async (directory) => {
+        await directory.sync().catch(() => {});
+        await directory.close();
+      })
+      .catch(() => {});
   } catch (error) {
+    await handle?.close().catch(() => {});
     await rm(temporary, { force: true }).catch(() => {});
     throw new ArtifactError('WRITE_FAILED', `failed to write ${file}`, { path: file, cause: error });
   }
@@ -143,9 +158,11 @@ export async function writeJsonAtomic(file, value) {
  */
 export async function writeFiretreeJson(root, relativePath, value) {
   const file = resolveWithin(root, relativePath);
-  const result = await writeJsonAtomic(file, value);
-  await writeTextAtomic(`${file}.sha256`, `${result.sha256}\n`);
-  return { path: relativePath.replaceAll('\\', '/'), sha256: result.sha256, bytes: result.bytes };
+  return withFileLock(`${file}.lock`, async () => {
+    const result = await writeJsonAtomic(file, value);
+    await writeTextAtomic(`${file}.sha256`, `${result.sha256}\n`);
+    return { path: relativePath.replaceAll('\\', '/'), sha256: result.sha256, bytes: result.bytes };
+  });
 }
 
 /**
