@@ -124,6 +124,9 @@ test('assurance is derived rather than declared', () => {
   }).level, 'A1');
   assert.equal(atLeast('A2', 'A1'), true);
   assert.equal(atLeast('A1', 'A2'), false);
+  assert.equal(atLeast('A3-AI', 'A3-AI-S'), true);
+  assert.equal(atLeast('A3-AI-S', 'A3-AI'), false);
+  assert.equal(atLeast('A3-AI', 'A3'), false);
 });
 
 test('bundle manifest verifies content and detects tampering', async () => {

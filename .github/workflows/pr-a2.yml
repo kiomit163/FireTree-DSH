@@ -103,15 +103,26 @@ jobs:
         env:
           PR: ${{ github.event.pull_request.number }}
         run: |
+          AI_ARGS=()
+          if [ -f ".firetree/ai-reviews/pr-$PR.json" ]; then
+            AI_ARGS=(--ai-review ".firetree/ai-reviews/pr-$PR.json")
+          fi
           node bin/firetree-ci.mjs \
             --change "pr-$PR" \
             --evidence evidence/ci-junit.xml \
-            --intent-spec "PR #$PR"
+            --intent-spec "PR #$PR" \
+            "${AI_ARGS[@]}"
 
       - name: Verify A2
         env:
           PR: ${{ github.event.pull_request.number }}
         run: |
+          AI_ARGS=()
+          REQUIRE=A2
+          if [ -f ".firetree/ai-reviews/pr-$PR.json" ]; then
+            AI_ARGS=(--ai-review ".firetree/ai-reviews/pr-$PR.json")
+            REQUIRE=A3-AI-S
+          fi
           node bin/firetree-check.mjs \
             --mode autonomous \
             --change "pr-$PR" \
@@ -120,7 +131,8 @@ jobs:
             --workflow-ref "${{ github.workflow_ref }}" \
             --repository "${{ github.repository }}" \
             --audience firetree \
-            --require A2
+            --require "$REQUIRE" \
+            "${AI_ARGS[@]}"
 
       - name: Upload retained FireTree artifacts
         if: always()

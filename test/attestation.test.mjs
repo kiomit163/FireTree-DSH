@@ -76,4 +76,13 @@ test('attested provenance raises A2 to A3 only with verified human approval', ()
   assert.equal(deriveAssurance(base).level, 'A2');
   assert.equal(deriveAssurance({ ...base, approval: { verified: true } }).level, 'A3');
   assert.equal(deriveAssurance({ ...base, approval: { verified: false } }).level, 'A2');
+  assert.equal(deriveAssurance({
+    ...base, aiReview: { valid: true, mode: 'single-provider' }, attested: true,
+  }).level, 'A3-AI-S');
+  assert.equal(deriveAssurance({
+    ...base, aiReview: { valid: true, mode: 'multi-provider' }, attested: true,
+  }).level, 'A3-AI');
+  assert.equal(deriveAssurance({
+    ...base, attested: false, aiReview: { valid: true, mode: 'single-provider' },
+  }).level, 'A2');
 });

@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 import { parseApproval, verifyApproval } from '../src/lib/approval.js';
+import { evaluateAiReview } from '../src/lib/ai-review.js';
 import { atLeast, deriveAssurance } from '../src/lib/assurance.js';
 import { verifyGithubAttestation } from '../src/lib/attestation.js';
 import { verifyBundleManifest } from '../src/lib/bundle.js';
@@ -23,6 +24,7 @@ function usage() {
     '  --jwks <file>             Local JWKS JSON for offline/tests (default: GitHub JWKS)',
     '  --claims-sha <sha>        SHA the OIDC token must bind to (default: change head)',
     '  --workflow-ref <ref>      Expected OIDC workflow_ref (optional)',
+    '  --ai-review <file>        Adversarial AI review artifact (A3-AI-S/A3-AI)',
     '  --claims <file>           Legacy claims JSON (not trusted for A2)',
     '  --bundle <dir>            Evidence bundle directory with bundle-manifest.json',
     '  --approval <file>         Normalized human approval JSON (A3)',
@@ -44,7 +46,7 @@ function usage() {
 }
 
 const VALUE_ARGS = new Set([
-  '--change', '--mode', '--root', '--jwt', '--jwks', '--claims-sha', '--workflow-ref', '--claims', '--bundle', '--approval', '--signature',
+  '--change', '--mode', '--root', '--jwt', '--jwks', '--claims-sha', '--workflow-ref', '--claims', '--ai-review', '--bundle', '--approval', '--signature',
   '--public-key', '--attestation', '--attested-artifact', '--signer-workflow', '--source-digest',
   '--gh', '--reviewer', '--require', '--repository', '--issuer', '--audience',
 ]);
@@ -62,8 +64,8 @@ function parseArgs(argv) {
   }
   if (typeof args.change !== 'string' || args.change.length === 0) throw new Error('--change is required');
   if (args.mode !== 'governed' && args.mode !== 'autonomous') throw new Error('--mode must be governed or autonomous');
-  if (args.require !== undefined && !['A1', 'A2', 'A3'].includes(args.require)) {
-    throw new Error('--require must be A1, A2, or A3');
+  if (args.require !== undefined && !['A1', 'A2', 'A3-AI-S', 'A3-AI', 'A3'].includes(args.require)) {
+    throw new Error('--require must be A1, A2, A3-AI-S, A3-AI, or A3');
   }
   if ((args.signature === undefined) !== (args['public-key'] === undefined)) {
     throw new Error('--signature and --public-key must be used together');
@@ -97,6 +99,8 @@ async function main() {
   let claims = null;
   let claimsValid = false;
   let approvalVerified = false;
+  let aiReviewValid = false;
+  let aiReviewMode = null;
   let signed = false;
   let attested = false;
 
@@ -155,13 +159,39 @@ async function main() {
       }
     }
 
+    let assessmentRecord = null;
+    try {
+      assessmentRecord = await readFiretreeJson(
+        root,
+        `.firetree/changes/${args.change}/assessment.json`,
+        { verifyHash: true, missing: 'null' },
+      );
+    } catch (error) {
+      gaps.push(`assessment artifact is unreadable: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    if (args['ai-review'] !== undefined) {
+      try {
+        const reviewRecord = await readFiretreeJson(root, args['ai-review'], { verifyHash: true });
+        const review = evaluateAiReview(reviewRecord.value, {
+          ...(typeof head === 'string' ? { head } : {}),
+          ...(typeof assessmentRecord?.value?.git?.diff_sha256 === 'string'
+            ? { diffSha256: assessmentRecord.value.git.diff_sha256 }
+            : {}),
+          ...(assessmentRecord?.sha256 === null || assessmentRecord?.sha256 === undefined
+            ? {}
+            : { assessmentSha256: assessmentRecord.sha256 }),
+        });
+        aiReviewValid = review.valid;
+        aiReviewMode = review.mode;
+        gaps.push(...review.gaps);
+      } catch (error) {
+        gaps.push(`AI review is invalid: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
     if (args.approval !== undefined) {
       try {
-        const assessmentRecord = await readFiretreeJson(
-          root,
-          `.firetree/changes/${args.change}/assessment.json`,
-          { verifyHash: true, missing: 'null' },
-        );
         const approval = parseApproval(await readJson(resolve(root, args.approval)));
         const approvalCheck = verifyApproval(approval, {
           head: typeof head === 'string' ? head : '',
@@ -221,6 +251,7 @@ async function main() {
       claims,
       evidence: record?.evidence ?? [],
       approval: approvalVerified ? { verified: true } : null,
+      aiReview: aiReviewValid ? { valid: true, mode: aiReviewMode } : null,
       signed,
       attested,
     });

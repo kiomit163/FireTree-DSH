@@ -1,6 +1,6 @@
 /** Assurance levels derived by a verifier, never taken from the caller. */
 
-export const ASSURANCE_LEVELS = Object.freeze(['A0', 'A1', 'A2', 'A3']);
+export const ASSURANCE_LEVELS = Object.freeze(['A0', 'A1', 'A2', 'A3-AI-S', 'A3-AI', 'A3']);
 
 /**
  * Derive assurance from externally verifiable facts.
@@ -8,10 +8,12 @@ export const ASSURANCE_LEVELS = Object.freeze(['A0', 'A1', 'A2', 'A3']);
  * - A0: self-declared, no evidence.
  * - A1: local deterministic evidence (or local file hashes).
  * - A2: CI OIDC claims + CI-produced evidence.
+ * - A3-AI-S: A2 + single-provider adversarial AI review + signed/attested bundle.
+ * - A3-AI: A2 + multi-provider adversarial AI review + signed/attested bundle.
  * - A3: A2 + verified human approval + a signed/attested bundle.
  *
- * @param {{claimsValid?: boolean, claims?: object|null, evidence?: object[], approval?: {verified?: boolean}|null, signed?: boolean, attested?: boolean}} input - Facts.
- * @returns {{level: 'A0'|'A1'|'A2'|'A3', reasons: string[]}} Derived level.
+ * @param {{claimsValid?: boolean, claims?: object|null, evidence?: object[], approval?: {verified?: boolean}|null, aiReview?: {valid?: boolean, mode?: string}|null, signed?: boolean, attested?: boolean}} input - Facts.
+ * @returns {{level: 'A0'|'A1'|'A2'|'A3-AI-S'|'A3-AI'|'A3', reasons: string[]}} Derived level.
  */
 export function deriveAssurance(input = {}) {
   const reasons = [];
@@ -31,11 +33,16 @@ export function deriveAssurance(input = {}) {
     }
   }
   const provenance = input.signed === true || input.attested === true;
-  if (level === 'A2' && input.approval?.verified === true && provenance) {
+  if (level === 'A2' && input.aiReview?.valid === true && provenance) {
+    level = input.aiReview.mode === 'multi-provider' ? 'A3-AI' : 'A3-AI-S';
+    reasons.push(`${level} derives from adversarial AI review and a signed/attested bundle`);
+  } else if (level === 'A2' && input.aiReview?.valid === true && !provenance) {
+    reasons.push('A3-AI requires adversarial AI review and a signed/attested bundle');
+  } else if (level === 'A2' && input.approval?.verified === true && provenance) {
     level = 'A3';
     reasons.push('verified human approval and signed/attested bundle present');
-  } else if (level === 'A2' && (input.approval?.verified !== true || !provenance)) {
-    reasons.push('A3 requires verified human approval and a signed/attested bundle');
+  } else if (level === 'A2') {
+    reasons.push('A3 requires verified human approval or adversarial AI review and a signed/attested bundle');
   }
   return { level, reasons };
 }
