@@ -25,12 +25,10 @@ const SEATS = [
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
   {
-    id: 'github-models',
-    provider: 'github-models',
-    model: 'openai/gpt-4o-mini',
-    endpoint: 'https://models.github.ai/inference/chat/completions',
-    apiKeyEnv: 'GITHUB_MODELS_TOKEN',
-    fallbackKeyEnv: 'GITHUB_TOKEN',
+    id: 'pollinations',
+    provider: 'pollinations',
+    model: 'openai',
+    endpoint: 'https://text.pollinations.ai/openai',
   },
 ];
 
@@ -38,8 +36,8 @@ function usage() {
   return [
     'Usage: trusted-ai-review --diff-file <file> --change <id> --head <sha> --diff-sha256 <sha256> --out <artifact.json>',
     '',
-    'Requires OPENCODE_GO_API_KEY, a GitHub Models token, and',
-    'FIRE_TREE_REVIEW_SIGNING_KEY.',
+    'Requires OPENCODE_GO_API_KEY and FIRE_TREE_REVIEW_SIGNING_KEY;',
+    'the second seat uses the keyless Pollinations OpenAI-compatible endpoint.',
   ].join('\n');
 }
 
@@ -110,12 +108,18 @@ function promptFor(diff) {
 }
 
 async function callSeat(seat, prompt) {
-  const apiKey = process.env[seat.apiKeyEnv] ?? (seat.fallbackKeyEnv === undefined ? undefined : process.env[seat.fallbackKeyEnv]);
-  if (typeof apiKey !== 'string' || apiKey.length === 0) throw new Error(`${seat.apiKeyEnv} is not configured`);
+  let apiKey;
+  if (seat.apiKeyEnv !== undefined) {
+    apiKey = process.env[seat.apiKeyEnv];
+    if (typeof apiKey !== 'string' || apiKey.length === 0) throw new Error(`${seat.apiKeyEnv} is not configured`);
+  }
   const response = await fetch(seat.endpoint, {
     method: 'POST',
     redirect: 'error',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(apiKey === undefined ? {} : { Authorization: `Bearer ${apiKey}` }),
+    },
     body: JSON.stringify({
       model: seat.model,
       temperature: 0,
