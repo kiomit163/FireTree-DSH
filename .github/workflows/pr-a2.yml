@@ -76,7 +76,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Replace source with PR data (base tests remain trusted)
-        run: git checkout refs/remotes/pull/head -- src
+        run: git checkout refs/remotes/pull/head -- src schemas
 
       - name: Run trusted base tests
         run: |
