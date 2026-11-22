@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node`n// Tested by test/sign-bundle.test.mjs.
 /** Sign a bundle manifest digest with the trusted Ed25519 key. */
 
 import { createPrivateKey, sign } from 'node:crypto';
