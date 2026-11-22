@@ -180,6 +180,7 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           GH_TOKEN: ${{ github.token }}
           WORKFLOW_REF: ${{ github.workflow_ref }}
+          FIRE_TREE_ALLOW_PUBLIC_REVIEW_PROVIDER: ${{ github.event.repository.private == false }}
         run: |
           REQUIRE=A2
           node bin/firetree-check.mjs \
