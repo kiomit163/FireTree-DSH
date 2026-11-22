@@ -4,7 +4,8 @@
 import { access, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
 
-import { readFiretreeJson, resolveWithin, sha256Text } from '../src/lib/artifacts.js';
+import { readFiretreeJson, resolveWithin, sha256Text, writeFiretreeJson } from '../src/lib/artifacts.js';
+import { readEvents } from '../src/lib/events.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
 
 function usage() {
@@ -114,12 +115,24 @@ async function main() {
     process.exitCode = 1;
     return;
   }
+  const eventLog = await readEvents(root);
+  const anchor = {
+    schema: 'firetree.event-anchor/v1',
+    change: { id: result.technical_evidence.change.id ?? args.change, head: result.technical_evidence.change.head },
+    events: {
+      count: eventLog.events.length,
+      head: eventLog.events.length === 0 ? null : eventLog.events.at(-1).hash,
+    },
+    created_at: new Date().toISOString(),
+  };
+  const anchorArtifact = await writeFiretreeJson(root, `.firetree/evidence/${args.change}.event-anchor.json`, anchor);
   console.log(JSON.stringify({
     ok: true,
     change: args.change,
     tier: result.technical_evidence.tier,
     assurance: result.technical_evidence.assurance,
     artifact: result.artifact,
+    event_anchor: anchorArtifact,
   }));
 }
 

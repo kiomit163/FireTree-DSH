@@ -10,6 +10,7 @@ import { verifyGithubAttestation } from '../src/lib/attestation.js';
 import { verifyBundleManifest } from '../src/lib/bundle.js';
 import { IdentityError, verifyGithubJwt } from '../src/lib/identity.js';
 import { readFiretreeJson, sha256File } from '../src/lib/artifacts.js';
+import { readEvents } from '../src/lib/events.js';
 import { parseSignature, verifySignature } from '../src/lib/signature.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
 
@@ -24,6 +25,7 @@ function usage() {
     '  --claims-sha <sha>        SHA the OIDC token must bind to (default: change head)',
     '  --workflow-ref <ref>      Expected OIDC workflow_ref (optional)',
     '  --ai-review <file>        Adversarial AI review artifact (A3-AI-S/A3-AI)',
+    '  --event-anchor <file>     Event chain anchor artifact',
     '  --review-signing-key-env <name>  Env var for required AI review HMAC key',
     '  --bundle <dir>            Evidence bundle directory with bundle-manifest.json',
     '  --signature <file>        Detached Ed25519 signature over the bundle digest',
@@ -43,7 +45,7 @@ function usage() {
 }
 
 const VALUE_ARGS = new Set([
-  '--change', '--mode', '--root', '--jwt', '--jwks', '--claims-sha', '--workflow-ref', '--ai-review', '--review-signing-key-env', '--bundle', '--signature',
+  '--change', '--mode', '--root', '--jwt', '--jwks', '--claims-sha', '--workflow-ref', '--ai-review', '--event-anchor', '--review-signing-key-env', '--bundle', '--signature',
   '--public-key', '--attestation', '--attested-artifact', '--signer-workflow', '--source-digest',
   '--gh', '--require', '--repository', '--issuer', '--audience',
 ]);
@@ -154,6 +156,23 @@ async function main() {
       );
     } catch (error) {
       gaps.push(`assessment artifact is unreadable: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    if (args['event-anchor'] !== undefined) {
+      const anchorRecord = await readFiretreeJson(root, args['event-anchor'], { verifyHash: true, missing: 'null' });
+      if (anchorRecord === null) {
+        gaps.push('event anchor is missing');
+      } else {
+        const anchor = anchorRecord.value;
+        const eventLog = await readEvents(root);
+        if (!eventLog.valid) gaps.push(...eventLog.gaps);
+        if (anchor.schema !== 'firetree.event-anchor/v1') gaps.push('event anchor schema is invalid');
+        if (anchor.change?.id !== args.change) gaps.push('event anchor change does not match');
+        if (anchor.change?.head !== head) gaps.push('event anchor head does not match evidence');
+        if (anchor.events?.count !== eventLog.events.length) gaps.push('event anchor count does not match chain');
+        const actualHead = eventLog.events.length === 0 ? null : eventLog.events.at(-1).hash;
+        if (anchor.events?.head !== actualHead) gaps.push('event anchor head does not match chain');
+      }
     }
 
     if (args['ai-review'] !== undefined) {

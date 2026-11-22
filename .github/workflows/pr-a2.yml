@@ -185,6 +185,7 @@ jobs:
             --repository "${{ github.repository }}" \
             --audience firetree \
             --bundle .firetree \
+            --event-anchor .firetree/evidence/pr-$PR.event-anchor.json \
             --require "$REQUIRE"
 
       - name: Upload retained FireTree artifacts
