@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 
 import { assertSafeId, firetreePath, listJsonFiles, readFiretreeJson, writeFiretreeJson } from '../lib/artifacts.js';
+import { withChangeLock } from '../lib/change-lock.js';
 import { appendEvent } from '../lib/events.js';
 import { assertJsonSchemaValue } from '../lib/schema.js';
 import { toToolSchema } from '../lib/tool-schema.js';
@@ -357,12 +358,12 @@ export function createReviewTool(ctx) {
     async execute(args, exec) {
       const parsed = validateArgs(args);
       const root = await rootFor(ctx, exec);
+      const run = async () => {
       const assessment = await assessmentFor(root, parsed.change);
       const tier = assessment.value.tier;
       if (assessment.value.git?.diff_sha256 && assessment.value.git.diff_sha256 !== parsed.diff_sha256) {
         throw new ReviewError('DIFF_MISMATCH', 'review diff_sha256 does not match assessment git diff');
       }
-
       if (parsed.action === 'open') {
         const existing = await readFiretreeJson(root, `.firetree/changes/${parsed.change}/package.json`, { verifyHash: true, missing: 'null' });
         if (existing !== null) throw new ReviewError('REVIEW_ALREADY_OPEN', 'review package already exists');
@@ -491,6 +492,8 @@ export function createReviewTool(ctx) {
         record: verdict,
         artifact: { path: artifact.path, sha256: artifact.sha256 },
       };
+      };
+      return withChangeLock(root, parsed.change, run);
     },
   };
 }
