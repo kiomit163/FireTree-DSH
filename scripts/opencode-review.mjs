@@ -159,7 +159,7 @@ async function main() {
     diff_sha256: args['diff-sha256'],
     context_sha256: hash(`${system}\n${prompt}\n${PROVIDER}:${args.model}\n${args['diff-sha256']}`),
     prompt_sha256: hash(prompt),
-    transcript_sha256: hash(content),
+    transcript_sha256: hash(`${PROVIDER}\n${args.model}\n${content}`),
     verdict: parsed.verdict,
     findings: parsed.findings,
   };
