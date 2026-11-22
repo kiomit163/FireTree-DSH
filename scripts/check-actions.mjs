@@ -2,8 +2,10 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const directory = '.github/workflows';
-const files = readdirSync(directory).filter((name) => name.endsWith('.yml')).map((name) => join(directory, name));
-const action = /^\s*uses:\s*([^\s@]+)@([^\s#]+)/;
+const files = readdirSync(directory)
+  .filter((name) => name.endsWith('.yml') || name.endsWith('.yaml'))
+  .map((name) => join(directory, name));
+const action = /^\s*(?:-\s*)?uses:\s*['"]?([^\s@'"]+)@([^\s#'"]+)['"]?/;
 let failed = 0;
 for (const file of files) {
   for (const [index, line] of readFileSync(file, 'utf8').split(/\r?\n/).entries()) {
