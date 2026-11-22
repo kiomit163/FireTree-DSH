@@ -61,8 +61,6 @@ jobs:
     permissions:
       contents: read
       id-token: write
-      actions: read
-      attestations: write
     steps:
       - name: Checkout trusted base
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -144,11 +142,10 @@ jobs:
             await writeFile(".firetree/bundle-manifest.json", `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
           '
 
-      - name: Attest A3-AI bundle
-        id: attest
-        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
-        with:
-          subject-path: .firetree/bundle-manifest.json
+      - name: Sign A3-AI bundle
+        env:
+          FIRE_TREE_BUNDLE_SIGNING_KEY: ${{ secrets.FIRE_TREE_BUNDLE_SIGNING_KEY }}
+        run: node scripts/sign-bundle.mjs --bundle .firetree --out .firetree/bundle-signature.json
 
       - name: Verify A3-AI evidence
         env:
@@ -167,8 +164,8 @@ jobs:
             --workflow-ref "$WORKFLOW_REF" \
             --audience firetree \
             --bundle .firetree \
-            --attestation "${{ steps.attest.outputs.bundle-path }}" \
-            --signer-workflow "$WORKFLOW_REF" \
+            --signature .firetree/bundle-signature.json \
+            --public-key trust/bundle-public.pem \
             --ai-review ".firetree/ai-reviews/pr-$PR.json" \
             --review-signing-key-env FIRE_TREE_REVIEW_SIGNING_KEY \
             --require A3-AI
