@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 
 import { firetreePath, sha256Text } from './artifacts.js';
 import { canonicalJson } from './json.js';
+import { withFileLock } from './lock.js';
 
 /**
  * Append one event to `.firetree/events.jsonl`.
@@ -16,25 +17,35 @@ import { canonicalJson } from './json.js';
  */
 export async function appendEvent(root, event) {
   const file = firetreePath(root, 'events.jsonl');
-  let previous = null;
-  try {
-    const lines = (await readFile(file, 'utf8')).split('\n').filter((line) => line.trim().length > 0);
-    if (lines.length > 0) previous = JSON.parse(lines.at(-1));
-  } catch (error) {
-    if (!(error && typeof error === 'object' && error.code === 'ENOENT')) throw error;
-  }
-  const base = {
-    seq: previous === null ? 1 : Number(previous.seq) + 1,
-    prev: previous === null ? null : previous.hash,
-    event_id: randomUUID(),
-    ts: new Date().toISOString(),
-    ...event,
-  };
-  const hash = sha256Text(canonicalJson(base));
-  const written = { ...base, hash };
   await mkdir(dirname(file), { recursive: true });
-  await appendFile(file, `${JSON.stringify(written)}\n`, 'utf8');
-  return written;
+  return withFileLock(`${file}.lock`, async () => {
+    let previous = null;
+    try {
+      const lines = (await readFile(file, 'utf8')).split('\n').filter((line) => line.trim().length > 0);
+      if (lines.length > 0) previous = JSON.parse(lines.at(-1));
+    } catch (error) {
+      if (!(error && typeof error === 'object' && error.code === 'ENOENT')) throw error;
+    }
+    const {
+      seq: _seq,
+      prev: _prev,
+      event_id: _eventId,
+      ts: _ts,
+      hash: _hash,
+      ...payload
+    } = event;
+    const base = {
+      seq: previous === null ? 1 : Number(previous.seq) + 1,
+      prev: previous === null ? null : previous.hash,
+      event_id: randomUUID(),
+      ts: new Date().toISOString(),
+      ...payload,
+    };
+    const hash = sha256Text(canonicalJson(base));
+    const written = { ...base, hash };
+    await appendFile(file, `${JSON.stringify(written)}\n`, 'utf8');
+    return written;
+  });
 }
 
 /**
@@ -55,6 +66,7 @@ export async function readEvents(root) {
   const events = [];
   const gaps = [];
   let previousHash = null;
+  let previousSeq = 0;
   for (let index = 0; index < lines.length; index += 1) {
     let event;
     try {
@@ -64,9 +76,13 @@ export async function readEvents(root) {
       continue;
     }
     if (event.prev !== previousHash) gaps.push(`event ${event.seq} prev does not match previous hash`);
+    if (!Number.isInteger(event.seq) || event.seq !== previousSeq + 1) {
+      gaps.push(`event seq ${String(event.seq)} is not ${previousSeq + 1}`);
+    }
     const { hash, ...base } = event;
     if (sha256Text(canonicalJson(base)) !== hash) gaps.push(`event ${event.seq} hash does not match content`);
     previousHash = typeof hash === 'string' ? hash : null;
+    previousSeq = Number.isInteger(event.seq) ? event.seq : previousSeq;
     events.push(event);
   }
   return { events, valid: gaps.length === 0, gaps };
