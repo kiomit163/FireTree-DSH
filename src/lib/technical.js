@@ -84,6 +84,25 @@ export async function checkTechnicalEvidenceSemantics(evidence, options) {
     }
   }
 
+  if (evidence.ai_review !== undefined) {
+    let reviewFile;
+    try {
+      reviewFile = resolveWithin(options.root, evidence.ai_review.path);
+    } catch {
+      gaps.push('technical evidence ai_review path is unsafe');
+    }
+    if (reviewFile !== undefined) {
+      try {
+        if (await sha256File(reviewFile) !== evidence.ai_review.sha256) {
+          gaps.push('technical evidence ai_review hash does not match artifact');
+        }
+      } catch {
+        gaps.push('technical evidence ai_review file is missing');
+      }
+    }
+    if (evidence.ai_review.unresolved !== 0) gaps.push('technical evidence ai_review has unresolved findings');
+  }
+
   let assessmentRecord;
   try {
     assessmentRecord = await readFiretreeJson(
