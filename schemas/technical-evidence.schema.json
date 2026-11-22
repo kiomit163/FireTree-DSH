@@ -130,5 +130,14 @@
     "completion_claim": { "const": false },
     "milestone_claim": { "const": false },
     "created_at": { "type": "string", "format": "date-time" }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "assurance": { "enum": ["A3-AI-S", "A3-AI"] } },
+        "required": ["assurance"]
+      },
+      "then": { "required": ["ai_review"] }
+    }
+  ]
 }
