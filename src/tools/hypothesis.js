@@ -10,6 +10,7 @@ import {
   sha256File,
   writeFiretreeJson,
 } from '../lib/artifacts.js';
+import { withChangeLock } from '../lib/change-lock.js';
 import { appendEvent } from '../lib/events.js';
 import { assertJsonSchemaValue, SchemaValidationError } from '../lib/schema.js';
 import { toToolSchema } from '../lib/tool-schema.js';
@@ -327,6 +328,7 @@ export function createHypothesisTool(ctx) {
     async execute(args, exec) {
       const parsed = validateArgs(args);
       const root = await rootFor(ctx, exec);
+      const run = async () => {
       let record = await readLedger(root, parsed.change);
 
       if (parsed.action === 'add') {
@@ -395,6 +397,11 @@ export function createHypothesisTool(ctx) {
       }
 
       return summarize(record.exists, record.value, parsed.change, record.sha256);
+      };
+      if (['add', 'verify', 'accept'].includes(parsed.action)) {
+        return withChangeLock(root, parsed.change, run);
+      }
+      return run();
     },
   };
 }
