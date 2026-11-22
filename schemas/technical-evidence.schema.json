@@ -112,7 +112,7 @@
       }
     },
     "expires_at": { "type": "string", "format": "date-time" },
-    "assurance": { "type": "string", "enum": ["A1", "A2"] },
+    "assurance": { "type": "string", "enum": ["A1", "A2", "A3-AI-S", "A3-AI"] },
     "scope": { "type": "string", "enum": ["analysis-only", "test-evidence", "ci-evidence"] },
     "human_signoff": { "const": false },
     "completion_claim": { "const": false },
