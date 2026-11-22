@@ -111,7 +111,20 @@ function promptFor(diff, context = '') {
   ].join('\n');
 }
 
-async function callSeat(seat, prompt) {
+function changedFiles(diff) {
+  const files = new Set();
+  for (const line of diff.split(/\r?\n/u)) {
+    const match = /^\+\+\+ b\/(.+)$/.exec(line);
+    if (match) files.add(match[1]);
+  }
+  return files;
+}
+
+function findingsCiteChangedFile(findings, files) {
+  return findings.filter((finding) => [...files].some((file) => finding.evidence.includes(file)));
+}
+
+async function callSeat(seat, prompt, diff) {
   let apiKey;
   if (seat.apiKeyEnv !== undefined) {
     apiKey = process.env[seat.apiKeyEnv];
@@ -162,6 +175,12 @@ async function callSeat(seat, prompt) {
   const content = body?.choices?.[0]?.message?.content;
   if (typeof content !== 'string') throw new Error(`${seat.id} response has no assistant content`);
   const parsed = parseJsonContent(content);
+  const cited = findingsCiteChangedFile(parsed.findings, changedFiles(diff));
+  if (cited.length !== parsed.findings.length) {
+    console.error(`${seat.id}: dropped ${parsed.findings.length - cited.length} finding(s) without changed-file evidence`);
+  }
+  const findings = cited;
+  const verdict = findings.some((finding) => finding.status === 'open') ? 'not-ready' : 'ready';
   return {
     id: seat.id,
     provider: seat.provider,
@@ -170,8 +189,8 @@ async function callSeat(seat, prompt) {
     context_sha256: hash(`${prompt}\n${seat.provider}:${seat.model}`),
     prompt_sha256: hash(prompt),
     transcript_sha256: hash(`${seat.provider}\n${seat.model}\n${content}`),
-    verdict: parsed.verdict,
-    findings: parsed.findings,
+    verdict,
+    findings,
   };
 }
 
@@ -198,7 +217,7 @@ async function main() {
   if (typeof signingKey !== 'string' || signingKey.length === 0) throw new Error('FIRE_TREE_REVIEW_SIGNING_KEY is not configured');
   const prompt = promptFor(diff, context);
   const seats = await Promise.race([
-    Promise.all(SEATS.map((seat) => callSeat(seat, prompt))),
+    Promise.all(SEATS.map((seat) => callSeat(seat, prompt, diff))),
     new Promise((_, reject) => setTimeout(() => reject(new Error('trusted review exceeded the 5 minute budget')), 300000)),
   ]);
   for (const seat of seats) seat.diff_sha256 = args['diff-sha256'];
