@@ -145,7 +145,7 @@ jobs:
       - name: Sign A3-AI bundle
         env:
           FIRE_TREE_BUNDLE_SIGNING_KEY: ${{ secrets.FIRE_TREE_BUNDLE_SIGNING_KEY }}
-        run: node scripts/sign-bundle.mjs --bundle .firetree --out .firetree/bundle-signature.json
+        run: node scripts/sign-bundle.mjs --bundle .firetree --out bundle-signature.json
 
       - name: Verify A3-AI evidence
         env:
@@ -164,7 +164,7 @@ jobs:
             --workflow-ref "$WORKFLOW_REF" \
             --audience firetree \
             --bundle .firetree \
-            --signature .firetree/bundle-signature.json \
+            --signature bundle-signature.json \
             --public-key trust/bundle-public.pem \
             --ai-review ".firetree/ai-reviews/pr-$PR.json" \
             --review-signing-key-env FIRE_TREE_REVIEW_SIGNING_KEY \
