@@ -120,13 +120,11 @@ jobs:
             --out ".firetree/ai-reviews/pr-$PR.json"
 
       - name: Fetch OIDC JWT
-        run: node scripts/github-oidc.mjs --out claims.json --audience firetree
+        run: node scripts/github-oidc.mjs --out claims.json.jwt --audience firetree
 
-      - name: Build and verify A3-AI evidence
+      - name: Build A3-AI evidence
         env:
           PR: ${{ github.event.pull_request.number }}
-          WORKFLOW_REF: ${{ github.workflow_ref }}
-          FIRE_TREE_REVIEW_SIGNING_KEY: ${{ secrets.FIRE_TREE_REVIEW_SIGNING_KEY }}
         run: |
           node bin/firetree-ci.mjs \
             --root . \
@@ -135,22 +133,42 @@ jobs:
             --intent-spec "PR #$PR trusted A3-AI review" \
             --assurance A2 \
             --ai-review ".firetree/ai-reviews/pr-$PR.json"
+
+      - name: Build attested evidence bundle
+        run: |
+          node --input-type=module -e '
+            import { writeFile } from "node:fs/promises";
+            import { buildBundleManifest } from "./src/lib/bundle.js";
+            const manifest = await buildBundleManifest(".firetree");
+            await writeFile(".firetree/bundle-manifest.json", `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+          '
+
+      - name: Attest A3-AI bundle
+        id: attest
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: .firetree/bundle-manifest.json
+
+      - name: Verify A3-AI evidence
+        env:
+          PR: ${{ github.event.pull_request.number }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          FIRE_TREE_REVIEW_SIGNING_KEY: ${{ secrets.FIRE_TREE_REVIEW_SIGNING_KEY }}
+        run: |
           node bin/firetree-check.mjs \
             --mode autonomous \
             --root . \
             --change "pr-$PR" \
-            --jwt claims.json \
+            --jwt claims.json.jwt \
             --repository "${{ github.repository }}" \
             --workflow-ref "$WORKFLOW_REF" \
+            --audience firetree \
             --bundle .firetree \
+            --attestation "${{ steps.attest.outputs.bundle-path }}" \
+            --signer-workflow "$WORKFLOW_REF" \
             --ai-review ".firetree/ai-reviews/pr-$PR.json" \
             --review-signing-key-env FIRE_TREE_REVIEW_SIGNING_KEY \
             --require A3-AI
-
-      - name: Attest A3-AI bundle
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-path: .firetree
 
       - name: Upload A3-AI bundle
         uses: actions/upload-artifact@v4
