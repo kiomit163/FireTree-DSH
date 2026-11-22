@@ -54,6 +54,7 @@ jobs:
       contents: read
       id-token: write
       actions: read
+      attestations: write
     steps:
       - name: Checkout trusted base
         uses: actions/checkout@v4
@@ -113,6 +114,21 @@ jobs:
             --intent-spec "PR #$PR" \
             "${AI_ARGS[@]}"
 
+      - name: Build attested evidence bundle
+        run: |
+          node --input-type=module -e '
+            import { writeFile } from "node:fs/promises";
+            import { buildBundleManifest } from "./src/lib/bundle.js";
+            const manifest = await buildBundleManifest(".firetree");
+            await writeFile(".firetree/bundle-manifest.json", `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+          '
+
+      - name: Attest evidence bundle
+        id: attest
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: .firetree/bundle-manifest.json
+
       - name: Verify A2
         env:
           PR: ${{ github.event.pull_request.number }}
@@ -131,6 +147,8 @@ jobs:
             --workflow-ref "${{ github.workflow_ref }}" \
             --repository "${{ github.repository }}" \
             --audience firetree \
+            --bundle .firetree \
+            --attestation "${{ steps.attest.outputs.bundle-path }}" \
             --require "$REQUIRE" \
             "${AI_ARGS[@]}"
 
