@@ -134,7 +134,7 @@ export async function loadPolicyChain(root, policyPath = '.firetree/policy.json'
   return loadOne(root, policyPath, new Set());
 }
 
-const HARD_TRIGGERS = new Set(['unknown-impact', 'interface-change', 'security', 'data']);
+const HARD_TRIGGERS = new Set(['unknown-impact', 'interface-change', 'security', 'data', 'protected-path']);
 
 function triggerForReason(reason) {
   if (reason.startsWith('unknown path:') || reason.startsWith('consumer not registered:')) return 'unknown-impact';
@@ -142,6 +142,7 @@ function triggerForReason(reason) {
   if (reason.startsWith('cross-subsystem:')) return 'cross-subsystem';
   if (reason.startsWith('dependency changed:')) return 'dependency';
   if (reason.startsWith('sensitive path:')) return 'security';
+  if (reason.startsWith('protected path:')) return 'protected-path';
   return null;
 }
 

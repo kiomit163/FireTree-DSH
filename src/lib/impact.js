@@ -40,6 +40,19 @@ const DATA_SEGMENTS = new Set(['migration', 'migrations', 'schema', 'schemas', '
 const TEST_SEGMENTS = new Set(['test', 'tests', '__tests__', 'spec', 'specs', 'e2e', 'testdata']);
 const DOC_SEGMENTS = new Set(['docs', 'doc', 'documentation']);
 const LOW_RISK_CONFIG = /^(?:\.editorconfig|\.gitignore|\.gitattributes|\.prettierrc(?:\..*)?|\.npmrc|\.nvmrc|\.markdownlint.*)$/;
+const PROTECTED_PATHS = [
+  /^\.firetree\//,
+  /^\.github\/workflows\//,
+  /^src\/lib\/(?:impact|policy|assurance|ai-review|receipt|git)\.js$/,
+  /^bin\/(?:firetree-check|firetree-ci|firetree-assess)\.mjs$/,
+  /^schemas\//,
+  /^CODEOWNERS$/,
+  /^cordis\.patch\.yml$/,
+  /^\.gitignore$/,
+  /^\.gitattributes$/,
+  /^plan\//,
+  /^reference\//,
+];
 const DOC_EXTENSIONS = /\.(md|mdx|rst|txt|adoc|png|jpe?g|gif|svg|webp)$/i;
 
 function basename(path) {
@@ -91,6 +104,15 @@ export function isConfigPath(repoPath) {
  */
 export function isDependencyPath(repoPath) {
   return DEPENDENCY_FILES.has(basename(repoPath).toLowerCase());
+}
+
+/**
+ * @param {string} repoPath - Normalized repo path.
+ * @returns {boolean} Whether this is a control-defining path that must be L2.
+ */
+export function isProtectedPath(repoPath) {
+  const normalized = normalizeRepoPath(repoPath);
+  return PROTECTED_PATHS.some((pattern) => pattern.test(normalized));
 }
 
 /**
@@ -177,6 +199,7 @@ export function analyzeImpact(input) {
     && typeof input.codeowners.resolve === 'function';
   const dependencyFiles = [];
   const sensitiveFiles = [];
+  const protectedFiles = [];
 
   const addInterfaceImpact = (contractId, seen) => {
     if (seen.has(contractId)) return;
@@ -221,6 +244,7 @@ export function analyzeImpact(input) {
     }
 
     if (isDependencyPath(file)) dependencyFiles.push(file);
+    if (isProtectedPath(file)) protectedFiles.push(file);
     if (!isTestPath(file) && !isDocsPath(file) && (isSecuritySensitivePath(file) || isDataSensitivePath(file))) {
       sensitiveFiles.push(file);
     }
@@ -228,14 +252,16 @@ export function analyzeImpact(input) {
 
   const reasons = [];
   for (const file of unknown) reasons.push(`unknown path: ${file}`);
+  for (const file of protectedFiles) reasons.push(`protected path: ${file}`);
   for (const id of [...interfaceChanges].sort()) reasons.push(`interface changed: ${id}`);
   if (codeSubsystems.size > 1) reasons.push(`cross-subsystem: ${[...codeSubsystems].sort().join(', ')}`);
   for (const file of dependencyFiles) reasons.push(`dependency changed: ${file}`);
   for (const file of sensitiveFiles) reasons.push(`sensitive path: ${file}`);
   for (const consumer of [...unresolvedConsumers].sort()) reasons.push(`consumer not registered: ${consumer}`);
 
-  const l0 = files.every(isL0Path);
+  const l0 = files.every((file) => isL0Path(file) && !isProtectedPath(file));
   const l2 = unknown.length > 0
+    || protectedFiles.length > 0
     || changedInterfaces.size > 0
     || codeSubsystems.size > 1
     || dependencyFiles.length > 0

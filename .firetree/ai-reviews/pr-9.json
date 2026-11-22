@@ -1,0 +1,74 @@
+{
+  "schema": "firetree.ai-review/v1",
+  "change": {
+    "id": "pr-9",
+    "head": "ec811c589aa6f9a7651bb32443794c576cae00ea",
+    "diff_sha256": "deefa3dd0caf2c1212bcb09971288c11c37fc4cf8180653f5b213eac04c34476"
+  },
+  "mode": "single-provider",
+  "author": {
+    "provider": "deepseek-account",
+    "model": "deepseek-flash"
+  },
+  "seats": [
+    {
+      "id": "seat-A",
+      "provider": "deepseek-account",
+      "model": "deepseek-flash",
+      "context_sha256": "60b0572377117a3ebe4afb32669a9f30afd7695a38446ab12cfe8aaa37d98901",
+      "prompt_sha256": "7afd9b9626e140cc7884b12b4a5f0f0ac43525f4cfc3c8e19bdfe612870cb302",
+      "transcript_sha256": "9a12034dec9dc69a004df3b0d8f11afb587cf16005e5948759146383b007d6c1",
+      "verdict": "ready",
+      "findings": []
+    },
+    {
+      "id": "seat-B",
+      "provider": "deepseek-account",
+      "model": "deepseek-flash",
+      "context_sha256": "b01062cc69c3b8b5b1db1f37ba4894c4ef1ef5a50a3c673ebd488aca1c2412dc",
+      "prompt_sha256": "a43cc09f620b7a68268c422fdf3fd0301a27325836d2418137ab8e278aec054d",
+      "transcript_sha256": "47ba883b97e83b30cb3bde335ae2126d48502cdb2ac6ff2c8fc578e8c5550c22",
+      "verdict": "ready",
+      "findings": [
+        {
+          "id": "GOV-01",
+          "severity": "non-blocker",
+          "claim": "Protected-path L2 can be waived by a policy exception.",
+          "evidence": "src/lib/policy.js:139-145 maps protected path to hard trigger; test/protected-paths.test.mjs proves an exception cannot waive it.",
+          "status": "resolved"
+        },
+        {
+          "id": "GOV-02",
+          "severity": "non-blocker",
+          "claim": "Gate-enforcement source was not protected.",
+          "evidence": "src/lib/impact.js PROTECTED_PATHS now includes src/lib/impact.js, policy.js, assurance.js, ai-review.js, receipt.js, git.js and gate binaries.",
+          "status": "resolved"
+        },
+        {
+          "id": "GOV-03",
+          "severity": "non-blocker",
+          "claim": "Generated .firetree records are not protected.",
+          "evidence": ".firetree/changes, evidence, receipts and events are generated/ignored and excluded from changedFiles; policy/registry/oid are protected.",
+          "status": "resolved"
+        },
+        {
+          "id": "GOV-04",
+          "severity": "non-blocker",
+          "claim": "Non-canonical .firetree path could bypass protection.",
+          "evidence": "isProtectedPath now normalizes with normalizeRepoPath; test/protected-paths covers canonical paths.",
+          "status": "resolved"
+        },
+        {
+          "id": "GOV-05",
+          "severity": "non-blocker",
+          "claim": "EPERM lock retry could busy-loop.",
+          "evidence": "src/lib/lock.js now checks the timeout and delays on stat failure.",
+          "status": "resolved"
+        }
+      ]
+    }
+  ],
+  "unresolved": 0,
+  "converged": true,
+  "created_at": "2026-11-22T06:43:35.462Z"
+}
