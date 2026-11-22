@@ -132,7 +132,7 @@ async function callSeat(seat, prompt) {
   };
   let response;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(300000) });
+    response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(600000) });
     if (response.ok) break;
     if (![402, 429, 500, 502, 503, 504].includes(response.status) || attempt === 2) {
       throw new Error(`${seat.id} failed with HTTP ${response.status}`);
