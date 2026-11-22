@@ -110,7 +110,7 @@ Production uses `.github/workflows/pr-a3-ai.yml`, not the local seat CLI.
 The local `opencode-review.mjs` / `ai-review-combine.mjs` path remains useful
 for manual audit and debugging, but it is not the production gate.
 
-The Pollinations seat is a public anonymous endpoint. It is independent of
+The trusted workflow sets `FIRE_TREE_ALLOW_PUBLIC_REVIEW_PROVIDER` from`github.event.repository.private`; a private repository refuses the public seat. The Pollinations seat is a public anonymous endpoint. It is independent of
 OpenCode, but it has no data-retention contract; do not use this workflow for
 sensitive repositories until the second provider is replaced by an
 operator-controlled endpoint.
@@ -127,3 +127,4 @@ only `A3-AI` when:
 
 Until the review service runs outside the PR author's control, this remains a
 machine-assisted review path, not an independent third-party audit.
+

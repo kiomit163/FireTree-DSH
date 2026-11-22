@@ -132,7 +132,7 @@ async function callSeat(seat, prompt) {
   };
   let response;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(300000) });
+    response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(600000) });
     if (response.ok) break;
     if (![402, 429, 500, 502, 503, 504].includes(response.status) || attempt === 2) {
       throw new Error(`${seat.id} failed with HTTP ${response.status}`);
@@ -178,6 +178,9 @@ async function main() {
   }
   const diff = await readFile(resolve(args['diff-file']), 'utf8');
   if (Buffer.byteLength(diff, 'utf8') > MAX_DIFF_BYTES) throw new Error('diff exceeds the 1 MiB review limit');
+  if (process.env.FIRE_TREE_ALLOW_PUBLIC_REVIEW_PROVIDER !== 'true') {
+    throw new Error('public review provider is disabled; enable it only for public repositories');
+  }
   const signingKey = process.env.FIRE_TREE_REVIEW_SIGNING_KEY;
   if (typeof signingKey !== 'string' || signingKey.length === 0) throw new Error('FIRE_TREE_REVIEW_SIGNING_KEY is not configured');
   const prompt = promptFor(diff);
@@ -221,3 +224,5 @@ main().catch((error) => {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 });
+
+
