@@ -82,12 +82,19 @@ function normalizePaths(buffer) {
  * @param {string} head - Head commit-ish.
  * @returns {string[]} Sorted unique repo-relative paths.
  */
+const GENERATED_FIRETREE = [
+  ':(exclude).firetree/changes/**',
+  ':(exclude).firetree/evidence/**',
+  ':(exclude).firetree/receipts/**',
+  ':(exclude).firetree/events.jsonl',
+];
+
 export function changedFiles(root, base, head) {
-  // `.firetree/` holds the protocol's own artifacts (including this assessment).
-  // They are governed by the protocol, not by the code-change diff.
+  // Tracked `.firetree` policy/registry inputs are assessed; generated change
+  // artifacts and event logs are not part of the code diff.
   const output = git(root, [
     'diff', '--name-only', '-z', '--no-renames', `${base}..${head}`,
-    '--', '.', ':(exclude).firetree/**',
+    '--', '.', ...GENERATED_FIRETREE,
   ], 'buffer');
   return normalizePaths(output);
 }
@@ -101,7 +108,7 @@ export function changedFiles(root, base, head) {
 export function diffSha256(root, base, head) {
   const output = git(root, [
     'diff', '--binary', '--no-renames', '--full-index', `${base}..${head}`,
-    '--', '.', ':(exclude).firetree/**',
+    '--', '.', ...GENERATED_FIRETREE,
   ], 'buffer');
   return createHash('sha256').update(output).digest('hex');
 }
