@@ -132,7 +132,15 @@ async function callSeat(seat, prompt) {
   };
   let response;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(600000) });
+    try {
+      response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(600000) });
+    } catch (error) {
+      if (attempt === 2) {
+        throw new Error(`${seat.id} network failure after 3 attempts: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 3000 * (attempt + 1)));
+      continue;
+    }
     if (response.ok) break;
     if (![402, 429, 500, 502, 503, 504].includes(response.status) || attempt === 2) {
       throw new Error(`${seat.id} failed with HTTP ${response.status}`);
