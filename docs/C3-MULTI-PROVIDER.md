@@ -11,7 +11,7 @@
   - `step-5-preview-free`
 - API key reference: `OPENCODE_GO_API_KEY`.
 
-OpenCode Go was verified with `qwen3.8-flash` returning HTTP 200.
+OpenCode Go was verified with `qwen3.8-flash` and `glm-5.3-flash` returning HTTP 200; `glm-5.3-flash` is the trusted review primary because it is substantially faster on review prompts.
 
 ## Review seat CLI
 
@@ -22,7 +22,7 @@ seat record. It never logs or writes the API key.
 $env:OPENCODE_GO_API_KEY = '<credential>'
 node scripts/opencode-review.mjs `
   --prompt review-prompt.txt `
-  --model qwen3.8-flash `
+  --model glm-5.3-flash `
   --diff-sha256 <reviewed-diff-sha256> `
   --out seat-opencode.json
 ```
