@@ -160,6 +160,7 @@ jobs:
             --root . \
             --change "pr-$PR" \
             --jwt claims.json.jwt \
+            --claims-sha "$BASE_SHA" \
             --repository "${{ github.repository }}" \
             --workflow-ref "$WORKFLOW_REF" \
             --audience firetree \
