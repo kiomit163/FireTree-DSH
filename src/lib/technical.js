@@ -95,10 +95,11 @@ export async function checkTechnicalEvidenceSemantics(evidence, options) {
     if (reviewFile !== undefined) {
       let review;
       try {
-        if (await sha256File(reviewFile) !== evidence.ai_review.sha256) {
+        const text = await readFile(reviewFile, 'utf8');
+        if (sha256Text(text) !== evidence.ai_review.sha256) {
           gaps.push('technical evidence ai_review hash does not match artifact');
         }
-        review = JSON.parse(await readFile(reviewFile, 'utf8'));
+        review = JSON.parse(text);
       } catch {
         gaps.push('technical evidence ai_review file is missing or invalid');
       }
