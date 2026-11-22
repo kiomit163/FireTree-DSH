@@ -87,6 +87,7 @@ const GENERATED_FIRETREE = [
   ':(exclude).firetree/evidence/**',
   ':(exclude).firetree/receipts/**',
   ':(exclude).firetree/events.jsonl',
+  ':(exclude).firetree/ai-reviews/**',
 ];
 
 export function changedFiles(root, base, head) {

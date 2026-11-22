@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /** Build autonomous technical evidence from an existing assessment and CI evidence. */
 
+import { access } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { readFiretreeJson, sha256Text } from '../src/lib/artifacts.js';
@@ -18,13 +19,13 @@ function usage() {
     '  --expires-at <date-time>  Evidence expiry (default: now + 30 days)',
     '  --assurance <A1|A2>       Declared technical assurance (default: A2)',
     '',
-    'L2 changes are rejected: they require a governed receipt with human sign-off.',
+    'L2 changes require an adversarial AI review artifact (or a governed human receipt).',
   ].join('\n');
 }
 
 function parseArgs(argv) {
   const args = { root: process.cwd(), producer: 'ci:github-actions', assurance: 'A2' };
-  const values = new Set(['--root', '--registry-root', '--change', '--evidence', '--intent-spec', '--producer', '--expires-at', '--assurance']);
+  const values = new Set(['--root', '--registry-root', '--change', '--evidence', '--intent-spec', '--producer', '--expires-at', '--assurance', '--ai-review']);
   for (let index = 0; index < argv.length; index += 1) {
     const key = argv[index];
     if (key === '--help' || key === '-h') return { help: true };
@@ -50,7 +51,14 @@ async function main() {
   const assessment = await readFiretreeJson(root, `.firetree/changes/${args.change}/assessment.json`, { verifyHash: true });
   if (assessment === null) throw new Error('assessment is missing; run firetree-assess first');
   if (assessment.value.tier === 'L2') {
-    throw new Error('L2 changes require a governed receipt with human sign-off; A2 CI cannot complete them');
+    if (typeof args['ai-review'] !== 'string') {
+      throw new Error('L2 changes require an adversarial AI review artifact (--ai-review) or a governed human receipt');
+    }
+    try {
+      await access(resolve(root, args['ai-review']));
+    } catch {
+      throw new Error(`AI review artifact is missing: ${args['ai-review']}`);
+    }
   }
   const impact = assessment.value.impact;
   const subsystemId = impact.subsystems?.[0];

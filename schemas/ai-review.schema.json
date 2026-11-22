@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://firetree-dsh.local/schemas/ai-review.schema.json",
+  "title": "FireTree AI review v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "change", "mode", "author", "seats", "unresolved", "converged", "created_at"],
+  "properties": {
+    "schema": { "const": "firetree.ai-review/v1" },
+    "change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["head"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "head": { "type": "string", "pattern": "^[a-f0-9]{7,64}$" },
+        "diff_sha256": { "$ref": "#/$defs/sha256" },
+        "assessment_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "mode": { "type": "string", "enum": ["single-provider", "multi-provider"] },
+    "author": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "model"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 }
+      }
+    },
+    "seats": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/seat" }
+    },
+    "unresolved": { "type": "integer", "minimum": 0 },
+    "converged": { "type": "boolean" },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "seat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "provider", "model", "context_sha256", "prompt_sha256", "transcript_sha256", "verdict", "findings"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "provider": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "context_sha256": { "$ref": "#/$defs/sha256" },
+        "prompt_sha256": { "$ref": "#/$defs/sha256" },
+        "transcript_sha256": { "$ref": "#/$defs/sha256" },
+        "verdict": { "type": "string", "enum": ["ready", "not-ready"] },
+        "findings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/finding" }
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "claim", "severity", "status"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "claim": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string", "enum": ["blocker", "non-blocker", "question"] },
+        "status": { "type": "string", "enum": ["resolved", "open", "accepted"] },
+        "evidence": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

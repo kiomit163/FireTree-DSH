@@ -9,7 +9,7 @@ import { test } from 'node:test';
 
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 
-import { readFiretreeJson } from '../src/lib/artifacts.js';
+import { readFiretreeJson, writeFiretreeJson } from '../src/lib/artifacts.js';
 import { buildBundleManifest } from '../src/lib/bundle.js';
 import { createAssessTool } from '../src/tools/assess.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
@@ -182,6 +182,56 @@ test('CI check derives A2 from OIDC claims and refuses A3 without a signature', 
     ]);
     assert.equal(a3.code, 0, a3.stdout + a3.stderr);
     assert.equal(JSON.parse(a3.stdout).assurance, 'A3');
+
+    await writeFiretreeJson(workspace.root, '.firetree/ai-reviews/chg-cli-a2.json', {
+      schema: 'firetree.ai-review/v1',
+      change: {
+        id: 'chg-cli-a2',
+        head: assessment.change.head,
+        assessment_sha256: assessmentRecord.sha256,
+      },
+      mode: 'single-provider',
+      author: { provider: 'deepseek-account', model: 'deepseek-flash' },
+      seats: [
+        {
+          id: 'seat-1', provider: 'deepseek-account', model: 'deepseek-flash',
+          context_sha256: '1'.repeat(64), prompt_sha256: '2'.repeat(64), transcript_sha256: '3'.repeat(64),
+          verdict: 'ready', findings: [],
+        },
+        {
+          id: 'seat-2', provider: 'deepseek-account', model: 'deepseek-flash',
+          context_sha256: '4'.repeat(64), prompt_sha256: '5'.repeat(64), transcript_sha256: '6'.repeat(64),
+          verdict: 'ready', findings: [],
+        },
+      ],
+      unresolved: 0,
+      converged: true,
+      created_at: '2026-11-18T02:00:00Z',
+    });
+    const aiBundle = await buildBundleManifest(join(workspace.root, '.firetree'));
+    await writeFile(join(workspace.root, '.firetree', 'bundle-manifest.json'), `${JSON.stringify(aiBundle, null, 2)}\n`, 'utf8');
+    const aiSignaturePath = join(workspace.root, 'signature-ai.json');
+    await writeFile(aiSignaturePath, `${JSON.stringify({
+      schema: 'firetree.signature/v1',
+      algorithm: 'ed25519',
+      digest: aiBundle.digest,
+      signature: sign(null, Buffer.from(aiBundle.digest, 'utf8'), edPrivateKey).toString('base64'),
+    }, null, 2)}\n`, 'utf8');
+    const ai = await cli([
+      '--mode', 'governed',
+      '--change', 'chg-cli-a2',
+      '--root', workspace.root,
+      '--jwt', jwtPath,
+      '--jwks', jwksPath,
+      '--repository', 'owner/repo',
+      '--bundle', join(workspace.root, '.firetree'),
+      '--ai-review', '.firetree/ai-reviews/chg-cli-a2.json',
+      '--signature', aiSignaturePath,
+      '--public-key', join(workspace.root, 'public.pem'),
+      '--require', 'A3-AI-S',
+    ]);
+    assert.equal(ai.code, 0, ai.stdout + ai.stderr);
+    assert.equal(JSON.parse(ai.stdout).assurance, 'A3-AI-S');
 
     const noClaims = await cli([
       '--mode', 'governed',
