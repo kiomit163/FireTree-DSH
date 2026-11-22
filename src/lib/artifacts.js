@@ -156,6 +156,21 @@ async function ensureRealWithin(root, file, relativePath) {
     throw new ArtifactError('PATH_TRAVERSAL', `artifact path escapes root through a symlink: ${relativePath}`, { path: relativePath });
   }
 }
+
+async function ensureExistingAncestorWithin(root, directory, relativePath) {
+  let current = directory;
+  while (true) {
+    try {
+      await ensureRealWithin(root, current, relativePath);
+      return;
+    } catch (error) {
+      if (!(error && typeof error === 'object' && error.code === 'ENOENT')) throw error;
+      const parent = dirname(current);
+      if (parent === current) throw error;
+      current = parent;
+    }
+  }
+}
 /**
  * Write an artifact and its .sha256 sidecar under .firetree.
  *
@@ -166,6 +181,7 @@ async function ensureRealWithin(root, file, relativePath) {
  */
 export async function writeFiretreeJson(root, relativePath, value) {
   const file = resolveWithin(root, relativePath);
+  await ensureExistingAncestorWithin(root, dirname(file), relativePath);
   await mkdir(dirname(file), { recursive: true });
   await ensureRealWithin(root, dirname(file), relativePath);
   try {
