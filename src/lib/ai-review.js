@@ -18,7 +18,8 @@ const SCHEMA = JSON.parse(readFileSync(new URL('../../schemas/ai-review.schema.j
  * @returns {{valid: boolean, mode: string|null, gaps: string[], seats: number}} Result.
  */
 export function evaluateAiReview(value, expected = {}) {
-  const gaps = validateJsonSchema(value, SCHEMA);
+  const gaps = validateJsonSchema(value, SCHEMA)
+    .map((gap) => (typeof gap === 'string' ? gap : `schema ${gap.path ?? ''}: ${gap.message ?? JSON.stringify(gap)}`));
   if (gaps.length > 0) return { valid: false, mode: null, gaps, seats: 0 };
   const review = value;
   if (expected.head !== undefined && review.change.head !== expected.head.toLowerCase()) {
@@ -26,9 +27,6 @@ export function evaluateAiReview(value, expected = {}) {
   }
   if (expected.diffSha256 !== undefined && review.change.diff_sha256 !== expected.diffSha256) {
     gaps.push('AI review diff hash does not match assessment');
-  }
-  if (expected.assessmentSha256 !== undefined && review.change.assessment_sha256 !== expected.assessmentSha256) {
-    gaps.push('AI review assessment hash does not match assessment artifact');
   }
   const ids = new Set();
   const contexts = new Set();
@@ -46,6 +44,9 @@ export function evaluateAiReview(value, expected = {}) {
     if (seat.verdict !== 'ready') gaps.push(`AI seat ${seat.id} verdict is ${seat.verdict}`);
     for (const finding of seat.findings) {
       if (finding.status === 'open') openFindings += 1;
+      if (finding.severity === 'blocker' && finding.status === 'accepted') {
+        gaps.push(`blocker AI finding ${finding.id} cannot be accepted without a human acceptance record`);
+      }
       if (finding.status === 'resolved' && (typeof finding.evidence !== 'string' || finding.evidence.length === 0)) {
         gaps.push(`resolved AI finding ${finding.id} has no evidence`);
       }

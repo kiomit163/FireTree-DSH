@@ -68,6 +68,11 @@ jobs:
             "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/pull/head"
           echo "BASE_SHA=$(git merge-base "origin/${{ github.event.pull_request.base.ref }}" refs/remotes/pull/head)" >> "$GITHUB_ENV"
           echo "TRUSTED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          REVIEW=".firetree/ai-reviews/pr-${{ github.event.pull_request.number }}.json"
+          if git cat-file -e "refs/remotes/pull/head:${REVIEW}" 2>/dev/null; then
+            mkdir -p .firetree/ai-reviews
+            git show "refs/remotes/pull/head:${REVIEW}" > "${REVIEW}"
+          fi
 
       - uses: pnpm/action-setup@v4
         with:
@@ -132,6 +137,7 @@ jobs:
       - name: Verify A2
         env:
           PR: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           AI_ARGS=()
           REQUIRE=A2
@@ -149,6 +155,7 @@ jobs:
             --audience firetree \
             --bundle .firetree \
             --attestation "${{ steps.attest.outputs.bundle-path }}" \
+            --signer-workflow "${{ github.workflow_ref }}" \
             --require "$REQUIRE" \
             "${AI_ARGS[@]}"
 

@@ -33,14 +33,16 @@ export function deriveAssurance(input = {}) {
     }
   }
   const provenance = input.signed === true || input.attested === true;
-  if (level === 'A2' && input.aiReview?.valid === true && provenance) {
-    level = input.aiReview.mode === 'multi-provider' ? 'A3-AI' : 'A3-AI-S';
-    reasons.push(`${level} derives from adversarial AI review and a signed/attested bundle`);
-  } else if (level === 'A2' && input.aiReview?.valid === true && !provenance) {
-    reasons.push('A3-AI requires adversarial AI review and a signed/attested bundle');
-  } else if (level === 'A2' && input.approval?.verified === true && provenance) {
+  const aiMode = input.aiReview?.mode;
+  const aiValid = input.aiReview?.valid === true && (aiMode === 'single-provider' || aiMode === 'multi-provider');
+  if (level === 'A2' && input.approval?.verified === true && provenance) {
     level = 'A3';
     reasons.push('verified human approval and signed/attested bundle present');
+  } else if (level === 'A2' && aiValid && provenance) {
+    level = aiMode === 'multi-provider' ? 'A3-AI' : 'A3-AI-S';
+    reasons.push(`${level} derives from adversarial AI review and a signed/attested bundle`);
+  } else if (level === 'A2' && aiValid && !provenance) {
+    reasons.push('A3-AI requires adversarial AI review and a signed/attested bundle');
   } else if (level === 'A2') {
     reasons.push('A3 requires verified human approval or adversarial AI review and a signed/attested bundle');
   }
@@ -53,5 +55,7 @@ export function deriveAssurance(input = {}) {
  * @returns {boolean} Whether actual meets required.
  */
 export function atLeast(level, required) {
-  return ASSURANCE_LEVELS.indexOf(level) >= ASSURANCE_LEVELS.indexOf(required);
+  const actual = ASSURANCE_LEVELS.indexOf(level);
+  const expected = ASSURANCE_LEVELS.indexOf(required);
+  return actual >= 0 && expected >= 0 && actual >= expected;
 }

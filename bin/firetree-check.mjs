@@ -2,7 +2,7 @@
 /** CI gate for a FireTree change: check technical evidence or a governed receipt, then verify provenance. */
 
 import { readFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 
 import { parseApproval, verifyApproval } from '../src/lib/approval.js';
 import { evaluateAiReview } from '../src/lib/ai-review.js';
@@ -10,7 +10,7 @@ import { atLeast, deriveAssurance } from '../src/lib/assurance.js';
 import { verifyGithubAttestation } from '../src/lib/attestation.js';
 import { verifyBundleManifest } from '../src/lib/bundle.js';
 import { IdentityError, parseOidcClaims, verifyClaims, verifyGithubJwt } from '../src/lib/identity.js';
-import { readFiretreeJson } from '../src/lib/artifacts.js';
+import { readFiretreeJson, sha256File } from '../src/lib/artifacts.js';
 import { parseSignature, verifySignature } from '../src/lib/signature.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
 
@@ -172,19 +172,30 @@ async function main() {
 
     if (args['ai-review'] !== undefined) {
       try {
-        const reviewRecord = await readFiretreeJson(root, args['ai-review'], { verifyHash: true });
-        const review = evaluateAiReview(reviewRecord.value, {
-          ...(typeof head === 'string' ? { head } : {}),
-          ...(typeof assessmentRecord?.value?.git?.diff_sha256 === 'string'
-            ? { diffSha256: assessmentRecord.value.git.diff_sha256 }
-            : {}),
-          ...(assessmentRecord?.sha256 === null || assessmentRecord?.sha256 === undefined
-            ? {}
-            : { assessmentSha256: assessmentRecord.sha256 }),
-        });
-        aiReviewValid = review.valid;
-        aiReviewMode = review.mode;
-        gaps.push(...review.gaps);
+        if (args.bundle === undefined || bundleManifest === null) {
+          gaps.push('--ai-review requires --bundle with a verified bundle-manifest.json');
+        } else {
+          const reviewPath = resolve(root, args['ai-review']);
+          const bundleRoot = resolve(root, args.bundle);
+          const relativePath = relative(bundleRoot, reviewPath).replaceAll('\\', '/');
+          if (relativePath.startsWith('../') || relativePath === '..') {
+            gaps.push('AI review must be inside the attested bundle');
+          } else {
+            const entry = bundleManifest.files?.find((file) => file.path === relativePath);
+            const actual = await sha256File(reviewPath);
+            if (entry === undefined) gaps.push('AI review is not listed in the bundle manifest');
+            else if (entry.sha256 !== actual) gaps.push('AI review hash does not match the bundle manifest');
+            const review = evaluateAiReview(await readJson(reviewPath), {
+              ...(typeof head === 'string' ? { head } : {}),
+              ...(typeof assessmentRecord?.value?.git?.diff_sha256 === 'string'
+                ? { diffSha256: assessmentRecord.value.git.diff_sha256 }
+                : {}),
+            });
+            aiReviewValid = review.valid;
+            aiReviewMode = review.mode;
+            gaps.push(...review.gaps);
+          }
+        }
       } catch (error) {
         gaps.push(`AI review is invalid: ${error instanceof Error ? error.message : String(error)}`);
       }
@@ -262,6 +273,9 @@ async function main() {
       };
     }
 
+    if (record?.tier === 'L2' && !aiReviewValid) {
+      gaps.push('L2 requires a valid adversarial AI review artifact');
+    }
     const claimed = record?.assurance;
     if (claimed !== undefined && !atLeast(derived.level, claimed)) {
       gaps.push(`claimed assurance ${claimed} exceeds derived assurance ${derived.level}`);

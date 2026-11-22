@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /** Build autonomous technical evidence from an existing assessment and CI evidence. */
 
+import { access } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { readFiretreeJson, sha256Text } from '../src/lib/artifacts.js';
@@ -49,8 +50,15 @@ async function main() {
   const root = resolve(args.root);
   const assessment = await readFiretreeJson(root, `.firetree/changes/${args.change}/assessment.json`, { verifyHash: true });
   if (assessment === null) throw new Error('assessment is missing; run firetree-assess first');
-  if (assessment.value.tier === 'L2' && typeof args['ai-review'] !== 'string') {
-    throw new Error('L2 changes require an adversarial AI review artifact (--ai-review) or a governed human receipt');
+  if (assessment.value.tier === 'L2') {
+    if (typeof args['ai-review'] !== 'string') {
+      throw new Error('L2 changes require an adversarial AI review artifact (--ai-review) or a governed human receipt');
+    }
+    try {
+      await access(resolve(root, args['ai-review']));
+    } catch {
+      throw new Error(`AI review artifact is missing: ${args['ai-review']}`);
+    }
   }
   const impact = assessment.value.impact;
   const subsystemId = impact.subsystems?.[0];
