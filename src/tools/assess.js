@@ -14,6 +14,7 @@ import {
   sha256Text,
   writeFiretreeJson,
 } from '../lib/artifacts.js';
+import { withChangeLock } from '../lib/change-lock.js';
 import { loadCodeowners } from '../lib/codeowners.js';
 import { appendEvent } from '../lib/events.js';
 import { GitError, isGitWorktree, verifyGitChange } from '../lib/git.js';
@@ -173,6 +174,7 @@ export function createAssessTool(ctx) {
     async execute(args, exec) {
       const parsed = validateArgs(args);
       const root = await rootFor(ctx, exec);
+      const run = async () => {
       const policyPath = parsed.policy_path ?? '.firetree/policy.json';
       let registryRoot = root;
       if (parsed.registry_root !== undefined) {
@@ -350,6 +352,8 @@ export function createAssessTool(ctx) {
       };
       assertJsonSchemaValue(output, OUTPUT_SCHEMA);
       return output;
+      };
+      return withChangeLock(root, parsed.change, run);
     },
   };
 }
