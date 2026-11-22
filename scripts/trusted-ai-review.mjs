@@ -131,21 +131,21 @@ async function callSeat(seat, prompt) {
     }),
   };
   let response;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(600000) });
+      response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(120000) });
     } catch (error) {
-      if (attempt === 2) {
-        throw new Error(`${seat.id} network failure after 3 attempts: ${error instanceof Error ? error.message : String(error)}`);
+      if (attempt === 1) {
+        throw new Error(`${seat.id} network failure after 2 attempts: ${error instanceof Error ? error.message : String(error)}`);
       }
-      await new Promise((resolve) => setTimeout(resolve, 3000 * (attempt + 1)));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       continue;
     }
     if (response.ok) break;
-    if (![402, 429, 500, 502, 503, 504].includes(response.status) || attempt === 2) {
+    if (![402, 429, 500, 502, 503, 504].includes(response.status) || attempt === 1) {
       throw new Error(`${seat.id} failed with HTTP ${response.status}`);
     }
-    await new Promise((resolve) => setTimeout(resolve, 3000 * (attempt + 1)));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   }
   if (!response?.ok) throw new Error(`${seat.id} failed after retries`);
   const text = await response.text();
@@ -192,7 +192,10 @@ async function main() {
   const signingKey = process.env.FIRE_TREE_REVIEW_SIGNING_KEY;
   if (typeof signingKey !== 'string' || signingKey.length === 0) throw new Error('FIRE_TREE_REVIEW_SIGNING_KEY is not configured');
   const prompt = promptFor(diff);
-  const seats = await Promise.all(SEATS.map((seat) => callSeat(seat, prompt)));
+  const seats = await Promise.race([
+    Promise.all(SEATS.map((seat) => callSeat(seat, prompt))),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('trusted review exceeded the 5 minute budget')), 300000)),
+  ]);
   for (const seat of seats) seat.diff_sha256 = args['diff-sha256'];
   console.log(JSON.stringify(seats.map((seat) => ({
     provider: seat.provider,
