@@ -8,7 +8,7 @@ import { approvalFromEnvironment, parseApproval } from '../src/lib/approval.js';
 
 function parseArgs(argv) {
   const args = { environment: 'firetree-a3', out: 'approval.json' };
-  const values = new Set(['--repo', '--run-id', '--environment', '--head', '--change', '--out']);
+  const values = new Set(['--repo', '--run-id', '--environment', '--head', '--change', '--assessment-sha256', '--diff-sha256', '--out']);
   for (let index = 0; index < argv.length; index += 1) {
     const key = argv[index];
     if (key === '--help' || key === '-h') return { help: true };
@@ -48,6 +48,8 @@ async function main() {
     environment: args.environment,
     head: args.head,
     ...(args.change === undefined ? {} : { change: args.change }),
+    ...(args['assessment-sha256'] === undefined ? {} : { assessmentSha256: args['assessment-sha256'] }),
+    ...(args['diff-sha256'] === undefined ? {} : { diffSha256: args['diff-sha256'] }),
   }));
   const out = resolve(args.out);
   await writeFile(out, `${JSON.stringify(approval, null, 2)}\n`, 'utf8');

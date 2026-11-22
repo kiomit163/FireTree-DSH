@@ -47,9 +47,24 @@ export function parseApproval(value) {
   if (typeof approval.ref !== 'string' || approval.ref.length === 0) {
     throw new ApprovalError('INVALID_APPROVAL', 'approval.ref is required');
   }
+  for (const [field, value] of [
+    ['change.diff_sha256', change.diff_sha256],
+    ['change.assessment_sha256', change.assessment_sha256],
+    ['bundle_digest', approval.bundle_digest],
+  ]) {
+    if (value !== undefined && (typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value))) {
+      throw new ApprovalError('INVALID_APPROVAL', `approval.${field} must be a SHA-256 digest`);
+    }
+  }
   return {
     schema: 'firetree.approval/v1',
-    change: { ...(typeof change.id === 'string' ? { id: change.id } : {}), head: change.head.toLowerCase() },
+    change: {
+      ...(typeof change.id === 'string' ? { id: change.id } : {}),
+      head: change.head.toLowerCase(),
+      ...(typeof change.diff_sha256 === 'string' ? { diff_sha256: change.diff_sha256 } : {}),
+      ...(typeof change.assessment_sha256 === 'string' ? { assessment_sha256: change.assessment_sha256 } : {}),
+    },
+    ...(typeof approval.bundle_digest === 'string' ? { bundle_digest: approval.bundle_digest } : {}),
     reviewer: approval.reviewer,
     source: approval.source,
     decision: 'approved',
@@ -62,7 +77,7 @@ export function parseApproval(value) {
  * Normalize a GitHub PR review object into a FireTree approval.
  *
  * @param {object} review - GitHub review object.
- * @param {{head: string, change?: string}} options - Expected head and change id.
+ * @param {{head: string, change?: string, diffSha256?: string, assessmentSha256?: string}} options - Expected binding.
  * @returns {object} Approval record.
  */
 export function approvalFromGithubReview(review, options) {
@@ -81,6 +96,8 @@ export function approvalFromGithubReview(review, options) {
     change: {
       ...(options.change === undefined ? {} : { id: options.change }),
       head: options.head.toLowerCase(),
+      ...(options.diffSha256 === undefined ? {} : { diff_sha256: options.diffSha256 }),
+      ...(options.assessmentSha256 === undefined ? {} : { assessment_sha256: options.assessmentSha256 }),
     },
     reviewer: `github:${login}`,
     source: 'github-review',
@@ -94,7 +111,7 @@ export function approvalFromGithubReview(review, options) {
  * Normalize a GitHub environment approval from the run approvals API.
  *
  * @param {unknown} value - `GET /actions/runs/{id}/approvals` response.
- * @param {{environment: string, head: string, change?: string}} options - Expected environment and change.
+ * @param {{environment: string, head: string, change?: string, diffSha256?: string, assessmentSha256?: string}} options - Expected environment and binding.
  * @returns {object} Approval record.
  */
 export function approvalFromEnvironment(value, options) {
@@ -120,6 +137,8 @@ export function approvalFromEnvironment(value, options) {
     change: {
       ...(options.change === undefined ? {} : { id: options.change }),
       head: options.head.toLowerCase(),
+      ...(options.diffSha256 === undefined ? {} : { diff_sha256: options.diffSha256 }),
+      ...(options.assessmentSha256 === undefined ? {} : { assessment_sha256: options.assessmentSha256 }),
     },
     reviewer: `github:${match.user.login}`,
     source: 'github-environment',
@@ -133,7 +152,7 @@ export function approvalFromEnvironment(value, options) {
  * Verify approval against the change head and optional reviewer policy.
  *
  * @param {object} approval - Normalized approval.
- * @param {{head: string, reviewer?: string, source?: string}} policy - Expected values.
+ * @param {{head: string, change?: string, reviewer?: string, source?: string, diffSha256?: string, assessmentSha256?: string, bundleDigest?: string}} policy - Expected values.
  * @returns {{valid: boolean, failures: string[], reviewer: string}} Result.
  */
 export function verifyApproval(approval, policy) {
@@ -143,6 +162,15 @@ export function verifyApproval(approval, policy) {
   }
   if (policy.change !== undefined && approval.change.id !== policy.change) {
     failures.push(`approval change id must be ${policy.change}`);
+  }
+  if (policy.diffSha256 !== undefined && approval.change.diff_sha256 !== policy.diffSha256) {
+    failures.push('approval diff hash does not match assessment');
+  }
+  if (policy.assessmentSha256 !== undefined && approval.change.assessment_sha256 !== policy.assessmentSha256) {
+    failures.push('approval assessment hash does not match assessment artifact');
+  }
+  if (policy.bundleDigest !== undefined && approval.bundle_digest !== policy.bundleDigest) {
+    failures.push('approval bundle digest does not match bundle manifest');
   }
   if (policy.reviewer !== undefined && approval.reviewer !== policy.reviewer) {
     failures.push(`approval reviewer must be ${policy.reviewer}`);
