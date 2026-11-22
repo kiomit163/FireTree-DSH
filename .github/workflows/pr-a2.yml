@@ -45,9 +45,55 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  trusted-tests:
+    name: Trusted base tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout trusted base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+
+      - name: Fetch PR source
+        run: |
+          git fetch --no-tags origin \
+            "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/pull/head"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install trusted test dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Replace source with PR data (base tests remain trusted)
+        run: git checkout refs/remotes/pull/head -- src
+
+      - name: Run trusted base tests
+        run: |
+          mkdir -p evidence
+          node --test --test-reporter=junit --test-reporter-destination=evidence/trusted-junit.xml
+
+      - name: Upload trusted test evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: trusted-junit-${{ github.event.pull_request.number }}
+          path: evidence/trusted-junit.xml
+          if-no-files-found: error
+          retention-days: 90
+
   verify:
     name: Trusted A2 verifier
-    needs: build
+    needs: [build, trusted-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -86,11 +132,16 @@ jobs:
       - name: Install trusted verifier
         run: pnpm install --frozen-lockfile
 
-      - name: Download untrusted evidence
+      - name: Download trusted test evidence
         uses: actions/download-artifact@v4
         with:
-          name: pr-junit-${{ github.event.pull_request.number }}
+          name: trusted-junit-${{ github.event.pull_request.number }}
           path: evidence
+
+      - name: Put trusted JUnit inside the attested bundle
+        run: |
+          mkdir -p .firetree/evidence
+          cp evidence/trusted-junit.xml .firetree/evidence/ci-junit.xml
 
       - name: Fetch OIDC JWT
         run: node scripts/github-oidc.mjs --out claims.json --audience firetree
@@ -117,7 +168,7 @@ jobs:
           fi
           node bin/firetree-ci.mjs \
             --change "pr-$PR" \
-            --evidence evidence/ci-junit.xml \
+            --evidence .firetree/evidence/ci-junit.xml \
             --intent-spec "PR #$PR" \
             "${AI_ARGS[@]}"
 
