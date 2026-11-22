@@ -8,7 +8,7 @@ import { evaluateAiReview } from '../src/lib/ai-review.js';
 import { atLeast, deriveAssurance } from '../src/lib/assurance.js';
 import { verifyGithubAttestation } from '../src/lib/attestation.js';
 import { verifyBundleManifest } from '../src/lib/bundle.js';
-import { IdentityError, parseOidcClaims, verifyClaims, verifyGithubJwt } from '../src/lib/identity.js';
+import { IdentityError, verifyGithubJwt } from '../src/lib/identity.js';
 import { readFiretreeJson, sha256File } from '../src/lib/artifacts.js';
 import { parseSignature, verifySignature } from '../src/lib/signature.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
@@ -25,7 +25,6 @@ function usage() {
     '  --workflow-ref <ref>      Expected OIDC workflow_ref (optional)',
     '  --ai-review <file>        Adversarial AI review artifact (A3-AI-S/A3-AI)',
     '  --review-signing-key-env <name>  Env var for required AI review HMAC key',
-    '  --claims <file>           Legacy claims JSON (not trusted for A2)',
     '  --bundle <dir>            Evidence bundle directory with bundle-manifest.json',
     '  --signature <file>        Detached Ed25519 signature over the bundle digest',
     '  --public-key <pem>        Ed25519 public key for --signature',
@@ -44,7 +43,7 @@ function usage() {
 }
 
 const VALUE_ARGS = new Set([
-  '--change', '--mode', '--root', '--jwt', '--jwks', '--claims-sha', '--workflow-ref', '--claims', '--ai-review', '--review-signing-key-env', '--bundle', '--signature',
+  '--change', '--mode', '--root', '--jwt', '--jwks', '--claims-sha', '--workflow-ref', '--ai-review', '--review-signing-key-env', '--bundle', '--signature',
   '--public-key', '--attestation', '--attested-artifact', '--signer-workflow', '--source-digest',
   '--gh', '--require', '--repository', '--issuer', '--audience',
 ]);
@@ -131,22 +130,6 @@ async function main() {
       } catch (error) {
         const message = error instanceof IdentityError || error instanceof Error ? error.message : String(error);
         gaps.push(`JWT is invalid: ${message}`);
-      }
-    } else if (args.claims !== undefined) {
-      try {
-        claims = parseOidcClaims(await readJson(resolve(root, args.claims)));
-        const verification = verifyClaims(claims, {
-          ...(args.issuer === undefined ? {} : { issuer: args.issuer }),
-          ...(args.audience === undefined ? {} : { audience: args.audience }),
-          ...(args.repository === undefined ? {} : { repository: args.repository }),
-          ...(typeof head === 'string' ? { sha: head } : {}),
-        });
-        claimsValid = false;
-        gaps.push('claims JSON without a raw OIDC JWT is not A2 evidence');
-        if (!verification.valid) gaps.push(...verification.failures);
-      } catch (error) {
-        const message = error instanceof IdentityError || error instanceof Error ? error.message : String(error);
-        gaps.push(`claims are invalid: ${message}`);
       }
     }
 
