@@ -76,7 +76,9 @@ export async function checkTechnicalEvidenceSemantics(evidence, options) {
   }
 
   for (const item of evidence.evidence) {
-    if (/^agent(?:$|[:/])/i.test(item.producer)) gaps.push('evidence producer must not be the agent');
+    if (!/^(?:ci|local|tool):[A-Za-z0-9._-]+$/.test(item.producer)) {
+      gaps.push('evidence producer must be an allowlisted ci/local/tool producer');
+    }
     const gap = await evidenceGap(options.root, item);
     if (gap !== null) gaps.push(gap);
     if (gap === null && !/^https?:\/\//i.test(item.run_ref)) {
