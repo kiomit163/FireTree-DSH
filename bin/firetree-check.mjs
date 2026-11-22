@@ -185,8 +185,9 @@ async function main() {
             const actual = await sha256File(reviewPath);
             if (entry === undefined) gaps.push('AI review is not listed in the bundle manifest');
             else if (entry.sha256 !== actual) gaps.push('AI review hash does not match the bundle manifest');
+            // The review commit is necessarily a descendant of the reviewed
+            // head. Bind to the diff digest, which excludes review artifacts.
             const review = evaluateAiReview(await readJson(reviewPath), {
-              ...(typeof head === 'string' ? { head } : {}),
               ...(typeof assessmentRecord?.value?.git?.diff_sha256 === 'string'
                 ? { diffSha256: assessmentRecord.value.git.diff_sha256 }
                 : {}),
