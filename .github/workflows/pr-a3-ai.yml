@@ -120,7 +120,7 @@ jobs:
             --out ".firetree/ai-reviews/pr-$PR.json"
 
       - name: Fetch OIDC JWT
-        run: node scripts/github-oidc.mjs --out claims.json.jwt --audience firetree
+        run: node scripts/github-oidc.mjs --out claims.json --audience firetree
 
       - name: Build A3-AI evidence
         env:
