@@ -1,7 +1,8 @@
 # A3-AI: machine-governed adversarial assurance
 
-> Status: proposed / single-provider (A3-AI-S) foundation. This is not human
-> sign-off and must never be labelled `A3`.
+> Status: **A3-AI-S implemented and exercised**. PR #9 was reviewed by two
+> single-provider AI seats and merged after the required `firetree-a2` check
+> passed. This is not human sign-off and must never be labelled `A3`.
 
 ## Why
 
@@ -45,11 +46,24 @@ Those are explicit residual risks.
 - A review artifact can be fabricated by a local agent; the CI attestation over
   the bundle is what limits substitution, not the AI text itself.
 
+## Implementation status
+
+- `firetree.ai-review/v1` schema and two-seat validator are implemented.
+- `firetree-check --require A3-AI-S` binds the review to the assessed diff and
+  requires it inside the attested bundle.
+- The trusted PR verifier materializes the review from PR data, builds the
+  bundle, attests it, and runs the check without executing PR code.
+- PR #9 (governance coverage and L0 sampling 0.1) passed this path and was
+  auto-merged.
+- The review used two seats from the same provider, so it is `A3-AI-S`
+  (single-provider), not `A3-AI`.
+
 ## Next implementation steps
 
-1. Generate review artifacts from real DSH subagents; record provider/model and
-   transcript hashes.
-2. Run at least two contexts; for `A3-AI`, configure a second provider.
-3. Bind the artifact into the attested bundle and require it from
-   `firetree-check --require A3-AI-S`.
-4. Make L2 PRs use this path; keep `A3` human-only.
+1. Add a second model provider; then `A3-AI` becomes available without a
+   protocol change.
+2. Persist the AI-review summary and residual risks in the receipt/technical
+   evidence, not only in check stdout.
+3. Expand tests for multi-provider, accepted-blocker rejection, and review
+   substitution.
+4. Keep `A3` human-only; `A3-AI-S` never satisfies `--require A3`.
