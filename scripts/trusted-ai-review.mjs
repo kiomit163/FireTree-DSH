@@ -20,7 +20,7 @@ const SEATS = [
   {
     id: 'opencode-go',
     provider: 'opencode-go',
-    model: 'glm-5.3-flash',
+    model: 'qwen3.8-flash',
     endpoint: 'https://opencode.ai/inference/v1/chat/completions',
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
@@ -90,10 +90,8 @@ function parseJsonContent(content) {
       status: finding.status,
     };
   });
-  if (verdict === 'ready' && findings.some((finding) => finding.status === 'open')) {
-    throw new Error('model returned ready with an open finding');
-  }
-  return { verdict, findings };
+  const effectiveVerdict = verdict === 'ready' && findings.some((finding) => finding.status === 'open') ? 'not-ready' : verdict;
+  return { verdict: effectiveVerdict, findings };
 }
 
 function promptFor(diff) {
@@ -174,6 +172,13 @@ async function main() {
   const prompt = promptFor(diff);
   const seats = await Promise.all(SEATS.map((seat) => callSeat(seat, prompt)));
   for (const seat of seats) seat.diff_sha256 = args['diff-sha256'];
+  console.log(JSON.stringify(seats.map((seat) => ({
+    provider: seat.provider,
+    model: seat.model,
+    verdict: seat.verdict,
+    findings: seat.findings.length,
+    open: seat.findings.filter((finding) => finding.status === 'open').length,
+  }))));
   const openFindings = seats.flatMap((seat) => seat.findings).filter((finding) => finding.status === 'open').length;
   const artifact = {
     schema: 'firetree.ai-review/v1',
