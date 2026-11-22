@@ -246,6 +246,9 @@ async function main() {
     }
 
     if (args.attestation !== undefined) {
+      if (typeof args['signer-workflow'] !== 'string' || args['signer-workflow'].length === 0) {
+        gaps.push('--attestation requires --signer-workflow');
+      }
       const bundleRoot = resolve(root, args.bundle);
       const artifact = resolve(root, args['attested-artifact'] ?? join(bundleRoot, 'bundle-manifest.json'));
       try {
