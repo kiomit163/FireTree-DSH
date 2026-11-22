@@ -74,7 +74,7 @@ test('attested provenance does not raise A2 to human A3', () => {
     attested: true,
   };
   assert.equal(deriveAssurance(base).level, 'A2');
-  assert.ok(['A2', 'A3'].includes(deriveAssurance({ ...base, approval: { verified: true } }).level));
+  assert.equal(deriveAssurance({ ...base, approval: { verified: true } }).level, 'A2');
   assert.equal(deriveAssurance({
     ...base, aiReview: { valid: true, mode: 'single-provider' }, attested: true,
   }).level, 'A3-AI-S');

@@ -110,13 +110,13 @@ test('assurance is derived rather than declared', () => {
     claims: claims(),
     evidence: [{ producer: 'ci:github-actions' }],
   }).level, 'A2');
-  assert.ok(['A2', 'A3'].includes(deriveAssurance({
+  assert.equal(deriveAssurance({
     claimsValid: true,
     claims: claims(),
     evidence: [{ producer: 'ci:github-actions' }],
     approval: { verified: true },
     signed: true,
-  }).level));
+  }).level, 'A2');
   assert.equal(deriveAssurance({
     claimsValid: true,
     claims: claims(),
