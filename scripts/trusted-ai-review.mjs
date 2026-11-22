@@ -20,7 +20,7 @@ const SEATS = [
   {
     id: 'opencode-go',
     provider: 'opencode-go',
-    model: 'qwen3.8-flash',
+    model: 'glm-5.3-flash',
     endpoint: 'https://opencode.ai/inference/v1/chat/completions',
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
