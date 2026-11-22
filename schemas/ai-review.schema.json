@@ -35,7 +35,8 @@
     },
     "unresolved": { "type": "integer", "minimum": 0 },
     "converged": { "type": "boolean" },
-    "created_at": { "type": "string", "format": "date-time" }
+    "created_at": { "type": "string", "format": "date-time" },
+    "signature": { "$ref": "#/$defs/sha256" }
   },
   "$defs": {
     "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },

@@ -1,5 +1,6 @@
 /** Validate a machine-generated adversarial review artifact. */
 
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 import { validateJsonSchema } from './schema.js';
@@ -17,11 +18,36 @@ const SCHEMA = JSON.parse(readFileSync(new URL('../../schemas/ai-review.schema.j
  * @param {{head?: string, diffSha256?: string, assessmentSha256?: string}} expected - Binding values.
  * @returns {{valid: boolean, mode: string|null, gaps: string[], seats: number}} Result.
  */
-export function evaluateAiReview(value, expected = {}) {
+export function reviewSignaturePayload(review) {
+  const { signature: _signature, ...payload } = review;
+  return JSON.stringify(payload);
+}
+
+/** @param {unknown} review @param {string} key */
+export function verifyAiReviewSignature(review, key) {
+  if (typeof review !== 'object' || review === null || typeof review.signature !== 'string') return false;
+  if (typeof key !== 'string' || key.length === 0) return false;
+  const expected = createHmac('sha256', key).update(reviewSignaturePayload(review)).digest();
+  try {
+    const actual = Buffer.from(review.signature, 'hex');
+    return actual.length === expected.length && timingSafeEqual(actual, expected);
+  } catch {
+    return false;
+  }
+}
+
+export function evaluateAiReview(value, expected = {}, options = {}) {
   const gaps = validateJsonSchema(value, SCHEMA)
     .map((gap) => (typeof gap === 'string' ? gap : `schema ${gap.path ?? ''}: ${gap.message ?? JSON.stringify(gap)}`));
   if (gaps.length > 0) return { valid: false, mode: null, gaps, seats: 0 };
   const review = value;
+  if (options.requireSignature === true) {
+    if (typeof review.signature !== 'string') gaps.push('AI review signature is required');
+    else if (typeof options.signingKey !== 'string' || options.signingKey.length === 0) gaps.push('AI review signing key is not configured');
+    else if (!verifyAiReviewSignature(review, options.signingKey)) gaps.push('AI review signature is invalid');
+  } else if (review.signature !== undefined && options.signingKey !== undefined && !verifyAiReviewSignature(review, options.signingKey)) {
+    gaps.push('AI review signature is invalid');
+  }
   if (expected.head !== undefined && review.change.head !== expected.head.toLowerCase()) {
     gaps.push('AI review head does not match change head');
   }

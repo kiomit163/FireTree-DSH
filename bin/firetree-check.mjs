@@ -25,6 +25,7 @@ function usage() {
     '  --claims-sha <sha>        SHA the OIDC token must bind to (default: change head)',
     '  --workflow-ref <ref>      Expected OIDC workflow_ref (optional)',
     '  --ai-review <file>        Adversarial AI review artifact (A3-AI-S/A3-AI)',
+    '  --review-signing-key-env <name>  Env var for required AI review HMAC key',
     '  --claims <file>           Legacy claims JSON (not trusted for A2)',
     '  --bundle <dir>            Evidence bundle directory with bundle-manifest.json',
     '  --approval <file>         Normalized human approval JSON (A3)',
@@ -46,7 +47,7 @@ function usage() {
 }
 
 const VALUE_ARGS = new Set([
-  '--change', '--mode', '--root', '--jwt', '--jwks', '--claims-sha', '--workflow-ref', '--claims', '--ai-review', '--bundle', '--approval', '--signature',
+  '--change', '--mode', '--root', '--jwt', '--jwks', '--claims-sha', '--workflow-ref', '--claims', '--ai-review', '--review-signing-key-env', '--bundle', '--approval', '--signature',
   '--public-key', '--attestation', '--attested-artifact', '--signer-workflow', '--source-digest',
   '--gh', '--reviewer', '--require', '--repository', '--issuer', '--audience',
 ]);
@@ -193,10 +194,15 @@ async function main() {
             else if (entry.sha256 !== actual) gaps.push('AI review hash does not match the bundle manifest');
             // The review commit is necessarily a descendant of the reviewed
             // head. Bind to the diff digest, which excludes review artifacts.
+            const signingKeyEnv = args['review-signing-key-env'] ?? 'FIRE_TREE_REVIEW_SIGNING_KEY';
+            const signingKey = process.env[signingKeyEnv];
             const review = evaluateAiReview(await readJson(reviewPath), {
               ...(typeof assessmentRecord?.value?.git?.diff_sha256 === 'string'
                 ? { diffSha256: assessmentRecord.value.git.diff_sha256 }
                 : {}),
+            }, {
+              requireSignature: args.require === 'A3-AI',
+              ...(typeof signingKey === 'string' ? { signingKey } : {}),
             });
             aiReviewValid = review.valid;
             aiReviewMode = review.mode;

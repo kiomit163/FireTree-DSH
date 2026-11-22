@@ -1,0 +1,164 @@
+name: pr-a3-ai
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions: {}
+
+jobs:
+  trusted-tests:
+    name: A3-AI trusted tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout trusted base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+
+      - name: Fetch PR source
+        run: |
+          git fetch --no-tags origin \
+            "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/pull/head"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install trusted test dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Replace source with PR data (base tests remain trusted)
+        run: git checkout refs/remotes/pull/head -- src
+
+      - name: Run trusted base tests
+        run: |
+          mkdir -p evidence
+          node --test --test-reporter=junit --test-reporter-destination=evidence/trusted-junit.xml
+
+      - name: Upload trusted test evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: a3-trusted-junit-${{ github.event.pull_request.number }}
+          path: evidence/trusted-junit.xml
+          if-no-files-found: error
+          retention-days: 90
+
+  a3-ai:
+    name: firetree-a3-ai
+    needs: trusted-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      actions: read
+      attestations: write
+      models: read
+    steps:
+      - name: Checkout trusted base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+
+      - name: Fetch PR head as data
+        run: |
+          git fetch --no-tags origin \
+            "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/pull/head"
+          echo "BASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "DIFF_BASE=$(git merge-base HEAD refs/remotes/pull/head)" >> "$GITHUB_ENV"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install trusted tools
+        run: pnpm install --frozen-lockfile
+
+      - name: Download trusted test evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: a3-trusted-junit-${{ github.event.pull_request.number }}
+          path: .firetree/evidence
+
+      - name: Normalize trusted JUnit path
+        run: mv .firetree/evidence/trusted-junit.xml .firetree/evidence/ci-junit.xml
+
+      - name: Assess PR with trusted policy and review the exact diff
+        env:
+          PR: ${{ github.event.pull_request.number }}
+          HEAD: refs/remotes/pull/head
+          OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FIRE_TREE_REVIEW_SIGNING_KEY: ${{ secrets.FIRE_TREE_REVIEW_SIGNING_KEY }}
+        run: |
+          node bin/firetree-assess.mjs \
+            --base "$DIFF_BASE" \
+            --head "$HEAD" \
+            --change "pr-$PR"
+          mkdir -p .firetree/ai-reviews
+          git --no-pager diff --no-ext-diff --no-textconv --no-color "$DIFF_BASE" "$HEAD" > .firetree/evidence/review.diff
+          DIFF_SHA=$(node -e 'const fs=require("fs");const a=JSON.parse(fs.readFileSync(".firetree/changes/pr-"+process.env.PR+"/assessment.json","utf8"));process.stdout.write(a.git.diff_sha256)')
+          node scripts/trusted-ai-review.mjs \
+            --diff-file .firetree/evidence/review.diff \
+            --change "pr-$PR" \
+            --head "$(git rev-parse "$HEAD")" \
+            --diff-sha256 "$DIFF_SHA" \
+            --out ".firetree/ai-reviews/pr-$PR.json"
+
+      - name: Fetch OIDC JWT
+        run: node scripts/github-oidc.mjs --out claims.json --audience firetree
+
+      - name: Build and verify A3-AI evidence
+        env:
+          PR: ${{ github.event.pull_request.number }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          FIRE_TREE_REVIEW_SIGNING_KEY: ${{ secrets.FIRE_TREE_REVIEW_SIGNING_KEY }}
+        run: |
+          node bin/firetree-ci.mjs \
+            --root . \
+            --change "pr-$PR" \
+            --evidence .firetree/evidence/ci-junit.xml \
+            --intent-spec "PR #$PR trusted A3-AI review" \
+            --assurance A2 \
+            --ai-review ".firetree/ai-reviews/pr-$PR.json" \
+            --bundle .firetree
+          node bin/firetree-check.mjs \
+            --mode autonomous \
+            --root . \
+            --change "pr-$PR" \
+            --jwt claims.json \
+            --repository "${{ github.repository }}" \
+            --workflow-ref "$WORKFLOW_REF" \
+            --bundle .firetree \
+            --ai-review ".firetree/ai-reviews/pr-$PR.json" \
+            --review-signing-key-env FIRE_TREE_REVIEW_SIGNING_KEY \
+            --require A3-AI
+
+      - name: Attest A3-AI bundle
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: .firetree
+
+      - name: Upload A3-AI bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: a3-ai-${{ github.event.pull_request.number }}
+          path: .firetree
+          if-no-files-found: error
+          retention-days: 90
