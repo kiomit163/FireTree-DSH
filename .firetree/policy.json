@@ -1,11 +1,11 @@
 {
   "schema": "firetree.policy/v1",
-  "version": "f26c83ff892f7babe8429631ce67cfc2f58ec9cbf6278756abae98d9432b8eca",
+  "version": "09a659428f596c662d08bd5a9303ec5c34de6d7e4ed9f6a00f893b6010504ee0",
   "scope": "repo",
   "extends": null,
   "tiers": {
     "L0": {
-      "sample_rate": 0,
+      "sample_rate": 0.1,
       "review_rounds": 1,
       "signoff": "none",
       "correctness_case": "none",

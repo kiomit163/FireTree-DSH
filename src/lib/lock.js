@@ -30,7 +30,7 @@ export async function withFileLock(file, fn, options = {}) {
       handle = await open(file, 'wx');
       await handle.writeFile(`${process.pid}\n${new Date().toISOString()}\n`, 'utf8');
     } catch (error) {
-      if (!(error && typeof error === 'object' && error.code === 'EEXIST')) throw error;
+      if (!(error && typeof error === 'object' && (error.code === 'EEXIST' || error.code === 'EPERM'))) throw error;
       try {
         const info = await stat(file);
         if (Date.now() - info.mtimeMs > STALE_MS) {
@@ -38,7 +38,9 @@ export async function withFileLock(file, fn, options = {}) {
           continue;
         }
       } catch {
-        // The lock was released between open() and stat(); retry.
+        // The lock was released between open() and stat(); retry with a bound.
+        if (Date.now() - started > timeoutMs) throw new Error(`timed out waiting for lock ${file}`);
+        await delay(retryMs);
         continue;
       }
       if (Date.now() - started > timeoutMs) {

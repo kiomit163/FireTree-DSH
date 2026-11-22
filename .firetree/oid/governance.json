@@ -1,0 +1,33 @@
+{
+  "schema": "firetree.oid/v1",
+  "subsystem": "governance",
+  "kind": "large",
+  "layers_known": [
+    "policy",
+    "registry",
+    "release"
+  ],
+  "layers_unknown": [],
+  "coupling_evidence": [
+    "policy and registry gate every change"
+  ],
+  "reducibility_test": {
+    "command": "node --test",
+    "result": "reducible"
+  },
+  "method": "decompose",
+  "owner_of_unknowns": [
+    "human:kiomit163"
+  ],
+  "learning_plan": [
+    "run schema lint and registry coverage on every change"
+  ],
+  "allowed": {
+    "decomposition_autonomy": true,
+    "requires_human_signoff": true,
+    "constraints": [
+      "policy or registry change requires governed sign-off"
+    ]
+  },
+  "updated_at": "2026-11-22T00:00:00.000Z"
+}
