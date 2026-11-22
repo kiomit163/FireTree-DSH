@@ -12,6 +12,7 @@
 | 证据由 CI/确定性工具产生，插件只读 | partial | 哈希/格式/claims 已校验；producer 仍是字符串，OIDC 只证明 CI 运行 |
 | A2 需要验签的 OIDC JWT | implemented | `jose` JWKS 验签、`--jwt`、`--claims-sha`；PR #2 trusted build/verify 已真实通过（run 44915432273） |
 | A3 需要人类审批 + 签名 bundle | partial | Ed25519 A3 已验证；autonomous A3 已被代码拒绝；`keyless-a2` 只验证 attestation/A2。真正的 governed A3 + 独立 approval + 留存仍未完成 |
+| A3-AI-S 机器审计 | implemented | 两席位单 provider AI review + attested bundle + `firetree-check --require A3-AI-S`；PR #9 已通过并 auto-merge。单 provider，非独立第三方 |
 | 变更集来自 git diff，不可自述 | implemented | `test/git-assess.test.mjs` |
 | 重评估不能覆盖已评审 change | implemented | `test/git-assess.test.mjs` |
 | 评审绑定 assessment/diff/package | implemented | `test/git-assess.test.mjs`、receipt 复验 |
