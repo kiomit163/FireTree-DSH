@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /** Call one OpenCode Go review seat and emit a seat record. */
 
-import { createHash } from 'node:crypto';
-import { readFile, writeFile } from 'node:fs/promises';
-import { isAbsolute, relative, resolve } from 'node:path';
+import { createHash, randomUUID } from 'node:crypto';
+import { lstat, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
 const PROVIDER = 'opencode-go';
 const BASE_URL = 'https://opencode.ai/inference/v1';
@@ -67,8 +67,7 @@ function validateFinding(finding) {
     if (typeof finding[field] !== 'string' || finding[field].length === 0) throw new Error(`finding.${field} is required`);
   }
   if (!['blocker', 'non-blocker', 'question'].includes(finding.severity)) throw new Error('finding.severity is invalid');
-  if (!['open', 'resolved', 'accepted'].includes(finding.status)) throw new Error('finding.status is invalid');
-  if (finding.severity === 'blocker' && finding.status === 'accepted') throw new Error('blocker finding cannot be accepted by the seat');
+  if (!['open', 'resolved'].includes(finding.status)) throw new Error('finding.status is invalid');
   return {
     id: finding.id,
     severity: finding.severity,
@@ -89,7 +88,11 @@ function parseModelJson(content) {
   const verdict = typeof parsed.verdict === 'string' ? parsed.verdict.trim() : '';
   if (!['ready', 'not-ready'].includes(verdict)) throw new Error('model response verdict must be ready or not-ready');
   if (!Array.isArray(parsed.findings)) throw new Error('model response findings must be an array');
-  return { verdict, findings: parsed.findings.map(validateFinding) };
+  const findings = parsed.findings.map(validateFinding);
+  if (verdict === 'ready' && findings.some((finding) => finding.status === 'open')) {
+    throw new Error('model reported ready despite an open finding');
+  }
+  return { verdict, findings };
 }
 
 async function main() {
@@ -102,13 +105,29 @@ async function main() {
   if (typeof key !== 'string' || key.length === 0) throw new Error(`${API_KEY_ENV} is not set`);
   const root = resolve(args.root ?? process.cwd());
   const output = resolve(root, args.out);
+  let outputParent;
+  try {
+    outputParent = await lstat(dirname(output));
+  } catch {
+    throw new Error('--out parent directory must exist');
+  }
+  if (!outputParent.isDirectory()) throw new Error('--out parent must be a directory');
   const outputRelative = relative(root, output);
-  if (outputRelative.startsWith('..') || isAbsolute(outputRelative)) throw new Error('--out must stay inside --root');
+  if (outputRelative.length === 0 || outputRelative === '..' || outputRelative.startsWith(`..${sep}`) || isAbsolute(outputRelative)) {
+    throw new Error('--out must stay inside --root');
+  }
+  try {
+    const existing = await lstat(output);
+    if (existing.isSymbolicLink()) throw new Error('--out must not be a symbolic link');
+  } catch (error) {
+    if (error instanceof Error && error.message === '--out must not be a symbolic link') throw error;
+  }
   const prompt = await readFile(resolve(args.prompt), 'utf8');
   if (Buffer.byteLength(prompt, 'utf8') > MAX_PROMPT_BYTES) throw new Error('prompt exceeds the 1 MiB limit');
   const system = 'You are an adversarial code reviewer. Return only JSON. Never praise. Every finding must cite evidence.';
   const response = await fetch(`${BASE_URL}/chat/completions`, {
     method: 'POST',
+    redirect: 'error',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: args.model,
@@ -144,7 +163,14 @@ async function main() {
     verdict: parsed.verdict,
     findings: parsed.findings,
   };
-  await writeFile(output, `${JSON.stringify(seat, null, 2)}\n`, 'utf8');
+  const temporary = `${output}.${process.pid}.${randomUUID()}.tmp`;
+  try {
+    await writeFile(temporary, `${JSON.stringify(seat, null, 2)}\n`, 'utf8');
+    await rename(temporary, output);
+  } catch (error) {
+    await rm(temporary, { force: true }).catch(() => {});
+    throw error;
+  }
   console.log(`seat written: ${args.out} verdict=${seat.verdict} findings=${seat.findings.length}`);
 }
 

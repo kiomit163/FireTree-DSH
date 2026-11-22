@@ -37,6 +37,9 @@ export function evaluateAiReview(value, expected = {}) {
     if (ids.has(seat.id)) gaps.push(`duplicate AI seat id: ${seat.id}`);
     if (contexts.has(seat.context_sha256)) gaps.push(`duplicate AI context hash: ${seat.context_sha256}`);
     if (transcripts.has(seat.transcript_sha256)) gaps.push(`duplicate AI transcript hash: ${seat.transcript_sha256}`);
+    if (seat.diff_sha256 !== undefined && expected.diffSha256 !== undefined && seat.diff_sha256 !== expected.diffSha256) {
+      gaps.push(`AI seat ${seat.id} diff hash does not match the reviewed change`);
+    }
     ids.add(seat.id);
     contexts.add(seat.context_sha256);
     transcripts.add(seat.transcript_sha256);

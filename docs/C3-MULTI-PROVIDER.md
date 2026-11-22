@@ -44,6 +44,10 @@ The prompt must require JSON:
 }
 ```
 
+`accepted` is not a seat status. A blocker must be resolved, not accepted, by
+a seat. If the model returns `ready` with an open finding, the CLI rejects the
+seat instead of writing it.
+
 ## Combining seats
 
 For `A3-AI`, combine:
@@ -51,8 +55,22 @@ For `A3-AI`, combine:
 - one `deepseek-account` seat from the host model;
 - one `opencode-go` seat from this CLI.
 
-The seat `provider` values must differ; otherwise the artifact is only
-`A3-AI-S`.
+Use the deterministic combiner:
+
+```powershell
+node scripts/ai-review-combine.mjs `
+  --seat deepseek-seat.json `
+  --seat seat-opencode.json `
+  --change pr-17 `
+  --head <code-head> `
+  --diff-sha256 <reviewed-diff-sha256> `
+  --author-provider deepseek-account `
+  --author-model deepseek-flash `
+  --out .firetree/ai-reviews/pr-17.json
+```
+
+The combiner validates the artifact before writing it. The seat `provider`
+values must differ; otherwise the artifact is only `A3-AI-S`.
 
 The final `firetree.ai-review/v1` artifact must:
 
@@ -62,13 +80,15 @@ The final `firetree.ai-review/v1` artifact must:
 - include both provider seat hashes.
 
 Each seat includes its own `context_sha256`, which binds the system prompt,
-user prompt, provider, model, and diff digest. Two seats from the same model
-therefore still have distinct context hashes.
+user prompt, provider, model, and diff digest. Different providers therefore
+have distinct context hashes; two seats from the same provider/model and the
+same prompt are **not** independent and must not be counted as two contexts.
 
 The current CLI is fixed to `https://opencode.ai/inference/v1`, provider
 `opencode-go`, and `OPENCODE_GO_API_KEY`; it cannot be pointed at an arbitrary
-endpoint or a different credential reference. The output path must stay inside
-`--root`.
+endpoint or a different credential reference. Redirects are rejected. The
+output path must stay inside `--root`, and an existing symlink at the output
+path is rejected.
 
 ## Security boundary
 
