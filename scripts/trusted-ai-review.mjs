@@ -10,6 +10,7 @@
 import { createHash, createHmac, randomUUID } from 'node:crypto';
 import { readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { evaluateAiReview } from '../src/lib/ai-review.js';
 
@@ -86,7 +87,7 @@ function hash(text) {
   return createHash('sha256').update(text).digest('hex');
 }
 
-function parseJsonContent(content) {
+export function parseJsonContent(content) {
   let trimmed = String(content).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
   const start = trimmed.indexOf('{');
   const end = trimmed.lastIndexOf('}');
@@ -133,7 +134,7 @@ function promptFor(diff, context = '') {
   ].join('\n');
 }
 
-function changedFiles(diff) {
+export function changedFiles(diff) {
   const files = new Set();
   for (const line of diff.split(/\r?\n/u)) {
     const match = /^\+\+\+ b\/(.+)$/.exec(line);
@@ -142,7 +143,7 @@ function changedFiles(diff) {
   return files;
 }
 
-function findingsCiteChangedFile(findings, files) {
+export function findingsCiteChangedFile(findings, files) {
   return findings.filter((finding) => [...files].some((file) => {
     const marker = `${file}:`;
     const index = finding.evidence.indexOf(marker);
@@ -288,9 +289,11 @@ async function main() {
   console.log(`trusted review written: ${args.out} mode=multi-provider seats=${seats.length}`);
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
-});
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  });
+}
 
 
