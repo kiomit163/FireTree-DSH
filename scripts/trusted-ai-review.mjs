@@ -25,9 +25,9 @@ const SEATS = [
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
   {
-    id: 'opencode-gemini',
+    id: 'opencode-qwen',
     provider: 'opencode-go',
-    model: 'gemini-4-neon',
+    model: 'qwen3.8-flash',
     endpoint: 'https://opencode.ai/inference/v1/chat/completions',
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
