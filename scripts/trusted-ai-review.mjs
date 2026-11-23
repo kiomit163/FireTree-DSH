@@ -87,7 +87,7 @@ function hash(text) {
   return createHash('sha256').update(text).digest('hex');
 }
 
-export function parseJsonContent(content) {
+// Pure helpers are exported for unit tests.`nexport function parseJsonContent(content) {
   let trimmed = String(content).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
   const start = trimmed.indexOf('{');
   const end = trimmed.lastIndexOf('}');
