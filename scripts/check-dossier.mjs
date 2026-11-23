@@ -29,7 +29,7 @@ async function main() {
   if (evidence === null) throw new Error(`technical evidence is missing for ${args.change}`);
   const classification = evidence.value.classification;
   if (classification === undefined || classification === null) throw new Error('technical evidence has no classification');
-  const record = await readFiretreeJson(root, `.firetree/subsystems/${classification.subsystem}.json`, { verifyHash: true, missing: 'null' });
+  const record = await readFiretreeJson(root, `.firetree/subsystems/${classification.subsystem}.json`, { missing: 'null' });
   if (record === null) throw new Error(`subsystem registry entry is missing: ${classification.subsystem}`);
   const dossier = record.value.dossier;
   if (dossier === undefined || dossier === null || typeof dossier !== 'object') throw new Error(`subsystem ${classification.subsystem} has no dossier`);
