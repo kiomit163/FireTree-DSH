@@ -32,7 +32,17 @@ async function main() {
   const record = await readFiretreeJson(root, `.firetree/subsystems/${classification.subsystem}.json`, { verifyHash: true, missing: 'null' });
   if (record === null) throw new Error(`subsystem registry entry is missing: ${classification.subsystem}`);
   const dossier = record.value.dossier;
-  if (dossier === undefined || dossier === null) throw new Error(`subsystem ${classification.subsystem} has no dossier`);
+  if (dossier === undefined || dossier === null || typeof dossier !== 'object') throw new Error(`subsystem ${classification.subsystem} has no dossier`);
+  if (typeof classification.dossier_sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(classification.dossier_sha256)) {
+    throw new Error('technical evidence classification has no valid dossier hash');
+  }
+  if (typeof dossier.sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(dossier.sha256)) {
+    throw new Error('subsystem registry dossier has no valid hash');
+  }
+  if (typeof classification.kind !== 'string' || classification.kind.length === 0) throw new Error('technical evidence classification has no kind');
+  if (typeof classification.method !== 'string' || classification.method.length === 0) throw new Error('technical evidence classification has no method');
+  if (typeof dossier.kind !== 'string' || dossier.kind.length === 0) throw new Error('subsystem registry dossier has no kind');
+  if (typeof dossier.method !== 'string' || dossier.method.length === 0) throw new Error('subsystem registry dossier has no method');
   if (classification.dossier_sha256 !== dossier.sha256) throw new Error('technical evidence dossier hash does not match subsystem registry');
   if (classification.kind !== dossier.kind) throw new Error('technical evidence classification kind does not match dossier');
   if (classification.method !== dossier.method) throw new Error('technical evidence classification method does not match dossier');
