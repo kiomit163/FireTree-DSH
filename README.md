@@ -99,6 +99,6 @@ Prow OWNERS 二进制级对拍：[docs/PROW-OWNERS-PARITY.md](docs/PROW-OWNERS-P
 
 ## 8. 许可与归属
 
-- 方法论与代码：待定（建议 Apache-2.0，与 DSH 生态一致）。
+- 代码与文档：**Apache-2.0**；完整文本见 [LICENSE](LICENSE)，归属见 [NOTICE](NOTICE)。
 - 继承来源：`bmad-code-org/BMAD-METHOD`（MIT）、`obra/superpowers`（MIT）——保留 NOTICE 与出处。
 - 钱学森四卷原文**不随仓库分发**；`reference/qian/` 只保存 SHA-256、抽取方法、短引文与出处。

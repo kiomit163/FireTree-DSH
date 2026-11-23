@@ -9,6 +9,8 @@
     "locale/**",
     "icon.svg",
     "README.md",
+    "LICENSE",
+    "NOTICE",
     "*.md"
   ],
   "owners": [

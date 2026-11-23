@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Auditable delivery protocol for DSH: risk tiers, external evidence receipts, human sign-off, and correctness cases.",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "engines": {
     "node": ">=20"
   },
@@ -23,7 +23,9 @@
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "NOTICE"
   ],
   "bin": {
     "firetree-approval": "./bin/firetree-approval.mjs",
