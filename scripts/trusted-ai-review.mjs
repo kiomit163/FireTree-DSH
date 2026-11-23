@@ -21,28 +21,28 @@ const SEATS = [
     id: 'opencode-glm',
     provider: 'opencode-go',
     model: 'glm-5.3-flash',
-    endpoint: 'https://opencode.ai/inference/v1/chat/completions',
+    endpoint: 'https://opencode.ai/zen/go/v1/chat/completions',
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
   {
-    id: 'opencode-gemini',
+    id: 'opencode-mimo',
     provider: 'opencode-go',
-    model: 'gemini-4-neon',
-    endpoint: 'https://opencode.ai/inference/v1/chat/completions',
+    model: 'mimo-v2.6-flash',
+    endpoint: 'https://opencode.ai/zen/go/v1/chat/completions',
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
   {
     id: 'opencode-kimi',
     provider: 'opencode-go',
     model: 'kimi-k3',
-    endpoint: 'https://opencode.ai/inference/v1/chat/completions',
+    endpoint: 'https://opencode.ai/zen/go/v1/chat/completions',
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
   {
     id: 'opencode-minimax',
     provider: 'opencode-go',
     model: 'minimax-m3',
-    endpoint: 'https://opencode.ai/inference/v1/chat/completions',
+    endpoint: 'https://opencode.ai/zen/go/v1/chat/completions',
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
 ];
@@ -154,6 +154,7 @@ async function callSeat(seat, prompt, diff) {
     redirect: 'error',
     headers: {
       'Content-Type': 'application/json',
+      ...(seat.provider === 'opencode-go' ? { 'x-opencode-session': `firetree-${seat.id}` } : {}),
       ...(apiKey === undefined ? {} : { Authorization: `Bearer ${apiKey}` }),
     },
     body: JSON.stringify({
@@ -166,11 +167,11 @@ async function callSeat(seat, prompt, diff) {
     }),
   };
   let response;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < 1; attempt += 1) {
     try {
-      response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(120000) });
+      response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(240000) });
     } catch (error) {
-      if (attempt === 1) {
+      if (attempt === 0) {
         throw new Error(`${seat.id} network failure after 2 attempts: ${error instanceof Error ? error.message : String(error)}`);
       }
       await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -235,10 +236,15 @@ async function main() {
   const signingKey = process.env.FIRE_TREE_REVIEW_SIGNING_KEY;
   if (typeof signingKey !== 'string' || signingKey.length === 0) throw new Error('FIRE_TREE_REVIEW_SIGNING_KEY is not configured');
   const prompt = promptFor(diff, context);
-  const seats = await Promise.race([
-    Promise.all(SEATS.map((seat) => callSeat(seat, prompt, diff))),
+  const settled = await Promise.race([
+    Promise.allSettled(SEATS.map((seat) => callSeat(seat, prompt, diff))),
     new Promise((_, reject) => setTimeout(() => reject(new Error('trusted review exceeded the 5 minute budget')), 300000)),
   ]);
+  for (const result of settled) {
+    if (result.status === 'rejected') console.error(`review seat failed: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`);
+  }
+  const seats = settled.filter((result) => result.status === 'fulfilled').map((result) => result.value);
+  if (seats.length < 3) throw new Error(`trusted review requires at least 3 successful seats, got ${seats.length}`);
   for (const seat of seats) seat.diff_sha256 = args['diff-sha256'];
   console.log(JSON.stringify(seats.map((seat) => ({
     provider: seat.provider,
