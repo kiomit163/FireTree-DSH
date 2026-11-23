@@ -117,7 +117,7 @@ export async function checkTechnicalEvidenceSemantics(evidence, options) {
           if (JSON.stringify(actualProviders) !== JSON.stringify(declaredProviders)) {
             gaps.push('technical evidence ai_review providers do not match artifact');
           }
-          if (evidence.assurance === 'A3-AI' && (review.mode !== 'multi-provider' || actualProviders.length < 2)) {
+          if (evidence.assurance === 'A3-AI' && (review.mode !== 'multi-provider' || review.seats.length < 3)) {
             gaps.push('A3-AI technical evidence requires a multi-provider review');
           }
           if (evidence.assurance === 'A3-AI-S' && (review.mode !== 'single-provider' || actualProviders.length !== 1)) {

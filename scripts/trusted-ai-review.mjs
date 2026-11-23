@@ -18,17 +18,32 @@ const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 
 const SEATS = [
   {
-    id: 'opencode-go',
+    id: 'opencode-glm',
     provider: 'opencode-go',
     model: 'glm-5.3-flash',
     endpoint: 'https://opencode.ai/inference/v1/chat/completions',
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
   {
-    id: 'pollinations',
-    provider: 'pollinations',
-    model: 'openai',
-    endpoint: 'https://text.pollinations.ai/openai',
+    id: 'opencode-gemini',
+    provider: 'opencode-go',
+    model: 'gemini-4-neon',
+    endpoint: 'https://opencode.ai/inference/v1/chat/completions',
+    apiKeyEnv: 'OPENCODE_GO_API_KEY',
+  },
+  {
+    id: 'opencode-kimi',
+    provider: 'opencode-go',
+    model: 'kimi-k3',
+    endpoint: 'https://opencode.ai/inference/v1/chat/completions',
+    apiKeyEnv: 'OPENCODE_GO_API_KEY',
+  },
+  {
+    id: 'opencode-minimax',
+    provider: 'opencode-go',
+    model: 'minimax-m3',
+    endpoint: 'https://opencode.ai/inference/v1/chat/completions',
+    apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
 ];
 
