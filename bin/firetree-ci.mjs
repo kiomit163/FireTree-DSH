@@ -127,6 +127,13 @@ async function main() {
     created_at: new Date().toISOString(),
   };
   const anchorArtifact = await writeFiretreeJson(root, `.firetree/evidence/${args.change}.event-anchor.json`, anchor);
+  const trustRoot = await computeTrustRoot(root);
+  const trustAnchor = await writeFiretreeJson(root, `.firetree/evidence/${args.change}.trust-anchor.json`, {
+    schema: 'firetree.trust-root/v1',
+    change: args.change,
+    ...trustRoot,
+    created_at: new Date().toISOString(),
+  });
   console.log(JSON.stringify({
     ok: true,
     change: args.change,
