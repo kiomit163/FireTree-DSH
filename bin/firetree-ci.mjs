@@ -7,6 +7,7 @@ import { isAbsolute, relative, resolve } from 'node:path';
 import { readFiretreeJson, resolveWithin, sha256Text, writeFiretreeJson } from '../src/lib/artifacts.js';
 import { readEvents } from '../src/lib/events.js';
 import { createReceiptTool } from '../src/tools/receipt.js';
+import { computeTrustRoot } from '../src/lib/trust-root.js';
 
 function usage() {
   return [
@@ -133,6 +134,7 @@ async function main() {
     assurance: result.technical_evidence.assurance,
     artifact: result.artifact,
     event_anchor: anchorArtifact,
+    trust_anchor: trustAnchor,
   }));
 }
 
