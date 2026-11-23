@@ -142,6 +142,11 @@ jobs:
             --assurance A2 \
             --ai-review ".firetree/ai-reviews/pr-$PR.json"
 
+      - name: Verify dossier binding
+        env:
+          PR: ${{ github.event.pull_request.number }}
+        run: node scripts/check-dossier.mjs --change "pr-$PR"
+
       - name: Build attested evidence bundle
         run: |
           node --input-type=module -e '

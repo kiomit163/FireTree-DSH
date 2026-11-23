@@ -158,6 +158,11 @@ jobs:
             --evidence .firetree/evidence/ci-junit.xml \
             --intent-spec "PR #$PR"
 
+      - name: Verify dossier binding
+        env:
+          PR: ${{ github.event.pull_request.number }}
+        run: node scripts/check-dossier.mjs --change "pr-$PR"
+
       - name: Build attested evidence bundle
         run: |
           node --input-type=module -e '
