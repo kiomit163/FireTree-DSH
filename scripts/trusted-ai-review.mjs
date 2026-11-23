@@ -21,28 +21,28 @@ const SEATS = [
     id: 'opencode-glm',
     provider: 'opencode-go',
     model: 'glm-5.3-flash',
-    endpoint: 'https://opencode.ai/inference/v1/chat/completions',
+    endpoint: 'https://opencode.ai/zen/go/v1/chat/completions',
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
   {
-    id: 'opencode-qwen',
+    id: 'opencode-mimo',
     provider: 'opencode-go',
-    model: 'qwen3.8-flash',
-    endpoint: 'https://opencode.ai/inference/v1/chat/completions',
+    model: 'mimo-v2.6-flash',
+    endpoint: 'https://opencode.ai/zen/go/v1/chat/completions',
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
   {
     id: 'opencode-kimi',
     provider: 'opencode-go',
     model: 'kimi-k3',
-    endpoint: 'https://opencode.ai/inference/v1/chat/completions',
+    endpoint: 'https://opencode.ai/zen/go/v1/chat/completions',
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
   {
     id: 'opencode-minimax',
     provider: 'opencode-go',
     model: 'minimax-m3',
-    endpoint: 'https://opencode.ai/inference/v1/chat/completions',
+    endpoint: 'https://opencode.ai/zen/go/v1/chat/completions',
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
 ];
@@ -154,6 +154,7 @@ async function callSeat(seat, prompt, diff) {
     redirect: 'error',
     headers: {
       'Content-Type': 'application/json',
+      ...(seat.provider === 'opencode-go' ? { 'x-opencode-session': `firetree-${seat.id}` } : {}),
       ...(apiKey === undefined ? {} : { Authorization: `Bearer ${apiKey}` }),
     },
     body: JSON.stringify({
