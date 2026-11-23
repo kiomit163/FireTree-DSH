@@ -115,7 +115,7 @@ jobs:
             [ -z "$file" ] && continue
             if git cat-file -e "$HEAD:$file" 2>/dev/null; then
               printf '\n### %s\n' "$file" >> .firetree/evidence/review-context.txt
-              git show "$HEAD:$file" | sed -n '1,400p' >> .firetree/evidence/review-context.txt
+              git show "$HEAD:$file" | sed -n '1,200p' >> .firetree/evidence/review-context.txt
             fi
           done
           DIFF_SHA=$(node -e 'const fs=require("fs");const a=JSON.parse(fs.readFileSync(".firetree/changes/pr-"+process.env.PR+"/assessment.json","utf8"));process.stdout.write(a.git.diff_sha256)')

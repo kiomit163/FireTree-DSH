@@ -45,6 +45,13 @@ const SEATS = [
     endpoint: 'https://opencode.ai/zen/go/v1/chat/completions',
     apiKeyEnv: 'OPENCODE_GO_API_KEY',
   },
+  {
+    id: 'opencode-qwen',
+    provider: 'opencode-go',
+    model: 'qwen3.8-flash',
+    endpoint: 'https://opencode.ai/zen/go/v1/chat/completions',
+    apiKeyEnv: 'OPENCODE_GO_API_KEY',
+  },
 ];
 
 function usage() {
@@ -160,6 +167,7 @@ async function callSeat(seat, prompt, diff) {
     body: JSON.stringify({
       model: seat.model,
       temperature: 0,
+      max_tokens: 1200,
       messages: [
         { role: 'system', content: 'You are an adversarial code reviewer. Return only JSON. Never praise. Every finding must cite evidence.' },
         { role: 'user', content: prompt },
@@ -169,7 +177,7 @@ async function callSeat(seat, prompt, diff) {
   let response;
   for (let attempt = 0; attempt < 1; attempt += 1) {
     try {
-      response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(240000) });
+      response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(150000) });
     } catch (error) {
       if (attempt === 0) {
         throw new Error(`${seat.id} network failure after 2 attempts: ${error instanceof Error ? error.message : String(error)}`);
