@@ -85,10 +85,9 @@ export function evaluateAiReview(value, expected = {}, options = {}) {
   if (review.unresolved !== 0) gaps.push('AI review has unresolved findings');
   if (review.converged !== true) gaps.push('AI review did not converge');
   if (review.mode === 'multi-provider') {
-    if (providers.size < 2) gaps.push('multi-provider AI review requires at least two providers');
-    if ([...providers].every((provider) => provider === review.author.provider)) {
-      gaps.push('multi-provider AI review requires a provider independent of the author');
-    }
+    if (review.seats.length < 3) gaps.push('multi-provider AI review requires at least three model seats');
+    const models = new Set(review.seats.map((seat) => seat.model));
+    if (models.size < 3) gaps.push('multi-provider AI review requires at least three distinct models');
   } else {
     if (providers.size !== 1) gaps.push('single-provider AI review must use one provider');
     if (!providers.has(review.author.provider)) gaps.push('single-provider AI review must use the author provider');
