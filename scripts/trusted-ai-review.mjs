@@ -166,11 +166,11 @@ async function callSeat(seat, prompt, diff) {
     }),
   };
   let response;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < 1; attempt += 1) {
     try {
-      response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(120000) });
+      response = await fetch(seat.endpoint, { ...request, signal: AbortSignal.timeout(240000) });
     } catch (error) {
-      if (attempt === 1) {
+      if (attempt === 0) {
         throw new Error(`${seat.id} network failure after 2 attempts: ${error instanceof Error ? error.message : String(error)}`);
       }
       await new Promise((resolve) => setTimeout(resolve, 3000));
